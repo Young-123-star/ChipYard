@@ -19,3 +19,6 @@ out*.txt
 
 # 原始 Office 文档（源文件，按需保留，默认不入库）
 *.docx
+
+# bash/cygwin 崩溃转储
+*.stackdump
