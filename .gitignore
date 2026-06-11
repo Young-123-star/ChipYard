@@ -5,3 +5,17 @@ target/
 .vscode/
 node_modules/
 dist/
+
+# Claude Code 本机配置（不入库）
+.claude/
+
+# 需求/数据库文档解析产生的中间文件
+_clean_*.txt
+_unpacked_db/
+_unpacked_req/
+_数据库设计.txt
+_需求文档.txt
+out*.txt
+
+# 原始 Office 文档（源文件，按需保留，默认不入库）
+*.docx
