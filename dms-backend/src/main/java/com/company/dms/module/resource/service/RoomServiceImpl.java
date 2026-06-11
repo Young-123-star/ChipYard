@@ -5,12 +5,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.company.dms.common.exception.BizException;
 import com.company.dms.common.result.PageResult;
 import com.company.dms.common.result.ResultCode;
+import com.company.dms.module.resource.dto.BoardQuery;
 import com.company.dms.module.resource.dto.RoomQuery;
 import com.company.dms.module.resource.dto.RoomSaveDTO;
 import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.mapper.RoomMapper;
+import com.company.dms.module.resource.vo.RoomBoardVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class RoomServiceImpl implements RoomService {
@@ -32,6 +36,21 @@ public class RoomServiceImpl implements RoomService {
                         .eq(query.getStatus() != null, Room::getStatus, query.getStatus())
                         .orderByAsc(Room::getRoomNumber));
         return PageResult.of(p);
+    }
+
+    @Override
+    public List<RoomBoardVO> board(BoardQuery query) {
+        return roomMapper.selectList(Wrappers.<Room>lambdaQuery()
+                        .eq(query.getBuildingId() != null, Room::getBuildingId, query.getBuildingId())
+                        .eq(query.getFloorId() != null, Room::getFloorId, query.getFloorId())
+                        .orderByAsc(Room::getRoomNumber))
+                .stream()
+                .map(r -> {
+                    RoomBoardVO vo = new RoomBoardVO();
+                    BeanUtils.copyProperties(r, vo);
+                    return vo;
+                })
+                .collect(Collectors.toList());
     }
 
     @Override

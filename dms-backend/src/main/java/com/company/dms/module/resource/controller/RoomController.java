@@ -2,14 +2,17 @@ package com.company.dms.module.resource.controller;
 
 import com.company.dms.common.result.PageResult;
 import com.company.dms.common.result.R;
+import com.company.dms.module.resource.dto.BoardQuery;
 import com.company.dms.module.resource.dto.RoomQuery;
 import com.company.dms.module.resource.dto.RoomSaveDTO;
 import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.service.RoomService;
+import com.company.dms.module.resource.vo.RoomBoardVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @Tag(name = "房间管理")
 @RestController
@@ -26,6 +29,12 @@ public class RoomController {
     @GetMapping
     public R<PageResult<Room>> page(RoomQuery query) {
         return R.ok(roomService.page(query));
+    }
+
+    @Operation(summary = "房间状态看板")
+    @GetMapping("/board")
+    public R<List<RoomBoardVO>> board(BoardQuery query) {
+        return R.ok(roomService.board(query));
     }
 
     @Operation(summary = "详情")
