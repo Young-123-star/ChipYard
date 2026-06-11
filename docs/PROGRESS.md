@@ -3,8 +3,20 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段
-**后端 DEMO 全部 12 个 Task 完成（分支 `feat/demo-backend`，18 测试全通过）。待最终全局审查 + 收尾分支决策；之后写前端实现计划。**
+## 当前阶段（2026-06-11 收工）
+**后端 DEMO 完成并已推送到 GitHub；前端计划已写好但【尚未执行】。下次从「执行前端实现计划」开始。**
+
+### 下次开工第一步（明天）
+1. 读本文件 + 设计文档恢复上下文。
+2. 用 **subagent-driven-development** 执行前端实现计划：`docs/superpowers/plans/2026-06-11-宿舍管理DEMO-前端.md`（Task 1–10：Vite 脚手架→axios/api→store/router→登录+外壳→楼栋/楼层/房间/床位页→看板→联调）。
+3. 前端代码放 `dms-frontend/`，沿用 `feat/demo-backend` 分支（或按需新开 `feat/demo-frontend`，开工时跟用户确认）。
+4. 前端开发需后端在 :8080 运行（`cd dms-backend && mvn spring-boot:run`），Vite 起在 :5173 代理 /api。
+
+### Git / GitHub 状态
+- 分支 `feat/demo-backend` 已推送到远程 `origin`（https://github.com/Young-123-star/ChipYard.git）。
+- 已 `git merge --allow-unrelated-histories origin/main`（并入 main 的 README，解决"无关历史"以便建 PR）。
+- 用户用 GitHub Desktop 操作推送（CLI 推送会被防火墙/凭据拦）。PR 描述见 `docs/PR-后端DEMO.md`。
+- 本机杂项（.claude/、_clean_*、_unpacked_*、*.docx、*.stackdump）已加入 .gitignore，不入库。
 - 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 - 后端计划：`docs/superpowers/plans/2026-06-11-宿舍管理DEMO-后端.md`（Task 1–12）
 - 前端计划：待后端 API 定型后编写
@@ -71,3 +83,5 @@
 
 ## 变更日志
 - 2026-06-11 完成头脑风暴与设计文档，建立本进度文件。
+- 2026-06-11 后端 DEMO 全部 12 个 Task 完成（子 Agent 驱动 + 两阶段审查），18 测试通过；全局审查通过。
+- 2026-06-11 写好前端实现计划；推送 feat/demo-backend 到 GitHub，准备 PR；收工。下次执行前端计划。
