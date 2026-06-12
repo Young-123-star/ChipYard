@@ -1,0 +1,76 @@
+DROP TABLE IF EXISTS sys_user;
+CREATE TABLE sys_user (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username    VARCHAR(50)  NOT NULL,
+    password    VARCHAR(100) NOT NULL,
+    real_name   VARCHAR(50)  NOT NULL,
+    gender      TINYINT      DEFAULT 0,
+    status      TINYINT      DEFAULT 1,
+    created_at  DATETIME,
+    updated_at  DATETIME,
+    deleted_at  DATETIME
+);
+
+DROP TABLE IF EXISTS dms_building;
+CREATE TABLE dms_building (
+    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+    building_code VARCHAR(50)  NOT NULL,
+    building_name VARCHAR(100) NOT NULL,
+    address       VARCHAR(255),
+    floor_count   INT  NOT NULL DEFAULT 1,
+    has_elevator  TINYINT DEFAULT 0,
+    total_rooms   INT DEFAULT 0,
+    total_beds    INT DEFAULT 0,
+    status        TINYINT DEFAULT 1,
+    remark        VARCHAR(500),
+    created_at    DATETIME,
+    updated_at    DATETIME,
+    deleted_at    DATETIME
+);
+
+DROP TABLE IF EXISTS dms_floor;
+CREATE TABLE dms_floor (
+    id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+    building_id  BIGINT NOT NULL,
+    floor_number INT    NOT NULL,
+    floor_name   VARCHAR(50),
+    room_count   INT DEFAULT 0,
+    bed_count    INT DEFAULT 0,
+    status       TINYINT DEFAULT 1,
+    created_at   DATETIME,
+    updated_at   DATETIME,
+    deleted_at   DATETIME
+);
+
+DROP TABLE IF EXISTS dms_room;
+CREATE TABLE dms_room (
+    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+    building_id   BIGINT NOT NULL,
+    floor_id      BIGINT NOT NULL,
+    room_number   VARCHAR(20) NOT NULL,
+    room_type     TINYINT NOT NULL,
+    area          DECIMAL(6,2),
+    orientation   VARCHAR(20),
+    bed_count     INT NOT NULL DEFAULT 1,
+    occupied_beds INT DEFAULT 0,
+    facilities    VARCHAR(1000),
+    gender_limit  TINYINT DEFAULT 0,
+    status        TINYINT DEFAULT 1,
+    remark        VARCHAR(500),
+    created_at    DATETIME,
+    updated_at    DATETIME,
+    deleted_at    DATETIME
+);
+
+DROP TABLE IF EXISTS dms_bed;
+CREATE TABLE dms_bed (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    room_id         BIGINT NOT NULL,
+    bed_number      VARCHAR(20) NOT NULL,
+    bed_type        TINYINT DEFAULT 1,
+    current_user_id BIGINT,
+    status          TINYINT DEFAULT 1,
+    created_at      DATETIME,
+    updated_at      DATETIME,
+    deleted_at      DATETIME
+);
