@@ -14,6 +14,10 @@
 - 截图：docs/style-previews/v2-board.jpeg、v2-rooms-expand.jpeg
 - 未做（记录在案）：看板悬停详情、入住人姓名（二期）、筛选汇总条、楼栋卡片化
 
+### 登录页重设计 + 品牌名（2026-06-12，commit bbc5bb1）
+- 品牌名定为 **ChipYard Dram**（用户指定原文；若用户本意是 Dorm 改一处字符串即可）——登录页字标、侧栏 logo、浏览器标题三处生效。
+- 登录页：左右分栏（左品牌字标+标语 / 右毛玻璃登录卡），背景为自制 SVG（`src/assets/login-bg.svg`：柔和渐变光斑 + 芯片电路走线意象，贴合 ChipYard 主题）。截图 docs/style-previews/v2-login.jpeg。
+
 ### 视觉风格（已定）
 - 出了 4 套风格小样（docs/style-previews/：A Apple 风 / B 暗色控制台 / C 极简办公 / D 建筑蓝图，含 html+jpeg）。
 - 用户选定：**A·Apple 风全局** + 看板用 **D 蓝图的信息结构**（图签信息条、连体房间格、床位小图标、图例）以 Apple 材质渲染。
