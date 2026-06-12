@@ -3,14 +3,19 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-11 收工）
-**后端 DEMO 完成并已推送到 GitHub；前端计划已写好但【尚未执行】。下次从「执行前端实现计划」开始。**
+## 当前阶段（2026-06-12）
+**前端 DEMO 实现完成并通过浏览器端到端联调（分支 `feat/demo-frontend`）。进行中：页面视觉风格设计（用户要求 Apple 风等多种风格示例供选择）。**
 
-### 下次开工第一步（明天）
-1. 读本文件 + 设计文档恢复上下文。
-2. 用 **subagent-driven-development** 执行前端实现计划：`docs/superpowers/plans/2026-06-11-宿舍管理DEMO-前端.md`（Task 1–10：Vite 脚手架→axios/api→store/router→登录+外壳→楼栋/楼层/房间/床位页→看板→联调）。
-3. 前端代码放 `dms-frontend/`，沿用 `feat/demo-backend` 分支（或按需新开 `feat/demo-frontend`，开工时跟用户确认）。
-4. 前端开发需后端在 :8080 运行（`cd dms-backend && mvn spring-boot:run`），Vite 起在 :5173 代理 /api。
+### 前端完成情况（feat/demo-frontend 分支）
+- Task 1 脚手架（9ef898a + 4f55694）/ Task 2+3 API+store+路由（b5385ab）/ Task 4 登录+外壳（b74aeea）
+- Task 5–9 五页（800fbec/6ca84f8/415d93b/f21a0aa/a05fe7d）
+- 浏览器 E2E 全绿：登录→楼栋/楼层/房间/床位（级联）/看板，控制台零报错；看板截图 docs/screenshot-board.png
+- 联调发现并修复后端编码 Bug：Windows GBK 默认编码导致种子中文乱码 → application.yml 加 `spring.sql.init.encoding: UTF-8` + pom 加 `project.build.sourceEncoding=UTF-8`
+- 已知小项：刷新后顶栏用户名回退显示 "admin"（userInfo 不持久化，仅显示问题）
+
+### 运行方式
+- 后端：`cd dms-backend && mvn spring-boot:run`（:8080）
+- 前端：`cd dms-frontend && npm run dev`（:5173 代理 /api）；admin/admin123
 
 ### Git / GitHub 状态
 - 分支 `feat/demo-backend` 已推送到远程 `origin`（https://github.com/Young-123-star/ChipYard.git）。
