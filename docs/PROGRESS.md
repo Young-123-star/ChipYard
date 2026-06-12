@@ -3,9 +3,27 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-12）
-**前端 DEMO 全部完成（实现 + E2E 联调 + Apple 风换肤 + 看板数据增强 v2 + 登录页重设计 + 品牌 ChipMore Dorm）。分支 `feat/demo-frontend` 待用户用 GitHub Desktop 推送并建 PR。**
-- PR 文案已写好：`docs/PR-前端DEMO.md`（标题 + 描述，直接复制到 GitHub；base main ← compare feat/demo-frontend，无"无关历史"问题）。
+## 当前阶段（2026-06-12 收工）
+**前端 DEMO 全部完成 + 三轮数据/视觉增强全部落地。分支 `feat/demo-frontend`，工作区干净，最新提交 e3707c2。等待下次继续。**
+
+### 下次开工第一步
+1. 读本文件恢复上下文。
+2. 启动服务验证：后端 `cd dms-backend && mvn spring-boot:run`（:8080），前端 `cd dms-frontend && npm run dev`（:5173）；admin/admin123。
+3. 待办（用户/我之间）：
+   - **用户**：GitHub Desktop 把 `feat/demo-frontend` Push origin → 建 PR（描述用 `docs/PR-前端DEMO.md`，base main ← compare feat/demo-frontend，无"无关历史"问题）。
+   - 下一步方向未定（用户上次选了"完善增强项"，现已全部完成）。可选：第二阶段业务模块（入住/退宿/费用…，需先头脑风暴）、接 MySQL/Docker 部署、或继续打磨。开工时问用户。
+
+### 已完成全景（feat/demo-frontend）
+- 前端 DEMO 实现（脚手架→API/store/路由→登录+外壳→楼栋/楼层/房间/床位/看板），E2E 联调通过
+- Apple 风全局主题；登录页重设计（芯片电路 SVG 背景）；品牌 **ChipMore Dorm**
+- 数据增强 v2：看板入住率总览条/图例筛选/按楼层分组/性别标识；楼层实时统计+进度条+跳转；房间行展开床位/设施标签/快捷维修
+- 数据增强 v3：看板悬停详情；房间筛选汇总条；楼栋卡片化+入住率环
+- 后端配套小改：RoomBoardVO 扩字段、RoomSummaryVO+summary 接口、FloorVO/BuildingVO 实时统计、UTF-8 编码修复；**后端 19 测试全过**
+
+### 交付物文档
+- PR 文案：`docs/PR-前端DEMO.md`（前端）、`docs/PR-后端DEMO.md`（后端，已合并入 main）
+- 设计/计划：`docs/superpowers/specs/` 与 `docs/superpowers/plans/`
+- 效果截图：`docs/style-previews/`（applied-* / v2-* / v3-*）
 
 ### 数据展示增强 v2（2026-06-12，commit 67cbd2c，按用户确认的推荐组合实施）
 - 看板：入住率总览条（入住率/空闲床位/已满/维修/房间/床位/地址）、图例可点击筛选（带计数）、**按楼层分组**（1F/2F 分段+每层小计）、房间格性别标识 ♂/♀
