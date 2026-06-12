@@ -8,21 +8,26 @@ import com.company.dms.common.result.ResultCode;
 import com.company.dms.module.resource.dto.BoardQuery;
 import com.company.dms.module.resource.dto.RoomQuery;
 import com.company.dms.module.resource.dto.RoomSaveDTO;
+import com.company.dms.module.resource.entity.Floor;
 import com.company.dms.module.resource.entity.Room;
+import com.company.dms.module.resource.mapper.FloorMapper;
 import com.company.dms.module.resource.mapper.RoomMapper;
 import com.company.dms.module.resource.vo.RoomBoardVO;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
 public class RoomServiceImpl implements RoomService {
 
     private final RoomMapper roomMapper;
+    private final FloorMapper floorMapper;
 
-    public RoomServiceImpl(RoomMapper roomMapper) {
+    public RoomServiceImpl(RoomMapper roomMapper, FloorMapper floorMapper) {
         this.roomMapper = roomMapper;
+        this.floorMapper = floorMapper;
     }
 
     @Override
@@ -40,14 +45,21 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public List<RoomBoardVO> board(BoardQuery query) {
-        return roomMapper.selectList(Wrappers.<Room>lambdaQuery()
-                        .eq(query.getBuildingId() != null, Room::getBuildingId, query.getBuildingId())
-                        .eq(query.getFloorId() != null, Room::getFloorId, query.getFloorId())
-                        .orderByAsc(Room::getRoomNumber))
-                .stream()
+        List<Room> rooms = roomMapper.selectList(Wrappers.<Room>lambdaQuery()
+                .eq(query.getBuildingId() != null, Room::getBuildingId, query.getBuildingId())
+                .eq(query.getFloorId() != null, Room::getFloorId, query.getFloorId())
+                .orderByAsc(Room::getRoomNumber));
+        if (rooms.isEmpty()) return List.of();
+
+        List<Long> floorIds = rooms.stream().map(Room::getFloorId).distinct().collect(Collectors.toList());
+        Map<Long, Integer> floorNumbers = floorMapper.selectBatchIds(floorIds).stream()
+                .collect(Collectors.toMap(Floor::getId, Floor::getFloorNumber, (a, b) -> a));
+
+        return rooms.stream()
                 .map(r -> {
                     RoomBoardVO vo = new RoomBoardVO();
                     BeanUtils.copyProperties(r, vo);
+                    vo.setFloorNumber(floorNumbers.get(r.getFloorId()));
                     return vo;
                 })
                 .collect(Collectors.toList());

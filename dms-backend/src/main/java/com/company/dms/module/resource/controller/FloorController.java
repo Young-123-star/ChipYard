@@ -2,8 +2,8 @@ package com.company.dms.module.resource.controller;
 
 import com.company.dms.common.result.R;
 import com.company.dms.module.resource.dto.FloorSaveDTO;
-import com.company.dms.module.resource.entity.Floor;
 import com.company.dms.module.resource.service.FloorService;
+import com.company.dms.module.resource.vo.FloorVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,9 +21,9 @@ public class FloorController {
         this.floorService = floorService;
     }
 
-    @Operation(summary = "按楼栋查楼层")
+    @Operation(summary = "按楼栋查楼层（含实时统计）")
     @GetMapping
-    public R<List<Floor>> list(@RequestParam Long buildingId) {
+    public R<List<FloorVO>> list(@RequestParam Long buildingId) {
         return R.ok(floorService.listByBuilding(buildingId));
     }
 

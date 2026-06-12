@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>风格C · 极简办公</title>
+<style>
+  :root {
+    --bg: #ffffff; --side: #f7f7f5; --line: #e8e8e6; --ink: #37352f; --ink-2: #8f8e8a;
+    --accent: #2e6fed; --ok: #448361; --warn: #cb7b37; --bad: #d44c47; --hold: #337ea9;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    font-family: ui-sans-serif, -apple-system, "PingFang SC", "Microsoft YaHei UI", sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+  }
+  .shell { display: grid; grid-template-columns: 230px 1fr; min-height: 100vh; }
+  aside { background: var(--side); border-right: 1px solid var(--line); padding: 18px 10px; }
+  .ws { display:flex; align-items:center; gap:8px; padding: 4px 10px 16px; font-size: 14px; font-weight: 600; }
+  .ws i { width: 20px; height: 20px; border-radius: 4px; background: var(--ink); color:#fff; font-style: normal;
+         display:inline-flex; align-items:center; justify-content:center; font-size: 11px; }
+  .nav a {
+    display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 6px;
+    color: var(--ink-2); text-decoration: none; font-size: 13.5px; margin-bottom: 1px;
+  }
+  .nav a.on { background: #efefed; color: var(--ink); font-weight: 600; }
+  .nav .em { font-style: normal; font-size: 14px; width: 18px; text-align: center; }
+  main { padding: 44px 64px; max-width: 1080px; }
+  .crumb { font-size: 13px; color: var(--ink-2); margin-bottom: 14px; }
+  .crumb b { color: var(--ink); font-weight: 500; }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 6px; }
+  .sub { color: var(--ink-2); font-size: 14px; margin-bottom: 28px; }
+  .props { display: flex; gap: 26px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+           padding: 12px 0; margin-bottom: 28px; font-size: 13px; }
+  .props span { color: var(--ink-2); margin-right: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; color: var(--ink-2); font-weight: 500; font-size: 12.5px;
+       border-bottom: 1px solid var(--line); padding: 8px 10px; }
+  td { border-bottom: 1px solid var(--line); padding: 10px; }
+  tr:hover td { background: #fafaf9; }
+  .chip { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px; font-weight: 500; }
+  .c-ok   { background: #edf3ef; color: var(--ok); }
+  .c-warn { background: #faf3eb; color: var(--warn); }
+  .c-bad  { background: #fbecec; color: var(--bad); }
+  .bedbar { display:inline-flex; gap:2px; vertical-align: middle; margin-left: 8px; }
+  .bedbar i { width: 14px; height: 6px; border-radius: 2px; background: #ececea; }
+  .bedbar i.f { background: var(--accent); }
+  .login {
+    position: fixed; right: 56px; bottom: 48px; width: 264px; background: #fff;
+    border: 1px solid var(--line); border-radius: 8px; padding: 22px;
+    box-shadow: 0 12px 36px rgba(0,0,0,.09);
+  }
+  .login h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .login input {
+    width: 100%; border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px;
+    font-size: 13px; margin-bottom: 8px; outline: none; background: #fbfbfa;
+  }
+  .login input:focus { border-color: var(--accent); background: #fff; }
+  .login button {
+    width: 100%; background: var(--accent); color: #fff; border: 0; border-radius: 6px;
+    padding: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="ws"><i>宿</i>宿舍管理系统</div>
+    <nav class="nav">
+      <a class="on"><i class="em">▦</i>房间状态看板</a>
+      <a><i class="em">🏢</i>楼栋管理</a>
+      <a><i class="em">≣</i>楼层管理</a>
+      <a><i class="em">🚪</i>房间管理</a>
+      <a><i class="em">🛏</i>床位管理</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="crumb">楼栋管理 / <b>A栋员工宿舍</b></div>
+    <h1>A栋员工宿舍</h1>
+    <p class="sub">园区东路1号 · 有电梯</p>
+    <div class="props">
+      <div><span>楼层</span><b>6</b></div>
+      <div><span>房间</span><b>4</b></div>
+      <div><span>床位</span><b>8</b></div>
+      <div><span>空闲率</span><b>87.5%</b></div>
+    </div>
+    <table>
+      <tr><th>房间号</th><th>房型</th><th>朝向</th><th>床位占用</th><th>性别</th><th>状态</th></tr>
+      <tr><td><b>A101</b></td><td>双人间</td><td>南</td><td>0/2<span class="bedbar"><i></i><i></i></span></td><td>男</td><td><span class="chip c-ok">空闲</span></td></tr>
+      <tr><td><b>A102</b></td><td>双人间</td><td>南</td><td>1/2<span class="bedbar"><i class="f"></i><i></i></span></td><td>男</td><td><span class="chip c-warn">已满</span></td></tr>
+      <tr><td><b>A201</b></td><td>四人间</td><td>北</td><td>0/4<span class="bedbar"><i></i><i></i><i></i><i></i></span></td><td>女</td><td><span class="chip c-bad">维修中</span></td></tr>
+      <tr><td><b>A202</b></td><td>双人间</td><td>南</td><td>0/2<span class="bedbar"><i></i><i></i></span></td><td>男</td><td><span class="chip c-ok">空闲</span></td></tr>
+    </table>
+    <div class="login">
+      <h3>登录宿舍管理系统</h3>
+      <input placeholder="用户名" value="admin">
+      <input placeholder="密码" type="password" value="123456">
+      <button>登录</button>
+    </div>
+  </main>
+</div>
+</body>
+</html>
