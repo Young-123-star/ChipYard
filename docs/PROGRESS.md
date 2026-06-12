@@ -13,7 +13,14 @@
 - 房间页：行展开显示床位明细+面积/朝向、facilities JSON 解析为设施标签（空调/热水器/衣柜×2…）、"标记维修/恢复空闲"快捷切换、接收楼层页跳转参数
 - 后端：RoomBoardVO + floorNumber/genderLimit；新增 FloorVO（roomCount/bedCount/occupiedBeds 实算）；测试 19 个全过（含楼层统计断言）
 - 截图：docs/style-previews/v2-board.jpeg、v2-rooms-expand.jpeg
-- 未做（记录在案）：看板悬停详情、入住人姓名（二期）、筛选汇总条、楼栋卡片化
+- 未做（记录在案）：入住人姓名（二期，依赖入住档案）
+
+### 数据展示增强 v3（2026-06-12，commit f8b3e57）
+- 看板：房间格**悬停弹出详情**（面积/朝向/床位/性别限制/设施）
+- 房间页：**筛选汇总条**（共 X 间 · 床位 · 已住 · 空闲，覆盖全量不受分页限制）
+- 楼栋页：表格→**卡片化**，仪表盘入住率环 + 楼层/房间/床位/空闲/电梯 + 查看房间跳转
+- 后端：RoomBoardVO 增 area/orientation/facilities；新增 RoomSummaryVO + GET /api/rooms/summary；新增 BuildingVO（realRoomCount/realBedCount/occupiedBeds 实算），楼栋列表接口改返回 BuildingVO；19 测试仍全过
+- 截图：docs/style-previews/v3-buildings.jpeg、v3-rooms.jpeg、v3-board-hover.jpeg
 
 ### 登录页重设计 + 品牌名（2026-06-12，commit bbc5bb1）
 - 品牌名定为 **ChipMore Dorm**（演变：ChipYard Dram → Dorm → ChipMore Dorm）——登录页字标、侧栏 logo、浏览器标题三处生效。
