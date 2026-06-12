@@ -4,7 +4,8 @@
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
 ## 当前阶段（2026-06-12）
-**前端 DEMO 完成（实现 + E2E 联调 + Apple 风全局换肤）。分支 `feat/demo-frontend` 待推送 GitHub（用户用 GitHub Desktop 推）。**
+**前端 DEMO 全部完成（实现 + E2E 联调 + Apple 风换肤 + 看板数据增强 v2 + 登录页重设计 + 品牌 ChipMore Dorm）。分支 `feat/demo-frontend` 待用户用 GitHub Desktop 推送并建 PR。**
+- PR 文案已写好：`docs/PR-前端DEMO.md`（标题 + 描述，直接复制到 GitHub；base main ← compare feat/demo-frontend，无"无关历史"问题）。
 
 ### 数据展示增强 v2（2026-06-12，commit 67cbd2c，按用户确认的推荐组合实施）
 - 看板：入住率总览条（入住率/空闲床位/已满/维修/房间/床位/地址）、图例可点击筛选（带计数）、**按楼层分组**（1F/2F 分段+每层小计）、房间格性别标识 ♂/♀
