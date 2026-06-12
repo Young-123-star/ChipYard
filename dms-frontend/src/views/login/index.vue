@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="brand">
-      <div class="wordmark">ChipYard <span>Dram</span></div>
+      <div class="wordmark">ChipMore <span>Dorm</span></div>
       <p class="tagline">宿舍资源，一目了然</p>
       <p class="desc">楼栋 · 楼层 · 房间 · 床位 · 状态看板</p>
     </div>
