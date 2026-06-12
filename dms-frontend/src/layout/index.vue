@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout">
     <el-aside width="220px" class="aside">
-      <div class="logo">宿舍管理</div>
+      <div class="logo">ChipYard <span class="logo-accent">Dram</span></div>
       <el-menu :default-active="route.path" router class="menu">
         <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>楼栋管理</span></el-menu-item>
         <el-menu-item index="/floors"><el-icon><Files /></el-icon><span>楼层管理</span></el-menu-item>
@@ -57,10 +57,11 @@ function onCommand(cmd: string) {
   height: 48px;
   line-height: 48px;
   padding-left: 14px;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 17px;
   letter-spacing: -0.02em;
 }
+.logo-accent { color: var(--dms-accent); }
 .menu {
   border-right: none;
   background: transparent;
