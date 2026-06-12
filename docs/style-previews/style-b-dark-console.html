@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>风格B · 暗色控制台</title>
+<style>
+  :root {
+    --bg: #0b0d12; --panel: #12151d; --line: #232836; --ink: #e8eaf0; --ink-2: #8b93a7;
+    --accent: #6e8bff; --ok: #3fd68f; --warn: #f5b14c; --bad: #f4607a; --hold: #59b7ff;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    font-family: "Inter", -apple-system, "PingFang SC", "Microsoft YaHei UI", sans-serif;
+    background: var(--bg); color: var(--ink); min-height: 100vh;
+  }
+  .shell { display: grid; grid-template-columns: 216px 1fr; min-height: 100vh; }
+  aside { background: var(--panel); border-right: 1px solid var(--line); padding: 22px 12px; }
+  .logo { display:flex; align-items:center; gap:8px; font-size: 14px; font-weight: 700; padding: 0 12px 20px; letter-spacing:.02em; }
+  .logo i { width: 8px; height: 8px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 12px var(--accent); }
+  .nav a {
+    display: block; padding: 8px 12px; border-radius: 8px; color: var(--ink-2);
+    text-decoration: none; font-size: 13.5px; margin-bottom: 2px; border-left: 2px solid transparent;
+  }
+  .nav a.on { background: rgba(110,139,255,.1); color: var(--ink); border-left-color: var(--accent); }
+  main { padding: 34px 42px; }
+  .crumb { font-size: 12px; color: var(--ink-2); letter-spacing: .08em; text-transform: uppercase; }
+  h1 { font-size: 26px; font-weight: 700; margin: 8px 0 4px; letter-spacing: -.01em; }
+  .sub { color: var(--ink-2); font-size: 13.5px; margin-bottom: 26px; }
+  .stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 24px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .stat b { font-family: "JetBrains Mono", Consolas, monospace; font-size: 24px; display: block; }
+  .stat b.up { color: var(--ok); } .stat b.alert { color: var(--bad); }
+  .stat span { font-size: 12px; color: var(--ink-2); }
+  .board { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; }
+  .room {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; position: relative; overflow: hidden;
+  }
+  .room::before { content:""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--c, var(--ok)); }
+  .room.warn { --c: var(--warn); } .room.bad { --c: var(--bad); }
+  .room .no { font-family: "JetBrains Mono", Consolas, monospace; font-size: 17px; font-weight: 700; }
+  .room .meta { font-size: 12.5px; color: var(--ink-2); margin: 4px 0 12px; }
+  .tag {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; padding: 3px 8px; border-radius: 5px;
+    background: color-mix(in srgb, var(--c, var(--ok)) 16%, transparent); color: var(--c, var(--ok));
+  }
+  .bars { display:flex; gap:3px; margin-top: 12px; }
+  .bars i { height: 4px; flex:1; border-radius: 2px; background: var(--line); }
+  .bars i.f { background: var(--c, var(--ok)); }
+  .login {
+    position: fixed; right: 42px; bottom: 38px; width: 264px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 12px; padding: 22px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.5);
+  }
+  .login h3 { font-size: 14px; font-weight: 600; margin-bottom: 13px; }
+  .login input {
+    width: 100%; background: #0d1018; border: 1px solid var(--line); border-radius: 8px;
+    color: var(--ink); padding: 9px 11px; font-size: 13px; margin-bottom: 8px; outline: none;
+  }
+  .login input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(110,139,255,.18); }
+  .login button {
+    width: 100%; background: var(--accent); color: #0b0d12; font-weight: 700; border: 0;
+    border-radius: 8px; padding: 10px; font-size: 13px; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="logo"><i></i>DMS · 宿舍管理</div>
+    <nav class="nav">
+      <a class="on">房间状态看板</a>
+      <a>楼栋管理</a>
+      <a>楼层管理</a>
+      <a>房间管理</a>
+      <a>床位管理</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="crumb">Building / A</div>
+    <h1>A栋员工宿舍</h1>
+    <p class="sub">园区东路1号 · 6F · 4 rooms · 8 beds</p>
+    <div class="stats">
+      <div class="stat"><b class="up">87.5%</b><span>床位空闲率</span></div>
+      <div class="stat"><b>1</b><span>已入住</span></div>
+      <div class="stat"><b class="alert">1</b><span>维修中房间</span></div>
+      <div class="stat"><b>0</b><span>待处理申请</span></div>
+    </div>
+    <div class="board">
+      <div class="room"><div class="no">A101</div><div class="meta">双人间 · 0/2 床</div><span class="tag">空闲</span><div class="bars"><i></i><i></i></div></div>
+      <div class="room warn"><div class="no">A102</div><div class="meta">双人间 · 1/2 床</div><span class="tag">已满</span><div class="bars"><i class="f"></i><i></i></div></div>
+      <div class="room bad"><div class="no">A201</div><div class="meta">四人间 · 0/4 床</div><span class="tag">维修中</span><div class="bars"><i></i><i></i><i></i><i></i></div></div>
+      <div class="room"><div class="no">A202</div><div class="meta">双人间 · 0/2 床</div><span class="tag">空闲</span><div class="bars"><i></i><i></i></div></div>
+    </div>
+    <div class="login">
+      <h3>登录宿舍管理系统</h3>
+      <input placeholder="用户名" value="admin">
+      <input placeholder="密码" type="password" value="123456">
+      <button>登录</button>
+    </div>
+  </main>
+</div>
+</body>
+</html>

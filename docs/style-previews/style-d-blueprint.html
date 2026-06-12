@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>风格D · 建筑蓝图</title>
+<style>
+  :root {
+    --bg: #10243e; --paper: #122a48; --grid: rgba(120,170,220,.08); --line: rgba(140,190,235,.35);
+    --ink: #dceafa; --ink-2: #7fa6c9; --chalk: #eaf4ff;
+    --ok: #5ad8a6; --warn: #f2c14e; --bad: #ff7e79; --hold: #6ec4ff;
+  }
+  * { margin: 0; box-sizing: border-box; }
+  body {
+    font-family: "DIN Alternate", "Helvetica Neue", -apple-system, "PingFang SC", "Microsoft YaHei UI", sans-serif;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+      var(--bg);
+    background-size: 24px 24px, 24px 24px, auto;
+    color: var(--ink); min-height: 100vh;
+  }
+  .shell { display: grid; grid-template-columns: 210px 1fr; min-height: 100vh; }
+  aside { border-right: 1.5px solid var(--line); padding: 24px 14px; }
+  .logo { font-size: 13px; letter-spacing: .28em; color: var(--chalk); padding: 0 10px 6px; font-weight: 700; }
+  .logo small { display: block; letter-spacing: .1em; color: var(--ink-2); font-weight: 400; margin-top: 4px; }
+  .rule { border: 0; border-top: 1.5px solid var(--line); margin: 14px 0; }
+  .nav a {
+    display: block; padding: 8px 10px; color: var(--ink-2); text-decoration: none;
+    font-size: 13px; letter-spacing: .06em; border: 1.5px solid transparent; margin-bottom: 4px;
+  }
+  .nav a.on { border-color: var(--line); color: var(--chalk); background: rgba(140,190,235,.07); }
+  main { padding: 36px 46px; }
+  .title-block { border: 1.5px solid var(--line); display: inline-block; margin-bottom: 26px; }
+  .title-block .row { display: flex; }
+  .title-block .cell { padding: 8px 16px; border-right: 1.5px solid var(--line); font-size: 12px; color: var(--ink-2); }
+  .title-block .cell:last-child { border-right: 0; }
+  .title-block .cell b { display: block; color: var(--chalk); font-size: 15px; letter-spacing: .04em; margin-top: 2px; }
+  .title-block .head { border-bottom: 1.5px solid var(--line); padding: 10px 16px; font-size: 17px;
+                       letter-spacing: .12em; color: var(--chalk); font-weight: 700; }
+  .plan { display: grid; grid-template-columns: repeat(4, 170px); gap: 0; border: 1.5px solid var(--line); width: max-content; }
+  .room {
+    border: 1.5px solid var(--line); margin: -.75px; padding: 16px; min-height: 130px;
+    position: relative; background: rgba(18,42,72,.55);
+  }
+  .room .no { font-size: 18px; letter-spacing: .1em; color: var(--chalk); font-weight: 700; }
+  .room .dim { font-size: 11.5px; color: var(--ink-2); letter-spacing: .06em; margin-top: 3px; }
+  .room .st { position: absolute; bottom: 12px; left: 16px; font-size: 11px; letter-spacing: .14em;
+              padding: 3px 8px; border: 1.5px solid var(--c); color: var(--c); }
+  .room.ok { --c: var(--ok); } .room.warn { --c: var(--warn); } .room.bad { --c: var(--bad); }
+  .room .beds { position: absolute; top: 14px; right: 14px; display: flex; gap: 4px; }
+  .room .beds i { width: 10px; height: 16px; border: 1.5px solid var(--ink-2); border-radius: 2px; }
+  .room .beds i.f { background: var(--c); border-color: var(--c); }
+  .legend { margin-top: 20px; display: flex; gap: 18px; font-size: 11.5px; letter-spacing: .12em; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 7px; }
+  .legend i { width: 12px; height: 12px; border: 1.5px solid; }
+  .login {
+    position: fixed; right: 46px; bottom: 42px; width: 270px; background: var(--paper);
+    border: 1.5px solid var(--line); padding: 22px;
+  }
+  .login h3 { font-size: 13px; letter-spacing: .18em; color: var(--chalk); margin-bottom: 14px; font-weight: 700; }
+  .login input {
+    width: 100%; background: transparent; border: 1.5px solid var(--line); color: var(--ink);
+    padding: 9px 11px; font-size: 13px; margin-bottom: 9px; outline: none; letter-spacing: .04em;
+  }
+  .login input:focus { border-color: var(--hold); }
+  .login button {
+    width: 100%; background: var(--hold); color: #0d2036; border: 0; padding: 10px;
+    font-size: 13px; font-weight: 700; letter-spacing: .2em; cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside>
+    <div class="logo">DORM·PLAN<small>宿舍资源图纸</small></div>
+    <hr class="rule">
+    <nav class="nav">
+      <a class="on">房间状态看板</a>
+      <a>楼栋管理</a>
+      <a>楼层管理</a>
+      <a>房间管理</a>
+      <a>床位管理</a>
+    </nav>
+  </aside>
+  <main>
+    <div class="title-block">
+      <div class="head">A栋员工宿舍 · 平面索引</div>
+      <div class="row">
+        <div class="cell">地址<b>园区东路1号</b></div>
+        <div class="cell">层数<b>6F</b></div>
+        <div class="cell">房间<b>4</b></div>
+        <div class="cell">床位<b>8</b></div>
+        <div class="cell">图号<b>DMS-A-001</b></div>
+      </div>
+    </div>
+    <div class="plan">
+      <div class="room ok"><div class="no">A101</div><div class="dim">双人间 · 18.5㎡ · 南</div><div class="beds"><i></i><i></i></div><span class="st">空闲</span></div>
+      <div class="room warn"><div class="no">A102</div><div class="dim">双人间 · 18.5㎡ · 南</div><div class="beds"><i class="f"></i><i></i></div><span class="st">已满</span></div>
+      <div class="room bad"><div class="no">A201</div><div class="dim">四人间 · 26㎡ · 北</div><div class="beds"><i></i><i></i><i></i><i></i></div><span class="st">维修中</span></div>
+      <div class="room ok"><div class="no">A202</div><div class="dim">双人间 · 18.5㎡ · 南</div><div class="beds"><i></i><i></i></div><span class="st">空闲</span></div>
+    </div>
+    <div class="legend">
+      <span><i style="color:var(--ok)"></i>空闲</span>
+      <span><i style="color:var(--warn)"></i>已满</span>
+      <span><i style="color:var(--bad)"></i>维修中</span>
+      <span><i style="color:var(--hold)"></i>预留</span>
+    </div>
+    <div class="login">
+      <h3>登录 · 宿舍管理系统</h3>
+      <input placeholder="用户名" value="admin">
+      <input placeholder="密码" type="password" value="123456">
+      <button>登 录</button>
+    </div>
+  </main>
+</div>
+</body>
+</html>
