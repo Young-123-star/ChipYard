@@ -4,7 +4,13 @@
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
 ## 当前阶段（2026-06-12）
-**前端 DEMO 实现完成并通过浏览器端到端联调（分支 `feat/demo-frontend`）。进行中：页面视觉风格设计（用户要求 Apple 风等多种风格示例供选择）。**
+**前端 DEMO 完成（实现 + E2E 联调 + Apple 风全局换肤）。分支 `feat/demo-frontend` 待推送 GitHub（用户用 GitHub Desktop 推）。**
+
+### 视觉风格（已定）
+- 出了 4 套风格小样（docs/style-previews/：A Apple 风 / B 暗色控制台 / C 极简办公 / D 建筑蓝图，含 html+jpeg）。
+- 用户选定：**A·Apple 风全局** + 看板用 **D 蓝图的信息结构**（图签信息条、连体房间格、床位小图标、图例）以 Apple 材质渲染。
+- 实施：`src/styles/theme.css`（全局令牌 + Element Plus 变量覆盖）、layout（毛玻璃浅色侧栏）、login（渐变+毛玻璃卡）、board（蓝图信息结构）。commit cf76eb2。
+- 换肤后截图：docs/style-previews/applied-{board,buildings,login}.jpeg。浏览器验证零报错。
 
 ### 前端完成情况（feat/demo-frontend 分支）
 - Task 1 脚手架（9ef898a + 4f55694）/ Task 2+3 API+store+路由（b5385ab）/ Task 4 登录+外壳（b74aeea）
