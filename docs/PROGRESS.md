@@ -6,6 +6,14 @@
 ## 当前阶段（2026-06-12）
 **前端 DEMO 完成（实现 + E2E 联调 + Apple 风全局换肤）。分支 `feat/demo-frontend` 待推送 GitHub（用户用 GitHub Desktop 推）。**
 
+### 数据展示增强 v2（2026-06-12，commit 67cbd2c，按用户确认的推荐组合实施）
+- 看板：入住率总览条（入住率/空闲床位/已满/维修/房间/床位/地址）、图例可点击筛选（带计数）、**按楼层分组**（1F/2F 分段+每层小计）、房间格性别标识 ♂/♀
+- 楼层页：房间数/床位数改为**后端实时统计**（不再用静态种子值）+ 入住进度条 + "查看房间"跳转（带 buildingId/floorId 路由参数）
+- 房间页：行展开显示床位明细+面积/朝向、facilities JSON 解析为设施标签（空调/热水器/衣柜×2…）、"标记维修/恢复空闲"快捷切换、接收楼层页跳转参数
+- 后端：RoomBoardVO + floorNumber/genderLimit；新增 FloorVO（roomCount/bedCount/occupiedBeds 实算）；测试 19 个全过（含楼层统计断言）
+- 截图：docs/style-previews/v2-board.jpeg、v2-rooms-expand.jpeg
+- 未做（记录在案）：看板悬停详情、入住人姓名（二期）、筛选汇总条、楼栋卡片化
+
 ### 视觉风格（已定）
 - 出了 4 套风格小样（docs/style-previews/：A Apple 风 / B 暗色控制台 / C 极简办公 / D 建筑蓝图，含 html+jpeg）。
 - 用户选定：**A·Apple 风全局** + 看板用 **D 蓝图的信息结构**（图签信息条、连体房间格、床位小图标、图例）以 Apple 材质渲染。
