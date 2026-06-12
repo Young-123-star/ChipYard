@@ -22,6 +22,10 @@ export interface Building {
   totalBeds?: number
   status: number
   remark?: string
+  /** 后端实时统计 */
+  realRoomCount?: number
+  realBedCount?: number
+  occupiedBeds?: number
 }
 
 export interface Floor {
@@ -72,4 +76,14 @@ export interface RoomBoard {
   occupiedBeds: number
   genderLimit?: number
   status: number
+  area?: number
+  orientation?: string
+  facilities?: string
+}
+
+export interface RoomSummary {
+  total: number
+  totalBeds: number
+  occupiedBeds: number
+  freeBeds: number
 }

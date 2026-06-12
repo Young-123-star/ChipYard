@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { Room, RoomBoard, PageResult } from './types'
+import type { Room, RoomBoard, RoomSummary, PageResult } from './types'
 
 export interface RoomQuery {
   buildingId?: number
@@ -12,6 +12,10 @@ export interface RoomQuery {
 
 export function pageRooms(params: RoomQuery): Promise<PageResult<Room>> {
   return request.get('/rooms', { params })
+}
+
+export function roomSummary(params: RoomQuery): Promise<RoomSummary> {
+  return request.get('/rooms/summary', { params })
 }
 
 export function getRoom(id: number): Promise<Room> {

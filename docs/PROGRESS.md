@@ -3,8 +3,27 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-12）
-**前端 DEMO 完成（实现 + E2E 联调 + Apple 风全局换肤）。分支 `feat/demo-frontend` 待推送 GitHub（用户用 GitHub Desktop 推）。**
+## 当前阶段（2026-06-12 收工）
+**前端 DEMO 全部完成 + 三轮数据/视觉增强全部落地。分支 `feat/demo-frontend`，工作区干净，最新提交 e3707c2。等待下次继续。**
+
+### 下次开工第一步
+1. 读本文件恢复上下文。
+2. 启动服务验证：后端 `cd dms-backend && mvn spring-boot:run`（:8080），前端 `cd dms-frontend && npm run dev`（:5173）；admin/admin123。
+3. 待办（用户/我之间）：
+   - **用户**：GitHub Desktop 把 `feat/demo-frontend` Push origin → 建 PR（描述用 `docs/PR-前端DEMO.md`，base main ← compare feat/demo-frontend，无"无关历史"问题）。
+   - 下一步方向未定（用户上次选了"完善增强项"，现已全部完成）。可选：第二阶段业务模块（入住/退宿/费用…，需先头脑风暴）、接 MySQL/Docker 部署、或继续打磨。开工时问用户。
+
+### 已完成全景（feat/demo-frontend）
+- 前端 DEMO 实现（脚手架→API/store/路由→登录+外壳→楼栋/楼层/房间/床位/看板），E2E 联调通过
+- Apple 风全局主题；登录页重设计（芯片电路 SVG 背景）；品牌 **ChipMore Dorm**
+- 数据增强 v2：看板入住率总览条/图例筛选/按楼层分组/性别标识；楼层实时统计+进度条+跳转；房间行展开床位/设施标签/快捷维修
+- 数据增强 v3：看板悬停详情；房间筛选汇总条；楼栋卡片化+入住率环
+- 后端配套小改：RoomBoardVO 扩字段、RoomSummaryVO+summary 接口、FloorVO/BuildingVO 实时统计、UTF-8 编码修复；**后端 19 测试全过**
+
+### 交付物文档
+- PR 文案：`docs/PR-前端DEMO.md`（前端）、`docs/PR-后端DEMO.md`（后端，已合并入 main）
+- 设计/计划：`docs/superpowers/specs/` 与 `docs/superpowers/plans/`
+- 效果截图：`docs/style-previews/`（applied-* / v2-* / v3-*）
 
 ### 数据展示增强 v2（2026-06-12，commit 67cbd2c，按用户确认的推荐组合实施）
 - 看板：入住率总览条（入住率/空闲床位/已满/维修/房间/床位/地址）、图例可点击筛选（带计数）、**按楼层分组**（1F/2F 分段+每层小计）、房间格性别标识 ♂/♀
@@ -12,7 +31,14 @@
 - 房间页：行展开显示床位明细+面积/朝向、facilities JSON 解析为设施标签（空调/热水器/衣柜×2…）、"标记维修/恢复空闲"快捷切换、接收楼层页跳转参数
 - 后端：RoomBoardVO + floorNumber/genderLimit；新增 FloorVO（roomCount/bedCount/occupiedBeds 实算）；测试 19 个全过（含楼层统计断言）
 - 截图：docs/style-previews/v2-board.jpeg、v2-rooms-expand.jpeg
-- 未做（记录在案）：看板悬停详情、入住人姓名（二期）、筛选汇总条、楼栋卡片化
+- 未做（记录在案）：入住人姓名（二期，依赖入住档案）
+
+### 数据展示增强 v3（2026-06-12，commit f8b3e57）
+- 看板：房间格**悬停弹出详情**（面积/朝向/床位/性别限制/设施）
+- 房间页：**筛选汇总条**（共 X 间 · 床位 · 已住 · 空闲，覆盖全量不受分页限制）
+- 楼栋页：表格→**卡片化**，仪表盘入住率环 + 楼层/房间/床位/空闲/电梯 + 查看房间跳转
+- 后端：RoomBoardVO 增 area/orientation/facilities；新增 RoomSummaryVO + GET /api/rooms/summary；新增 BuildingVO（realRoomCount/realBedCount/occupiedBeds 实算），楼栋列表接口改返回 BuildingVO；19 测试仍全过
+- 截图：docs/style-previews/v3-buildings.jpeg、v3-rooms.jpeg、v3-board-hover.jpeg
 
 ### 登录页重设计 + 品牌名（2026-06-12，commit bbc5bb1）
 - 品牌名定为 **ChipMore Dorm**（演变：ChipYard Dram → Dorm → ChipMore Dorm）——登录页字标、侧栏 logo、浏览器标题三处生效。

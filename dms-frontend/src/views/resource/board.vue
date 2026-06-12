@@ -43,20 +43,30 @@
             <span class="floor-stat">{{ g.rooms.length }} 间 · 空闲床位 {{ g.freeBeds }}</span>
           </div>
           <div class="plan">
-            <div v-for="r in g.rooms" :key="r.id" class="room" :class="'st-' + r.status">
-              <div class="room-head">
-                <span class="no">
-                  {{ r.roomNumber }}
-                  <i v-if="r.genderLimit === 1" class="gender male">♂</i>
-                  <i v-else-if="r.genderLimit === 2" class="gender female">♀</i>
-                </span>
-                <span class="beds">
-                  <i v-for="i in r.bedCount" :key="i" class="bed" :class="{ occupied: i <= r.occupiedBeds }"></i>
-                </span>
+            <el-tooltip v-for="r in g.rooms" :key="r.id" placement="top" :show-after="120">
+              <template #content>
+                <div class="tip">
+                  <div class="tip-title">{{ r.roomNumber }} · {{ labelOf(ROOM_TYPE, r.roomType) }}</div>
+                  <div>面积：{{ r.area ?? '-' }} ㎡ ｜ 朝向：{{ r.orientation || '-' }}</div>
+                  <div>床位：{{ r.occupiedBeds }}/{{ r.bedCount }} ｜ 限制：{{ labelOf(GENDER_LIMIT, r.genderLimit) }}</div>
+                  <div>设施：{{ parseFacilities(r.facilities).join('、') || '无' }}</div>
+                </div>
+              </template>
+              <div class="room" :class="'st-' + r.status">
+                <div class="room-head">
+                  <span class="no">
+                    {{ r.roomNumber }}
+                    <i v-if="r.genderLimit === 1" class="gender male">♂</i>
+                    <i v-else-if="r.genderLimit === 2" class="gender female">♀</i>
+                  </span>
+                  <span class="beds">
+                    <i v-for="i in r.bedCount" :key="i" class="bed" :class="{ occupied: i <= r.occupiedBeds }"></i>
+                  </span>
+                </div>
+                <div class="meta">{{ labelOf(ROOM_TYPE, r.roomType) }} · {{ r.occupiedBeds }}/{{ r.bedCount }} 床</div>
+                <span class="status">{{ labelOf(ROOM_STATUS, r.status) }}</span>
               </div>
-              <div class="meta">{{ labelOf(ROOM_TYPE, r.roomType) }} · {{ r.occupiedBeds }}/{{ r.bedCount }} 床</div>
-              <span class="status">{{ labelOf(ROOM_STATUS, r.status) }}</span>
-            </div>
+            </el-tooltip>
           </div>
         </div>
         <el-empty v-if="!loading && !filteredList.length" description="暂无符合条件的房间" />
@@ -70,7 +80,24 @@ import { ref, computed, onMounted } from 'vue'
 import { pageBuildings } from '@/api/building'
 import { getRoomBoard } from '@/api/room'
 import type { Building, RoomBoard } from '@/api/types'
-import { ROOM_TYPE, ROOM_STATUS, labelOf } from '@/utils/dict'
+import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, labelOf } from '@/utils/dict'
+
+const FACILITY_NAMES: Record<string, string> = {
+  air_conditioner: '空调', water_heater: '热水器', wardrobe: '衣柜', desk: '书桌'
+}
+function parseFacilities(json?: string): string[] {
+  if (!json) return []
+  try {
+    return Object.entries(JSON.parse(json))
+      .filter(([, v]) => Number(v) > 0)
+      .map(([k, v]) => {
+        const name = FACILITY_NAMES[k] || k
+        return Number(v) > 1 ? `${name}×${v}` : name
+      })
+  } catch {
+    return []
+  }
+}
 
 const buildings = ref<Building[]>([])
 const buildingId = ref<number>()
@@ -233,4 +260,8 @@ onMounted(() => { loadBuildings(); reload() })
 .st-2 { --st-c: #b06b00; }
 .st-3 { --st-c: #c22a20; }
 .st-4 { --st-c: #2f6fbe; }
+
+/* 悬停提示 */
+.tip { font-size: 12.5px; line-height: 1.7; }
+.tip-title { font-weight: 700; margin-bottom: 2px; }
 </style>

@@ -16,28 +16,50 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="list" v-loading="loading" border>
-        <el-table-column prop="buildingCode" label="编码" width="100" />
-        <el-table-column prop="buildingName" label="名称" />
-        <el-table-column prop="address" label="地址" />
-        <el-table-column prop="floorCount" label="楼层数" width="90" />
-        <el-table-column label="电梯" width="80">
-          <template #default="{ row }">{{ row.hasElevator === 1 ? '有' : '无' }}</template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="tagTypeOf(BUILDING_STATUS, row.status) as any">{{ labelOf(BUILDING_STATUS, row.status) }}</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="160">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="onDelete(row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <div v-loading="loading" class="cards">
+        <div v-for="b in list" :key="b.id" class="bld-card">
+          <div class="bld-head">
+            <div>
+              <span class="bld-name">{{ b.buildingName }}</span>
+              <span class="bld-code">{{ b.buildingCode }}</span>
+            </div>
+            <el-tag :type="tagTypeOf(BUILDING_STATUS, b.status) as any" size="small" round>{{ labelOf(BUILDING_STATUS, b.status) }}</el-tag>
+          </div>
+          <div class="bld-addr">{{ b.address || '—' }}</div>
+
+          <div class="bld-body">
+            <el-progress
+              type="dashboard"
+              :width="92"
+              :stroke-width="8"
+              :percentage="rate(b)"
+              :color="rateColor(rate(b))"
+            >
+              <template #default>
+                <span class="ring-num">{{ rate(b) }}%</span>
+                <span class="ring-label">入住率</span>
+              </template>
+            </el-progress>
+            <div class="bld-stats">
+              <div><span>楼层</span><b>{{ b.floorCount }}</b></div>
+              <div><span>房间</span><b>{{ b.realRoomCount ?? 0 }}</b></div>
+              <div><span>床位</span><b>{{ b.realBedCount ?? 0 }}</b></div>
+              <div><span>空闲床位</span><b class="free">{{ (b.realBedCount ?? 0) - (b.occupiedBeds ?? 0) }}</b></div>
+              <div><span>电梯</span><b>{{ b.hasElevator === 1 ? '有' : '无' }}</b></div>
+            </div>
+          </div>
+
+          <div class="bld-foot">
+            <el-button link type="primary" @click="goRooms(b)">查看房间</el-button>
+            <el-button link type="primary" @click="openEdit(b)">编辑</el-button>
+            <el-button link type="danger" @click="onDelete(b)">删除</el-button>
+          </div>
+        </div>
+        <el-empty v-if="!loading && !list.length" description="暂无楼栋" />
+      </div>
 
       <el-pagination
+        v-if="total > query.size"
         style="margin-top: 12px; justify-content: flex-end"
         layout="total, prev, pager, next"
         :total="total"
@@ -75,10 +97,26 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings, createBuilding, updateBuilding, deleteBuilding } from '@/api/building'
 import type { Building } from '@/api/types'
 import { BUILDING_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
+
+const router = useRouter()
+
+function rate(b: Building): number {
+  const beds = b.realBedCount ?? 0
+  return beds ? Math.round(((b.occupiedBeds ?? 0) / beds) * 100) : 0
+}
+function rateColor(pct: number): string {
+  if (pct >= 90) return '#f56c6c'
+  if (pct >= 60) return '#e6a23c'
+  return '#34c759'
+}
+function goRooms(b: Building) {
+  router.push({ path: '/rooms', query: { buildingId: String(b.id) } })
+}
 
 const loading = ref(false)
 const saving = ref(false)
@@ -147,3 +185,35 @@ async function onDelete(row: Building) {
 
 onMounted(reload)
 </script>
+
+<style scoped>
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+.bld-card {
+  border: 1px solid var(--dms-hairline);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 18px 20px;
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.bld-card:hover { box-shadow: 0 8px 28px rgba(29, 79, 138, 0.1); transform: translateY(-2px); }
+.bld-head { display: flex; align-items: center; justify-content: space-between; }
+.bld-name { font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.bld-code { font-size: 12px; color: var(--dms-ink-2); margin-left: 8px; }
+.bld-addr { font-size: 12.5px; color: var(--dms-ink-2); margin-top: 4px; }
+.bld-body { display: flex; align-items: center; gap: 20px; margin: 14px 0 6px; }
+.ring-num { font-size: 18px; font-weight: 700; color: var(--dms-ink); display: block; }
+.ring-label { font-size: 11px; color: var(--dms-ink-2); }
+.bld-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; flex: 1; }
+.bld-stats div { font-size: 12.5px; color: var(--dms-ink-2); display: flex; justify-content: space-between; }
+.bld-stats b { color: var(--dms-ink); font-weight: 600; }
+.bld-stats b.free { color: #1d8a3e; }
+.bld-foot {
+  display: flex; justify-content: flex-end; gap: 4px;
+  border-top: 1px solid var(--dms-hairline); padding-top: 10px; margin-top: 8px;
+}
+</style>
