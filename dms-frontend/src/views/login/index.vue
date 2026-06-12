@@ -56,9 +56,26 @@ async function onSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f2f5;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(0, 113, 227, 0.08), transparent 60%),
+    linear-gradient(180deg, #fbfbfd 0%, #eef0f4 100%);
 }
-.login-card { width: 360px; }
-.title { text-align: center; margin: 0 0 20px; color: #303133; }
-.hint { text-align: center; color: #909399; font-size: 12px; margin: 12px 0 0; }
+.login-card {
+  width: 380px;
+  border-radius: 24px;
+  border: 1px solid var(--dms-hairline);
+  background: var(--dms-surface);
+  backdrop-filter: var(--dms-blur);
+  box-shadow: var(--dms-shadow-float);
+  padding: 12px 8px;
+}
+.title {
+  text-align: center;
+  margin: 4px 0 26px;
+  color: var(--dms-ink);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+.hint { text-align: center; color: var(--dms-ink-2); font-size: 12px; margin: 14px 0 0; }
 </style>

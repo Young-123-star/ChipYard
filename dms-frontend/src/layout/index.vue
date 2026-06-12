@@ -1,8 +1,8 @@
 <template>
   <el-container class="layout">
-    <el-aside width="210px" class="aside">
-      <div class="logo">宿舍管理系统</div>
-      <el-menu :default-active="route.path" router background-color="#304156" text-color="#bfcbd9" active-text-color="#409eff">
+    <el-aside width="220px" class="aside">
+      <div class="logo">宿舍管理</div>
+      <el-menu :default-active="route.path" router class="menu">
         <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>楼栋管理</span></el-menu-item>
         <el-menu-item index="/floors"><el-icon><Files /></el-icon><span>楼层管理</span></el-menu-item>
         <el-menu-item index="/rooms"><el-icon><House /></el-icon><span>房间管理</span></el-menu-item>
@@ -46,9 +46,58 @@ function onCommand(cmd: string) {
 
 <style scoped>
 .layout { height: 100vh; }
-.aside { background: #304156; }
-.logo { color: #fff; height: 56px; line-height: 56px; text-align: center; font-weight: bold; font-size: 16px; }
-.header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #eee; background: #fff; }
-.page-title { font-size: 16px; font-weight: 500; }
-.user { cursor: pointer; display: flex; align-items: center; gap: 4px; }
+.aside {
+  background: var(--dms-surface);
+  backdrop-filter: var(--dms-blur);
+  border-right: 1px solid var(--dms-hairline);
+  padding: 16px 12px 0;
+}
+.logo {
+  color: var(--dms-ink);
+  height: 48px;
+  line-height: 48px;
+  padding-left: 14px;
+  font-weight: 600;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+}
+.menu {
+  border-right: none;
+  background: transparent;
+  --el-menu-item-height: 42px;
+  --el-menu-text-color: var(--dms-ink-2);
+  --el-menu-hover-bg-color: rgba(0, 0, 0, 0.04);
+}
+.menu .el-menu-item {
+  border-radius: 10px;
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+.menu .el-menu-item.is-active {
+  background: rgba(0, 113, 227, 0.1);
+  color: var(--dms-accent);
+  font-weight: 600;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--dms-hairline);
+  background: var(--dms-surface);
+  backdrop-filter: var(--dms-blur);
+}
+.page-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.user {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--dms-ink);
+  font-size: 14px;
+}
+.el-main { padding: 28px 32px; }
 </style>
