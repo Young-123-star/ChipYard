@@ -8,6 +8,7 @@ import com.company.dms.module.resource.dto.RoomSaveDTO;
 import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.service.RoomService;
 import com.company.dms.module.resource.vo.RoomBoardVO;
+import com.company.dms.module.resource.vo.RoomSummaryVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -29,6 +30,12 @@ public class RoomController {
     @GetMapping
     public R<PageResult<Room>> page(RoomQuery query) {
         return R.ok(roomService.page(query));
+    }
+
+    @Operation(summary = "按筛选条件汇总（不分页）")
+    @GetMapping("/summary")
+    public R<RoomSummaryVO> summary(RoomQuery query) {
+        return R.ok(roomService.summary(query));
     }
 
     @Operation(summary = "房间状态看板")

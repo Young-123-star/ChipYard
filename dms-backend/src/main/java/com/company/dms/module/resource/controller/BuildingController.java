@@ -6,6 +6,7 @@ import com.company.dms.module.resource.dto.BuildingQuery;
 import com.company.dms.module.resource.dto.BuildingSaveDTO;
 import com.company.dms.module.resource.entity.Building;
 import com.company.dms.module.resource.service.BuildingService;
+import com.company.dms.module.resource.vo.BuildingVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,9 +23,9 @@ public class BuildingController {
         this.buildingService = buildingService;
     }
 
-    @Operation(summary = "分页列表")
+    @Operation(summary = "分页列表（含实时入住统计）")
     @GetMapping
-    public R<PageResult<Building>> page(BuildingQuery query) {
+    public R<PageResult<BuildingVO>> page(BuildingQuery query) {
         return R.ok(buildingService.page(query));
     }
 

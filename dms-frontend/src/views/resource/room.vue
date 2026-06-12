@@ -28,6 +28,10 @@
         </el-form-item>
       </el-form>
 
+      <div class="summary-bar">
+        当前筛选：共 <b>{{ summary.total }}</b> 间 · 床位 <b>{{ summary.totalBeds }}</b> · 已住 <b>{{ summary.occupiedBeds }}</b> · 空闲 <b class="free">{{ summary.freeBeds }}</b>
+      </div>
+
       <el-table :data="list" v-loading="loading" border @expand-change="onExpand">
         <el-table-column type="expand">
           <template #default="{ row }">
@@ -140,9 +144,9 @@ import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings } from '@/api/building'
 import { listFloors } from '@/api/floor'
-import { pageRooms, createRoom, updateRoom, deleteRoom } from '@/api/room'
+import { pageRooms, roomSummary, createRoom, updateRoom, deleteRoom } from '@/api/room'
 import { listBeds } from '@/api/bed'
-import type { Building, Floor, Room, Bed } from '@/api/types'
+import type { Building, Floor, Room, Bed, RoomSummary } from '@/api/types'
 import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 
 const route = useRoute()
@@ -154,6 +158,7 @@ const total = ref(0)
 const loading = ref(false)
 const saving = ref(false)
 const bedsMap = reactive<Record<number, Bed[] | undefined>>({})
+const summary = reactive<RoomSummary>({ total: 0, totalBeds: 0, occupiedBeds: 0, freeBeds: 0 })
 const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomType: undefined as number | undefined, status: undefined as number | undefined, page: 1, size: 10 })
 
 const dialogVisible = ref(false)
@@ -222,9 +227,10 @@ async function onFormBuildingChange() {
 async function reload() {
   loading.value = true
   try {
-    const res = await pageRooms(query)
+    const [res, sum] = await Promise.all([pageRooms(query), roomSummary(query)])
     list.value = res.records
     total.value = res.total
+    Object.assign(summary, sum)
   } finally {
     loading.value = false
   }
@@ -281,6 +287,15 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.summary-bar {
+  margin-bottom: 12px; padding: 9px 16px;
+  background: rgba(0, 113, 227, 0.06);
+  border: 1px solid rgba(0, 113, 227, 0.12);
+  border-radius: 10px;
+  font-size: 13px; color: var(--dms-ink-2);
+}
+.summary-bar b { color: var(--dms-ink); font-weight: 700; margin: 0 2px; }
+.summary-bar b.free { color: #1d8a3e; }
 .fac-tag { margin-right: 4px; }
 .fac-none { color: var(--dms-ink-2); }
 .expand-box { padding: 6px 16px 14px 48px; }
