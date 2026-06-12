@@ -29,8 +29,10 @@ export interface Floor {
   buildingId: number
   floorNumber: number
   floorName?: string
+  /** 后端实时统计 */
   roomCount?: number
   bedCount?: number
+  occupiedBeds?: number
   status: number
 }
 
@@ -63,9 +65,11 @@ export interface RoomBoard {
   id: number
   buildingId: number
   floorId: number
+  floorNumber?: number
   roomNumber: string
   roomType: number
   bedCount: number
   occupiedBeds: number
+  genderLimit?: number
   status: number
 }

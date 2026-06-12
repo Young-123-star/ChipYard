@@ -16,14 +16,27 @@
         <el-table-column prop="floorNumber" label="楼层号" width="100" />
         <el-table-column prop="floorName" label="名称" />
         <el-table-column prop="roomCount" label="房间数" width="100" />
-        <el-table-column prop="bedCount" label="床位数" width="100" />
+        <el-table-column label="入住情况" min-width="200">
+          <template #default="{ row }">
+            <div class="occ">
+              <el-progress
+                :percentage="row.bedCount ? Math.round((row.occupiedBeds / row.bedCount) * 100) : 0"
+                :stroke-width="8"
+                :show-text="false"
+                style="flex: 1"
+              />
+              <span class="occ-text">{{ row.occupiedBeds || 0 }}/{{ row.bedCount || 0 }} 床</span>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160">
+        <el-table-column label="操作" width="220">
           <template #default="{ row }">
+            <el-button link type="primary" @click="goRooms(row)">查看房间</el-button>
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button link type="danger" @click="onDelete(row)">删除</el-button>
           </template>
@@ -49,10 +62,17 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings } from '@/api/building'
 import { listFloors, createFloor, updateFloor, deleteFloor } from '@/api/floor'
 import type { Building, Floor } from '@/api/types'
+
+const router = useRouter()
+
+function goRooms(row: Floor) {
+  router.push({ path: '/rooms', query: { buildingId: String(row.buildingId), floorId: String(row.id) } })
+}
 
 const buildings = ref<Building[]>([])
 const buildingId = ref<number>()
@@ -121,3 +141,8 @@ async function onDelete(row: Floor) {
 
 onMounted(loadBuildings)
 </script>
+
+<style scoped>
+.occ { display: flex; align-items: center; gap: 10px; padding-right: 8px; }
+.occ-text { font-size: 12px; color: var(--dms-ink-2); white-space: nowrap; }
+</style>

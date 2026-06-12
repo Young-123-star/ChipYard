@@ -28,26 +28,57 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="list" v-loading="loading" border>
+      <el-table :data="list" v-loading="loading" border @expand-change="onExpand">
+        <el-table-column type="expand">
+          <template #default="{ row }">
+            <div class="expand-box">
+              <div class="expand-info">
+                <span>面积 <b>{{ row.area ?? '-' }}㎡</b></span>
+                <span>朝向 <b>{{ row.orientation || '-' }}</b></span>
+                <span v-if="row.remark">备注 <b>{{ row.remark }}</b></span>
+              </div>
+              <el-table v-if="bedsMap[row.id]" :data="bedsMap[row.id]" size="small" class="bed-table">
+                <el-table-column prop="bedNumber" label="床位编号" width="120" />
+                <el-table-column label="类型" width="100">
+                  <template #default="{ row: bed }">{{ labelOf(BED_TYPE, bed.bedType) }}</template>
+                </el-table-column>
+                <el-table-column label="状态" width="120">
+                  <template #default="{ row: bed }">
+                    <el-tag :type="tagTypeOf(BED_STATUS, bed.status) as any" size="small">{{ labelOf(BED_STATUS, bed.status) }}</el-tag>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <div v-else class="expand-loading">床位加载中…</div>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="roomNumber" label="房间号" width="100" />
-        <el-table-column label="房型" width="100">
+        <el-table-column label="房型" width="90">
           <template #default="{ row }">{{ labelOf(ROOM_TYPE, row.roomType) }}</template>
         </el-table-column>
-        <el-table-column prop="area" label="面积㎡" width="90" />
-        <el-table-column prop="orientation" label="朝向" width="80" />
         <el-table-column label="床位" width="100">
           <template #default="{ row }">{{ row.occupiedBeds }}/{{ row.bedCount }}</template>
         </el-table-column>
-        <el-table-column label="性别限制" width="90">
+        <el-table-column label="配套设施" min-width="180">
+          <template #default="{ row }">
+            <template v-if="parseFacilities(row.facilities).length">
+              <el-tag v-for="f in parseFacilities(row.facilities)" :key="f" size="small" class="fac-tag" type="info" effect="plain">{{ f }}</el-tag>
+            </template>
+            <span v-else class="fac-none">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="性别" width="70">
           <template #default="{ row }">{{ labelOf(GENDER_LIMIT, row.genderLimit) }}</template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="95">
           <template #default="{ row }">
             <el-tag :type="tagTypeOf(ROOM_STATUS, row.status) as any">{{ labelOf(ROOM_STATUS, row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160">
+        <el-table-column label="操作" width="225">
           <template #default="{ row }">
+            <el-button v-if="row.status !== 3" link type="warning" @click="markRepair(row, true)">标记维修</el-button>
+            <el-button v-else link type="success" @click="markRepair(row, false)">恢复空闲</el-button>
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button link type="danger" @click="onDelete(row)">删除</el-button>
           </template>
@@ -105,13 +136,16 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings } from '@/api/building'
 import { listFloors } from '@/api/floor'
 import { pageRooms, createRoom, updateRoom, deleteRoom } from '@/api/room'
-import type { Building, Floor, Room } from '@/api/types'
-import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, labelOf, tagTypeOf } from '@/utils/dict'
+import { listBeds } from '@/api/bed'
+import type { Building, Floor, Room, Bed } from '@/api/types'
+import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 
+const route = useRoute()
 const buildings = ref<Building[]>([])
 const floors = ref<Floor[]>([])
 const formFloors = ref<Floor[]>([])
@@ -119,6 +153,7 @@ const list = ref<Room[]>([])
 const total = ref(0)
 const loading = ref(false)
 const saving = ref(false)
+const bedsMap = reactive<Record<number, Bed[] | undefined>>({})
 const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomType: undefined as number | undefined, status: undefined as number | undefined, page: 1, size: 10 })
 
 const dialogVisible = ref(false)
@@ -130,6 +165,43 @@ const rules = {
   roomNumber: [{ required: true, message: '请输入房间号', trigger: 'blur' }],
   roomType: [{ required: true, message: '请选择房型', trigger: 'change' }],
   bedCount: [{ required: true, message: '请输入床位数', trigger: 'blur' }]
+}
+
+const FACILITY_NAMES: Record<string, string> = {
+  air_conditioner: '空调',
+  water_heater: '热水器',
+  wardrobe: '衣柜',
+  desk: '书桌'
+}
+
+function parseFacilities(json?: string): string[] {
+  if (!json) return []
+  try {
+    const obj = JSON.parse(json)
+    return Object.entries(obj)
+      .filter(([, v]) => Number(v) > 0)
+      .map(([k, v]) => {
+        const name = FACILITY_NAMES[k] || k
+        return Number(v) > 1 ? `${name}×${v}` : name
+      })
+  } catch {
+    return []
+  }
+}
+
+async function onExpand(row: Room, expanded: Room[]) {
+  if (expanded.includes(row) && !bedsMap[row.id]) {
+    bedsMap[row.id] = await listBeds(row.id)
+  }
+}
+
+async function markRepair(row: Room, toRepair: boolean) {
+  const target = toRepair ? 3 : 1
+  const label = toRepair ? '标记维修' : '恢复空闲'
+  await ElMessageBox.confirm(`确认将房间「${row.roomNumber}」${label}？`, '提示', { type: 'warning' })
+  await updateRoom(row.id, { ...row, status: target })
+  ElMessage.success(`已${label}`)
+  reload()
 }
 
 async function loadBuildings() {
@@ -194,5 +266,26 @@ async function onDelete(row: Room) {
   reload()
 }
 
-onMounted(() => { loadBuildings(); reload() })
+onMounted(async () => {
+  await loadBuildings()
+  // 接收楼层管理页跳转参数：/rooms?buildingId=&floorId=
+  const qb = Number(route.query.buildingId)
+  const qf = Number(route.query.floorId)
+  if (qb) {
+    query.buildingId = qb
+    floors.value = await listFloors(qb)
+    if (qf) query.floorId = qf
+  }
+  reload()
+})
 </script>
+
+<style scoped>
+.fac-tag { margin-right: 4px; }
+.fac-none { color: var(--dms-ink-2); }
+.expand-box { padding: 6px 16px 14px 48px; }
+.expand-info { display: flex; gap: 24px; font-size: 13px; color: var(--dms-ink-2); margin-bottom: 10px; }
+.expand-info b { color: var(--dms-ink); font-weight: 600; margin-left: 4px; }
+.bed-table { max-width: 480px; }
+.expand-loading { font-size: 12.5px; color: var(--dms-ink-2); }
+</style>
