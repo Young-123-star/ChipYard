@@ -12,8 +12,11 @@
 - 落地 3 处（保留所有 `--dms-*` 变量名，业务页零改动）：
   - `src/styles/theme.css`：令牌全面调色——主题蓝 `--dms-accent:#1f6feb`、冷调浅灰底、毛玻璃卡→干净白卡（去 backdrop-filter）、新增侧栏色板 `--dms-nav-*`（提亮版 top `#1a59ac`/bottom `#134890`、选中 `#2f80f7`）、Element Plus primary 变量改蓝、状态色微调。
   - `src/layout/index.vue`：侧栏深蓝实色渐变 + 白字、品牌加圆角 logo 块「C」、菜单按 `el-menu-item-group` 分「资源管理/视图」、选中项亮蓝填充块、顶栏纯白。
-- 真实前端验证：登录→楼栋(卡片)→看板，控制台零报错。截图 `docs/style-previews/blue-applied-{buildings,board}.jpeg`。
-- 待办：用户用 GitHub Desktop 推送 `feat/ui-blue-theme` 并建 PR（CLI 推送被防火墙拦，`gh` 未装）。P2P 参考图暂留未跟踪。
+  - 侧栏亮度按用户两次反馈逐步提亮，最终 top `#2569c8`/bottom `#1a57ac`/选中 `#4791f8`。
+  - `src/views/login/index.vue`：登录页重做为「左深蓝品牌栏 + 右白卡表单」分栏（左侧复用 `--dms-nav-*`，含 logo 标/大标题/功能勾选清单/版权），删除旧 `login-bg.svg`（已废弃）。
+- 真实前端验证：登录→楼栋(卡片)→看板，控制台零报错。截图 `docs/style-previews/blue-applied-{login,buildings,board}.jpeg`。
+- P2P 参考图（`docs/style-previews/P2PStyle*.png`，10 张）已留档入库。
+- 待办：用户用 GitHub Desktop 推送 `feat/ui-blue-theme` 并建 PR（CLI 推送被防火墙拦，`gh` 未装）。
 
 ### 合并状态（已全部进 main）
 - PR #1：后端 DEMO（merge a0df189）
@@ -26,9 +29,6 @@
 2. 从最新 `main` 切新功能分支再开发（本地 main 已建好跟踪 origin/main）。
 3. 启动服务验证：后端 `cd dms-backend && mvn spring-boot:run`（:8080），前端 `cd dms-frontend && npm run dev`（:5173）；admin/admin123。
 4. 下一步方向未定（增强项已全部完成）。可选：第二阶段业务模块（入住/退宿/费用…，需先头脑风暴）、接 MySQL/Docker 部署、或继续打磨。开工时问用户。
-
-### 待整理
-- `docs/style-previews/P2PStyle1~10.png`：未跟踪的风格参考图，尚未确认用途/去留。
 
 ### 已完成全景（feat/demo-frontend）
 - 前端 DEMO 实现（脚手架→API/store/路由→登录+外壳→楼栋/楼层/房间/床位/看板），E2E 联调通过
