@@ -14,12 +14,15 @@ import com.company.dms.module.checkin.vo.IntakeVO;
 import com.company.dms.module.checkin.vo.RecordVO;
 import com.company.dms.module.resident.entity.Resident;
 import com.company.dms.module.resident.service.ResidentService;
+import com.company.dms.module.resource.entity.Bed;
+import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.service.BedService;
 import com.company.dms.module.resource.service.RoomService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -145,7 +148,41 @@ public class CheckinServiceImpl implements CheckinService {
     @Override
     @Transactional
     public Long assign(Long intakeId, AssignDTO dto) {
-        // 在 Task 9 实现
-        throw new UnsupportedOperationException("assign 在 Task 9 实现");
+        CheckinIntake intake = getIntake(intakeId);
+        if (intake.getStatus() != 1) throw new BizException("仅待分配的意向单可办理入住");
+
+        Bed bed = bedService.getById(dto.getBedId());
+        if (bed.getStatus() == null || bed.getStatus() != 1) throw new BizException("所选床位不可用（非空闲）");
+
+        Room room = roomService.getById(bed.getRoomId());
+        Resident resident = residentService.getById(intake.getResidentId());
+
+        // 性别校验：房间限性别时，居住人性别须匹配
+        if (room.getGenderLimit() != null && room.getGenderLimit() != 0
+                && resident.getGender() != null && !resident.getGender().equals(room.getGenderLimit())) {
+            throw new BizException("居住人性别与房间性别限制不符");
+        }
+
+        // 占床 + 刷新房间统计
+        bedService.occupy(bed.getId(), resident.getId());
+        roomService.refreshOccupancy(room.getId());
+
+        // 生成入住档案
+        CheckinRecord rec = new CheckinRecord();
+        rec.setIntakeId(intake.getId());
+        rec.setResidentId(resident.getId());
+        rec.setBuildingId(room.getBuildingId());
+        rec.setFloorId(room.getFloorId());
+        rec.setRoomId(room.getId());
+        rec.setBedId(bed.getId());
+        rec.setCheckinDate(dto.getCheckinDate() != null ? dto.getCheckinDate() : LocalDate.now());
+        rec.setStatus(1);
+        recordMapper.insert(rec);
+
+        // 意向单置已入住
+        intake.setStatus(2);
+        intakeMapper.updateById(intake);
+
+        return rec.getId();
     }
 }
