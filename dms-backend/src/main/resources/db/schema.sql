@@ -84,7 +84,7 @@ CREATE TABLE dms_resident (
     resident_type TINYINT      DEFAULT 1,
     dept_name     VARCHAR(100),
     phone         VARCHAR(20),
-    id_card       VARCHAR(20),
+    id_card       VARCHAR(32),
     source        TINYINT      DEFAULT 2,
     status        TINYINT      DEFAULT 1,
     created_at    DATETIME,
