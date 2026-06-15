@@ -22,3 +22,6 @@ out*.txt
 
 # bash/cygwin 崩溃转储
 *.stackdump
+
+# 本地服务器运行日志
+*.log

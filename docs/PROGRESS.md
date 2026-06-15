@@ -3,15 +3,32 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-12 收工）
-**前端 DEMO 全部完成 + 三轮数据/视觉增强全部落地。分支 `feat/demo-frontend`，工作区干净，最新提交 e3707c2。等待下次继续。**
+## 当前阶段（2026-06-15）
+**前端 DEMO + 三轮数据/视觉增强已全部合并入 GitHub `main`（PR #1/#2/#3）。本次新开 `feat/ui-blue-theme` 分支，把全局视觉从 Apple 毛玻璃浅色风改为「蓝色企业主题 + 深蓝实色侧栏」。**
+
+### 蓝色主题改版（2026-06-15，分支 feat/ui-blue-theme）
+- 需求：用户给 P2P 系统参考图（`docs/style-previews/P2PStyle*.png`），要求主题色改蓝、左侧菜单改成（提亮后的）深蓝实色侧栏。
+- 先出静态示例 `docs/style-previews/blue-theme-preview.html`（+ .jpeg）确认方向。
+- 落地 3 处（保留所有 `--dms-*` 变量名，业务页零改动）：
+  - `src/styles/theme.css`：令牌全面调色——主题蓝 `--dms-accent:#1f6feb`、冷调浅灰底、毛玻璃卡→干净白卡（去 backdrop-filter）、新增侧栏色板 `--dms-nav-*`（提亮版 top `#1a59ac`/bottom `#134890`、选中 `#2f80f7`）、Element Plus primary 变量改蓝、状态色微调。
+  - `src/layout/index.vue`：侧栏深蓝实色渐变 + 白字、品牌加圆角 logo 块「C」、菜单按 `el-menu-item-group` 分「资源管理/视图」、选中项亮蓝填充块、顶栏纯白。
+  - 侧栏亮度反复试了两版提亮（#1a59ac、#2569c8），**最终按用户要求回到初始深海军蓝** top `#0c2f63`/bottom `#0a2750`/选中 `#1f6feb`（即最初示例 blue-theme-preview 的配色）。
+  - 登录页一度改为「左深蓝品牌栏 + 右白卡」分栏，**用户不满意，已回退为原 Apple 风**（字标渐变 + SVG 电路背景 + 毛玻璃卡，`login-bg.svg` 保留）；登录按钮随主题自然变蓝。
+- 真实前端验证：登录→楼栋/楼层(表格)→看板，控制台零报错。截图 `docs/style-previews/blue-applied-{buildings,board}.jpeg`。
+- P2P 参考图（`docs/style-previews/P2PStyle*.png`，10 张）已留档入库。
+- 待办：用户用 GitHub Desktop 推送 `feat/ui-blue-theme` 并建 PR（CLI 推送被防火墙拦，`gh` 未装）。
+
+### 合并状态（已全部进 main）
+- PR #1：后端 DEMO（merge a0df189）
+- PR #2：前端 DEMO（merge 4c2a074）
+- PR #3：前端数据增强 v2/v3 + 品牌（merge eb3c81a）
+- `origin/main` 最新 = eb3c81a。本地 `feat/demo-frontend` 工作已 100% 入 main，无未合并提交。
 
 ### 下次开工第一步
 1. 读本文件恢复上下文。
-2. 启动服务验证：后端 `cd dms-backend && mvn spring-boot:run`（:8080），前端 `cd dms-frontend && npm run dev`（:5173）；admin/admin123。
-3. 待办（用户/我之间）：
-   - **用户**：GitHub Desktop 把 `feat/demo-frontend` Push origin → 建 PR（描述用 `docs/PR-前端DEMO.md`，base main ← compare feat/demo-frontend，无"无关历史"问题）。
-   - 下一步方向未定（用户上次选了"完善增强项"，现已全部完成）。可选：第二阶段业务模块（入住/退宿/费用…，需先头脑风暴）、接 MySQL/Docker 部署、或继续打磨。开工时问用户。
+2. 从最新 `main` 切新功能分支再开发（本地 main 已建好跟踪 origin/main）。
+3. 启动服务验证：后端 `cd dms-backend && mvn spring-boot:run`（:8080），前端 `cd dms-frontend && npm run dev`（:5173）；admin/admin123。
+4. 下一步方向未定（增强项已全部完成）。可选：第二阶段业务模块（入住/退宿/费用…，需先头脑风暴）、接 MySQL/Docker 部署、或继续打磨。开工时问用户。
 
 ### 已完成全景（feat/demo-frontend）
 - 前端 DEMO 实现（脚手架→API/store/路由→登录+外壳→楼栋/楼层/房间/床位/看板），E2E 联调通过

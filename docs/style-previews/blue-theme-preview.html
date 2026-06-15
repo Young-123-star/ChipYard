@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChipMore Dorm · 蓝色主题示例</title>
+<style>
+  :root {
+    /* —— 深蓝实色侧栏 —— */
+    --nav-bg-top: #0c2f63;
+    --nav-bg-bottom: #0a2750;
+    --nav-text: rgba(255, 255, 255, 0.78);
+    --nav-text-strong: #ffffff;
+    --nav-active-bg: #1f6feb;        /* 选中项亮蓝 */
+    --nav-hover-bg: rgba(255, 255, 255, 0.08);
+    --nav-divider: rgba(255, 255, 255, 0.10);
+
+    /* —— 主题蓝 —— */
+    --accent: #1f6feb;
+    --accent-strong: #1657c4;
+    --accent-soft: #e8f1fe;
+
+    /* —— 内容区 —— */
+    --bg: #f4f6fb;
+    --card: #ffffff;
+    --ink: #16203a;
+    --ink-2: #5b6577;
+    --hairline: #e6e9f0;
+    --radius: 14px;
+    --shadow: 0 1px 2px rgba(16, 32, 70, 0.04), 0 6px 18px rgba(16, 32, 70, 0.05);
+
+    --ok: #1aa251; --ok-bg: #e7f6ec;
+    --warn: #c47d04; --warn-bg: #fdf2dc;
+    --bad: #d23b34; --bad-bg: #fbe7e6;
+    --hold: #2f6fbe; --hold-bg: #e7f0fb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei UI", sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+  }
+  .app { display: flex; min-height: 100vh; }
+
+  /* ===== 侧边栏 ===== */
+  .aside {
+    width: 232px; flex-shrink: 0;
+    background: linear-gradient(180deg, var(--nav-bg-top), var(--nav-bg-bottom));
+    color: var(--nav-text);
+    padding: 0 14px;
+    display: flex; flex-direction: column;
+  }
+  .brand {
+    height: 64px; display: flex; align-items: center; gap: 9px;
+    padding: 0 8px; color: var(--nav-text-strong);
+    font-size: 18px; font-weight: 700; letter-spacing: -0.02em;
+    border-bottom: 1px solid var(--nav-divider);
+    margin-bottom: 14px;
+  }
+  .brand .mark {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: #fff;
+    box-shadow: 0 2px 8px rgba(31, 111, 235, 0.45);
+  }
+  .brand .accent { color: #6ea8ff; }
+  .nav-label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: rgba(255,255,255,0.4); padding: 6px 10px 8px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    height: 42px; padding: 0 12px; margin-bottom: 4px;
+    border-radius: 10px; cursor: pointer;
+    font-size: 14px; color: var(--nav-text);
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-item .ico { width: 18px; height: 18px; opacity: 0.9; }
+  .nav-item:hover { background: var(--nav-hover-bg); color: #fff; }
+  .nav-item.active {
+    background: var(--nav-active-bg); color: #fff; font-weight: 600;
+    box-shadow: 0 4px 14px rgba(31, 111, 235, 0.4);
+  }
+
+  /* ===== 右侧主体 ===== */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .header {
+    height: 64px; background: #fff;
+    border-bottom: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px;
+  }
+  .crumb { font-size: 13px; color: var(--ink-2); }
+  .crumb b { color: var(--ink); font-weight: 600; }
+  .h-title { font-size: 19px; font-weight: 700; letter-spacing: -0.02em; }
+  .h-right { display: flex; align-items: center; gap: 18px; }
+  .pill-btn {
+    background: var(--accent); color: #fff; border: none;
+    padding: 8px 16px; border-radius: 9px; font-size: 13px; font-weight: 600;
+    cursor: pointer; box-shadow: 0 2px 8px rgba(31,111,235,0.32);
+  }
+  .user { display: flex; align-items: center; gap: 9px; font-size: 14px; }
+  .avatar { width: 30px; height: 30px; border-radius: 50%;
+    background: var(--accent); color: #fff; display: flex; align-items: center;
+    justify-content: center; font-size: 13px; font-weight: 700; }
+
+  .content { padding: 24px 28px; }
+
+  /* ===== 统计卡 ===== */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+  .stat {
+    background: var(--card); border: 1px solid var(--hairline);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .stat .lab { font-size: 13px; color: var(--ink-2); margin-bottom: 8px; }
+  .stat .num { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; }
+  .stat .num small { font-size: 14px; font-weight: 600; }
+  .stat .chip {
+    width: 44px; height: 44px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center; font-size: 20px;
+  }
+  .chip.b { background: var(--accent-soft); color: var(--accent); }
+  .chip.g { background: var(--ok-bg); color: var(--ok); }
+  .chip.o { background: var(--warn-bg); color: var(--warn); }
+  .chip.r { background: var(--bad-bg); color: var(--bad); }
+
+  /* ===== 区块卡 ===== */
+  .panel {
+    background: var(--card); border: 1px solid var(--hairline);
+    border-radius: var(--radius); box-shadow: var(--shadow); margin-bottom: 20px;
+  }
+  .panel-head {
+    padding: 16px 20px; border-bottom: 1px solid var(--hairline);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .panel-head h3 { font-size: 15px; font-weight: 700; }
+  .panel-head .sub { font-size: 12.5px; color: var(--ink-2); }
+  .panel-body { padding: 18px 20px; }
+
+  /* 楼栋卡片 */
+  .bld-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .bld {
+    border: 1px solid var(--hairline); border-radius: 12px; padding: 16px 18px;
+    transition: box-shadow 0.18s, transform 0.18s;
+  }
+  .bld:hover { box-shadow: 0 8px 24px rgba(16,32,70,0.1); transform: translateY(-2px); }
+  .bld-top { display: flex; justify-content: space-between; align-items: center; }
+  .bld-name { font-size: 16px; font-weight: 700; }
+  .bld-code { font-size: 12px; color: var(--ink-2); margin-left: 6px; }
+  .tag { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; }
+  .tag.on { background: var(--ok-bg); color: var(--ok); }
+  .bld-body { display: flex; align-items: center; gap: 18px; margin-top: 14px; }
+  .ring {
+    width: 78px; height: 78px; border-radius: 50%;
+    background: conic-gradient(var(--accent) calc(var(--p) * 1%), #eaecf2 0);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .ring i {
+    width: 58px; height: 58px; border-radius: 50%; background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-style: normal;
+  }
+  .ring b { font-size: 16px; font-weight: 700; }
+  .ring span { font-size: 10px; color: var(--ink-2); }
+  .bld-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; flex: 1; }
+  .bld-stats div { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-2); }
+  .bld-stats b { color: var(--ink); }
+
+  /* 看板房间格 */
+  .plan { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--hairline);
+    border-radius: 12px; overflow: hidden; }
+  .room { padding: 14px 16px; border-right: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline);
+    position: relative; min-height: 96px; }
+  .room .no { font-size: 17px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .room .gm { font-size: 11px; width: 17px; height: 17px; border-radius: 50%; display: inline-flex;
+    align-items: center; justify-content: center; background: var(--hold-bg); color: var(--hold); }
+  .room .beds { display: flex; gap: 3px; margin-top: 8px; }
+  .room .bed { width: 8px; height: 13px; border: 1.5px solid #c3c8d4; border-radius: 3px; }
+  .room .bed.occ { background: var(--c); border-color: var(--c); }
+  .room .meta { font-size: 12px; color: var(--ink-2); margin-top: 7px; }
+  .room .st { position: absolute; right: 14px; top: 14px; font-size: 11px; font-weight: 600;
+    padding: 2px 9px; border-radius: 99px; }
+  .s-free { --c: var(--ok); } .s-free .st { background: var(--ok-bg); color: var(--ok); }
+  .s-full { --c: var(--warn); } .s-full .st { background: var(--warn-bg); color: var(--warn); }
+  .s-fix  { --c: var(--bad); } .s-fix .st { background: var(--bad-bg); color: var(--bad); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- 侧栏 -->
+  <aside class="aside">
+    <div class="brand"><span class="mark">C</span>ChipMore <span class="accent">Dorm</span></div>
+    <div class="nav-label">资源管理</div>
+    <div class="nav-item active">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h.01M9 13h.01M9 17h.01M15 9h.01M15 13h.01M15 17h.01"/></svg>
+      楼栋管理
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      楼层管理
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      房间管理
+    </div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18v-6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6M3 18h18M7 10V7a2 2 0 0 1 2-2h6"/></svg>
+      床位管理
+    </div>
+    <div class="nav-label">视图</div>
+    <div class="nav-item">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+      房间状态看板
+    </div>
+  </aside>
+
+  <!-- 主体 -->
+  <div class="main">
+    <header class="header">
+      <div>
+        <div class="crumb">资源管理 / <b>楼栋管理</b></div>
+      </div>
+      <div class="h-right">
+        <button class="pill-btn">+ 新增楼栋</button>
+        <div class="user"><span class="avatar">A</span>管理员</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- 概览统计 -->
+      <div class="stats">
+        <div class="stat"><div><div class="lab">楼栋总数</div><div class="num">6</div></div><div class="chip b">🏢</div></div>
+        <div class="stat"><div><div class="lab">床位总数</div><div class="num">480</div></div><div class="chip g">🛏️</div></div>
+        <div class="stat"><div><div class="lab">入住率</div><div class="num">72<small>%</small></div></div><div class="chip o">📈</div></div>
+        <div class="stat"><div><div class="lab">维修中房间</div><div class="num">4</div></div><div class="chip r">🔧</div></div>
+      </div>
+
+      <!-- 楼栋卡片 -->
+      <div class="panel">
+        <div class="panel-head"><h3>楼栋概览</h3><span class="sub">实时入住统计</span></div>
+        <div class="panel-body">
+          <div class="bld-grid">
+            <div class="bld">
+              <div class="bld-top"><div><span class="bld-name">1号楼</span><span class="bld-code">A-01</span></div><span class="tag on">启用</span></div>
+              <div class="bld-body">
+                <div class="ring" style="--p:78"><i><b>78%</b><span>入住率</span></i></div>
+                <div class="bld-stats"><div><span>楼层</span><b>6</b></div><div><span>房间</span><b>48</b></div><div><span>床位</span><b>96</b></div><div><span>空闲</span><b>21</b></div></div>
+              </div>
+            </div>
+            <div class="bld">
+              <div class="bld-top"><div><span class="bld-name">2号楼</span><span class="bld-code">A-02</span></div><span class="tag on">启用</span></div>
+              <div class="bld-body">
+                <div class="ring" style="--p:64"><i><b>64%</b><span>入住率</span></i></div>
+                <div class="bld-stats"><div><span>楼层</span><b>6</b></div><div><span>房间</span><b>48</b></div><div><span>床位</span><b>96</b></div><div><span>空闲</span><b>35</b></div></div>
+              </div>
+            </div>
+            <div class="bld">
+              <div class="bld-top"><div><span class="bld-name">3号楼</span><span class="bld-code">B-01</span></div><span class="tag on">启用</span></div>
+              <div class="bld-body">
+                <div class="ring" style="--p:91"><i><b>91%</b><span>入住率</span></i></div>
+                <div class="bld-stats"><div><span>楼层</span><b>5</b></div><div><span>房间</span><b>40</b></div><div><span>床位</span><b>80</b></div><div><span>空闲</span><b>7</b></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 看板预览 -->
+      <div class="panel">
+        <div class="panel-head"><h3>房间状态看板 · 1号楼 2F</h3><span class="sub">8 间 · 空闲床位 9</span></div>
+        <div class="panel-body">
+          <div class="plan">
+            <div class="room s-free"><div class="no">201 <span class="gm">♂</span></div><div class="beds"><i class="bed occ"></i><i class="bed occ"></i><i class="bed"></i><i class="bed"></i></div><div class="meta">四人间 · 2/4 床</div><span class="st">空闲</span></div>
+            <div class="room s-full"><div class="no">202 <span class="gm">♂</span></div><div class="beds"><i class="bed occ"></i><i class="bed occ"></i><i class="bed occ"></i><i class="bed occ"></i></div><div class="meta">四人间 · 4/4 床</div><span class="st">已满</span></div>
+            <div class="room s-free"><div class="no">203 <span class="gm">♀</span></div><div class="beds"><i class="bed occ"></i><i class="bed"></i><i class="bed"></i><i class="bed"></i></div><div class="meta">四人间 · 1/4 床</div><span class="st">空闲</span></div>
+            <div class="room s-fix"><div class="no">204</div><div class="beds"><i class="bed"></i><i class="bed"></i></div><div class="meta">双人间 · 维修</div><span class="st">维修</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
