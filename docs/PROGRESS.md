@@ -4,7 +4,21 @@
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
 ## 当前阶段（2026-06-15）
-**前端 DEMO + 三轮数据/视觉增强已全部合并入 GitHub `main`（PR #1/#2/#3）。本次新开 `feat/ui-blue-theme` 分支，把全局视觉从 Apple 毛玻璃浅色风改为「蓝色企业主题 + 深蓝实色侧栏」。**
+**第二阶段第一个子项目「入住管理」已在分支 `feat/checkin-module` 完成实现并端到端联调通过（41 后端测试全过，前端 vue-tsc 零错误）。等待用户推送建 PR。** 之前的蓝色主题（PR #4）已合并入 main。
+
+### 入住管理子项目（2026-06-15，分支 feat/checkin-module，子 Agent 驱动 + 两阶段审查实现）
+- 设计/计划：`docs/superpowers/specs/2026-06-15-入住管理子项目-design.md`、`docs/superpowers/plans/2026-06-15-入住管理子项目.md`
+- 新增三模块：`resident`（居住人/员工档案）、`checkin`（意向单 intake + 入住档案 record）、`integration`（OA/HCP webhook 防腐层 + 出站客户端预留 + token 守卫）
+- 新增 3 表：`dms_resident`/`dms_checkin_intake`/`dms_checkin_record`（schema+seed）
+- 核心流程：Webhook/手工 → 意向单(待分配) → 管理员选床确认入住（@Transactional：性别校验+占床+刷新房间统计+生成档案+置已入住）→ 入住档案(在住)
+- 对接预留：`POST /api/integration/oa/checkin-application`、`/hcp/employee`，需 `X-Integration-Token`（application.yml `integration.token`，DEMO 值 `dms-demo-integration-token`），按 bizNo/employee_no 幂等；真实 OA/HCP 细节到位只换适配器实现
+- 前端新增菜单组「入住管理」：居住人管理 / 入住意向单（含楼栋→房间→空闲床位联动的分配弹窗）/ 入住档案
+- 后端测试 41 个全过（resident CRUD/幂等、占床统计、assign 事务+性别校验、webhook 幂等+token、controller）
+- 端到端联调：curl 投 OA/HCP 样例报文生成待分配意向单 → 浏览器分配入住 → 入住档案在住、床位占用。截图 docs/style-previews/checkin-{intakes,records}.jpeg
+- 后续子项目：退宿（释放床位，BedService.release 已占位，需补 currentUserId 置 null 的 @TableField 策略）、费用
+
+### 蓝色主题改版（已合并 PR #4，分支 feat/ui-blue-theme）
+**前端 DEMO + 三轮数据/视觉增强已全部合并入 GitHub `main`（PR #1/#2/#3）。`feat/ui-blue-theme` 把全局视觉从 Apple 毛玻璃浅色风改为「蓝色企业主题 + 深蓝实色侧栏」。**
 
 ### 蓝色主题改版（2026-06-15，分支 feat/ui-blue-theme）
 - 需求：用户给 P2P 系统参考图（`docs/style-previews/P2PStyle*.png`），要求主题色改蓝、左侧菜单改成（提亮后的）深蓝实色侧栏。

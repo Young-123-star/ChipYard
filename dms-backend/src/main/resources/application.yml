@@ -33,6 +33,9 @@ dms:
     secret: "dms-demo-secret-key-please-change-in-prod-0123456789abcdef"
     expire-minutes: 720
 
+integration:
+  token: dms-demo-integration-token
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

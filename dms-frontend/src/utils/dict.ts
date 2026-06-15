@@ -41,6 +41,29 @@ export const BUILDING_STATUS = [
   { value: 2, label: '维修中', type: 'danger' }
 ]
 
+export const RESIDENT_TYPE = [
+  { value: 1, label: '正式' },
+  { value: 2, label: '外包' },
+  { value: 3, label: '其他' }
+]
+
+export const RESIDENT_STATUS = [
+  { value: 0, label: '离职', type: 'info' },
+  { value: 1, label: '在职', type: 'success' }
+]
+
+export const INTAKE_STATUS = [
+  { value: 1, label: '待分配', type: 'warning' },
+  { value: 2, label: '已入住', type: 'success' },
+  { value: 3, label: '已取消', type: 'info' }
+]
+
+export const INTAKE_SOURCE = [
+  { value: 1, label: 'OA' },
+  { value: 2, label: 'HCP' },
+  { value: 3, label: '手工' }
+]
+
 export function labelOf(dict: { value: number; label: string }[], value?: number): string {
   const item = dict.find((d) => d.value === value)
   return item ? item.label : '-'

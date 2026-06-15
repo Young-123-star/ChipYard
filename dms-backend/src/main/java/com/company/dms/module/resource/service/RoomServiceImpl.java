@@ -25,10 +25,13 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomMapper roomMapper;
     private final FloorMapper floorMapper;
+    private final com.company.dms.module.resource.mapper.BedMapper bedMapper;
 
-    public RoomServiceImpl(RoomMapper roomMapper, FloorMapper floorMapper) {
+    public RoomServiceImpl(RoomMapper roomMapper, FloorMapper floorMapper,
+                           com.company.dms.module.resource.mapper.BedMapper bedMapper) {
         this.roomMapper = roomMapper;
         this.floorMapper = floorMapper;
+        this.bedMapper = bedMapper;
     }
 
     @Override
@@ -114,5 +117,19 @@ public class RoomServiceImpl implements RoomService {
     public void delete(Long id) {
         getById(id);
         roomMapper.deleteById(id);
+    }
+
+    @Override
+    public void refreshOccupancy(Long roomId) {
+        Room room = getById(roomId);
+        long occupied = bedMapper.selectCount(com.baomidou.mybatisplus.core.toolkit.Wrappers.<com.company.dms.module.resource.entity.Bed>lambdaQuery()
+                .eq(com.company.dms.module.resource.entity.Bed::getRoomId, roomId)
+                .eq(com.company.dms.module.resource.entity.Bed::getStatus, 2));
+        room.setOccupiedBeds((int) occupied);
+        int bedCount = room.getBedCount() == null ? 0 : room.getBedCount();
+        if (room.getStatus() != null && (room.getStatus() == 1 || room.getStatus() == 2)) {
+            room.setStatus(occupied >= bedCount ? 2 : 1);
+        }
+        roomMapper.updateById(room);
     }
 }

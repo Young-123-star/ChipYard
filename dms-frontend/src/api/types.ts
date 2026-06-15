@@ -87,3 +87,45 @@ export interface RoomSummary {
   occupiedBeds: number
   freeBeds: number
 }
+
+export interface Resident {
+  id: number
+  employeeNo: string
+  realName: string
+  gender?: number
+  residentType?: number
+  deptName?: string
+  phone?: string
+  idCard?: string
+  source?: number
+  status?: number
+}
+
+export interface CheckinIntake {
+  id: number
+  bizNo: string
+  residentId: number
+  residentName?: string
+  employeeNo?: string
+  residentGender?: number
+  source: number
+  expectCheckinDate?: string
+  genderLimitReq?: number
+  roomTypeReq?: number
+  buildingIdReq?: number
+  remark?: string
+  status: number
+}
+
+export interface CheckinRecord {
+  id: number
+  residentId: number
+  residentName?: string
+  employeeNo?: string
+  buildingId?: number
+  floorId?: number
+  roomId?: number
+  bedId?: number
+  checkinDate?: string
+  status: number
+}

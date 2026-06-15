@@ -17,4 +17,6 @@ public interface RoomService {
     void update(Long id, RoomSaveDTO dto);
     void delete(Long id);
     List<RoomBoardVO> board(BoardQuery query);
+    /** 按房间内已入住床位数重算 occupied_beds，并联动 status（满→2，未满且非维修/停用→1）。 */
+    void refreshOccupancy(Long roomId);
 }

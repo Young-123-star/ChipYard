@@ -12,7 +12,10 @@ const routes: RouteRecordRaw[] = [
       { path: 'floors', name: 'floors', meta: { title: '楼层管理' }, component: () => import('@/views/resource/floor.vue') },
       { path: 'rooms', name: 'rooms', meta: { title: '房间管理' }, component: () => import('@/views/resource/room.vue') },
       { path: 'beds', name: 'beds', meta: { title: '床位管理' }, component: () => import('@/views/resource/bed.vue') },
-      { path: 'board', name: 'board', meta: { title: '房间状态看板' }, component: () => import('@/views/resource/board.vue') }
+      { path: 'board', name: 'board', meta: { title: '房间状态看板' }, component: () => import('@/views/resource/board.vue') },
+      { path: 'residents', name: 'residents', meta: { title: '居住人管理' }, component: () => import('@/views/resident/index.vue') },
+      { path: 'intakes', name: 'intakes', meta: { title: '入住意向单' }, component: () => import('@/views/checkin/intake.vue') },
+      { path: 'records', name: 'records', meta: { title: '入住档案' }, component: () => import('@/views/checkin/record.vue') }
     ]
   }
 ]
