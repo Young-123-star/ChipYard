@@ -1,51 +1,62 @@
 /* ============================================================
-   DMS · Apple 风全局主题
-   设计令牌：浅灰渐变底 / 毛玻璃白卡 / 单一蓝强调 / 大圆角软阴影
+   DMS · 蓝色企业主题
+   设计令牌：冷调浅灰底 / 干净白卡 / 深蓝实色侧栏 / 蓝色强调
    ============================================================ */
 
 :root {
-  /* 色板 */
-  --dms-bg-top: #fbfbfd;
-  --dms-bg-bottom: #f0f0f4;
-  --dms-surface: rgba(255, 255, 255, 0.72);
+  /* 内容区色板 */
+  --dms-bg-top: #f6f8fc;
+  --dms-bg-bottom: #f1f4fa;
+  --dms-surface: #ffffff;
   --dms-surface-solid: #ffffff;
-  --dms-ink: #1d1d1f;
-  --dms-ink-2: #6e6e73;
-  --dms-hairline: rgba(0, 0, 0, 0.06);
-  --dms-accent: #0071e3;
-  --dms-ok: #34c759;
-  --dms-warn: #ff9f0a;
-  --dms-bad: #ff453a;
-  --dms-hold: #5e9eff;
+  --dms-ink: #16203a;
+  --dms-ink-2: #5b6577;
+  --dms-hairline: #e6e9f0;
+  --dms-accent: #1f6feb;
+  --dms-accent-strong: #1657c4;
+  --dms-accent-soft: #e8f1fe;
+  --dms-ok: #1aa251;
+  --dms-warn: #c47d04;
+  --dms-bad: #d23b34;
+  --dms-hold: #2f6fbe;
+
+  /* 蓝色侧栏色板（提亮版） */
+  --dms-nav-top: #1a59ac;
+  --dms-nav-bottom: #134890;
+  --dms-nav-text: rgba(255, 255, 255, 0.82);
+  --dms-nav-text-strong: #ffffff;
+  --dms-nav-active: #2f80f7;
+  --dms-nav-hover: rgba(255, 255, 255, 0.12);
+  --dms-nav-divider: rgba(255, 255, 255, 0.14);
+
   /* 几何 */
-  --dms-radius-card: 18px;
+  --dms-radius-card: 14px;
   --dms-radius-ctl: 10px;
-  --dms-shadow-card: 0 1px 2px rgba(0, 0, 0, 0.03);
-  --dms-shadow-float: 0 18px 50px rgba(0, 0, 0, 0.12);
-  --dms-blur: blur(30px) saturate(1.6);
+  --dms-shadow-card: 0 1px 2px rgba(16, 32, 70, 0.04), 0 6px 18px rgba(16, 32, 70, 0.05);
+  --dms-shadow-float: 0 18px 50px rgba(16, 32, 70, 0.18);
 
   /* Element Plus 变量覆盖 */
   --el-color-primary: var(--dms-accent);
-  --el-color-primary-light-3: #3d94ea;
-  --el-color-primary-light-5: #7ab8f0;
-  --el-color-primary-light-7: #b3d7f7;
-  --el-color-primary-light-8: #cce4fa;
-  --el-color-primary-light-9: #e8f3fd;
-  --el-color-primary-dark-2: #005bb8;
+  --el-color-primary-light-3: #4a8bf0;
+  --el-color-primary-light-5: #7fadf5;
+  --el-color-primary-light-7: #b3cef9;
+  --el-color-primary-light-8: #cfe0fb;
+  --el-color-primary-light-9: var(--dms-accent-soft);
+  --el-color-primary-dark-2: var(--dms-accent-strong);
   --el-color-success: var(--dms-ok);
   --el-color-warning: var(--dms-warn);
   --el-color-danger: var(--dms-bad);
   --el-color-error: var(--dms-bad);
   --el-text-color-primary: var(--dms-ink);
-  --el-text-color-regular: #3a3a3c;
+  --el-text-color-regular: #3a4255;
   --el-text-color-secondary: var(--dms-ink-2);
   --el-border-radius-base: var(--dms-radius-ctl);
   --el-border-radius-small: 8px;
-  --el-border-color: rgba(0, 0, 0, 0.12);
+  --el-border-color: #d6dbe6;
   --el-border-color-light: var(--dms-hairline);
   --el-border-color-lighter: var(--dms-hairline);
   --el-font-family: -apple-system, "SF Pro SC", "SF Pro Display", "PingFang SC",
-    "HarmonyOS Sans SC", "Microsoft YaHei UI", sans-serif;
+    "HarmonyOS Sans SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;
 }
 
 html,
@@ -57,12 +68,11 @@ body {
   letter-spacing: -0.01em;
 }
 
-/* ---------- 卡片：毛玻璃面板 ---------- */
+/* ---------- 卡片：干净白卡 ---------- */
 .el-card {
   border-radius: var(--dms-radius-card);
   border: 1px solid var(--dms-hairline);
   background: var(--dms-surface);
-  backdrop-filter: var(--dms-blur);
   box-shadow: var(--dms-shadow-card);
 }
 
@@ -72,8 +82,8 @@ body {
   font-weight: 500;
 }
 .el-button--primary {
-  --el-button-hover-bg-color: #0077ed;
-  box-shadow: 0 1px 3px rgba(0, 113, 227, 0.3);
+  --el-button-hover-bg-color: var(--dms-accent-strong);
+  box-shadow: 0 2px 8px rgba(31, 111, 235, 0.32);
 }
 
 /* ---------- 输入与选择器 ---------- */
@@ -86,9 +96,9 @@ body {
 /* ---------- 表格：去重边框感，行悬浮 ---------- */
 .el-table {
   --el-table-border-color: var(--dms-hairline);
-  --el-table-header-bg-color: transparent;
+  --el-table-header-bg-color: #f7f9fc;
   --el-table-header-text-color: var(--dms-ink-2);
-  --el-table-row-hover-bg-color: rgba(0, 113, 227, 0.04);
+  --el-table-row-hover-bg-color: var(--dms-accent-soft);
   background: transparent;
   border-radius: 12px;
   overflow: hidden;
@@ -131,7 +141,6 @@ body {
 .el-message {
   border-radius: 99px;
   border: 1px solid var(--dms-hairline);
-  backdrop-filter: var(--dms-blur);
 }
 
 /* ---------- 下拉菜单 ---------- */

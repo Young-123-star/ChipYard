@@ -1,13 +1,17 @@
 <template>
   <el-container class="layout">
-    <el-aside width="220px" class="aside">
-      <div class="logo">ChipMore <span class="logo-accent">Dorm</span></div>
+    <el-aside width="232px" class="aside">
+      <div class="logo"><span class="logo-mark">C</span>ChipMore <span class="logo-accent">Dorm</span></div>
       <el-menu :default-active="route.path" router class="menu">
-        <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>楼栋管理</span></el-menu-item>
-        <el-menu-item index="/floors"><el-icon><Files /></el-icon><span>楼层管理</span></el-menu-item>
-        <el-menu-item index="/rooms"><el-icon><House /></el-icon><span>房间管理</span></el-menu-item>
-        <el-menu-item index="/beds"><el-icon><Bell /></el-icon><span>床位管理</span></el-menu-item>
-        <el-menu-item index="/board"><el-icon><Grid /></el-icon><span>房间状态看板</span></el-menu-item>
+        <el-menu-item-group title="资源管理">
+          <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>楼栋管理</span></el-menu-item>
+          <el-menu-item index="/floors"><el-icon><Files /></el-icon><span>楼层管理</span></el-menu-item>
+          <el-menu-item index="/rooms"><el-icon><House /></el-icon><span>房间管理</span></el-menu-item>
+          <el-menu-item index="/beds"><el-icon><Bell /></el-icon><span>床位管理</span></el-menu-item>
+        </el-menu-item-group>
+        <el-menu-item-group title="视图">
+          <el-menu-item index="/board"><el-icon><Grid /></el-icon><span>房间状态看板</span></el-menu-item>
+        </el-menu-item-group>
       </el-menu>
     </el-aside>
     <el-container>
@@ -47,37 +51,64 @@ function onCommand(cmd: string) {
 <style scoped>
 .layout { height: 100vh; }
 .aside {
-  background: var(--dms-surface);
-  backdrop-filter: var(--dms-blur);
-  border-right: 1px solid var(--dms-hairline);
-  padding: 16px 12px 0;
+  background: linear-gradient(180deg, var(--dms-nav-top) 0%, var(--dms-nav-bottom) 100%);
+  border-right: none;
+  padding: 0 14px;
 }
 .logo {
-  color: var(--dms-ink);
-  height: 48px;
-  line-height: 48px;
-  padding-left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--dms-nav-text-strong);
+  height: 64px;
+  padding: 0 6px;
   font-weight: 700;
-  font-size: 17px;
+  font-size: 18px;
   letter-spacing: -0.02em;
+  border-bottom: 1px solid var(--dms-nav-divider);
+  margin-bottom: 12px;
 }
-.logo-accent { color: var(--dms-accent); }
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--dms-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(31, 111, 235, 0.45);
+}
+.logo-accent { color: #8fbaff; }
 .menu {
   border-right: none;
   background: transparent;
   --el-menu-item-height: 42px;
-  --el-menu-text-color: var(--dms-ink-2);
-  --el-menu-hover-bg-color: rgba(0, 0, 0, 0.04);
+  --el-menu-text-color: var(--dms-nav-text);
+  --el-menu-hover-bg-color: var(--dms-nav-hover);
+  --el-menu-hover-text-color: #fff;
+}
+.menu :deep(.el-menu-item-group__title) {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 8px 10px 6px;
 }
 .menu .el-menu-item {
   border-radius: 10px;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
   font-size: 14px;
+  color: var(--dms-nav-text);
 }
+.menu .el-menu-item:hover { color: #fff; }
 .menu .el-menu-item.is-active {
-  background: rgba(0, 113, 227, 0.1);
-  color: var(--dms-accent);
+  background: var(--dms-nav-active);
+  color: #fff;
   font-weight: 600;
+  box-shadow: 0 4px 14px rgba(47, 128, 247, 0.4);
 }
 .header {
   display: flex;
@@ -85,7 +116,6 @@ function onCommand(cmd: string) {
   justify-content: space-between;
   border-bottom: 1px solid var(--dms-hairline);
   background: var(--dms-surface);
-  backdrop-filter: var(--dms-blur);
 }
 .page-title {
   font-size: 20px;
