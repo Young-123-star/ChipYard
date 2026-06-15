@@ -52,4 +52,28 @@ public class BedServiceImpl implements BedService {
         if (bedMapper.selectById(id) == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "床位不存在");
         bedMapper.deleteById(id);
     }
+
+    @Override
+    public Bed getById(Long id) {
+        Bed b = bedMapper.selectById(id);
+        if (b == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "床位不存在");
+        return b;
+    }
+
+    @Override
+    public void occupy(Long bedId, Long residentId) {
+        Bed b = getById(bedId);
+        if (b.getStatus() != null && b.getStatus() == 2) throw new BizException("该床位已被占用");
+        b.setStatus(2);
+        b.setCurrentUserId(residentId);
+        bedMapper.updateById(b);
+    }
+
+    @Override
+    public void release(Long bedId) {
+        Bed b = getById(bedId);
+        b.setStatus(1);
+        b.setCurrentUserId(null);
+        bedMapper.updateById(b);
+    }
 }
