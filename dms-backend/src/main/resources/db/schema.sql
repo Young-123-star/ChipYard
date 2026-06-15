@@ -74,3 +74,54 @@ CREATE TABLE dms_bed (
     updated_at      DATETIME,
     deleted_at      DATETIME
 );
+
+DROP TABLE IF EXISTS dms_resident;
+CREATE TABLE dms_resident (
+    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+    employee_no   VARCHAR(50)  NOT NULL,
+    real_name     VARCHAR(50)  NOT NULL,
+    gender        TINYINT      DEFAULT 0,
+    resident_type TINYINT      DEFAULT 1,
+    dept_name     VARCHAR(100),
+    phone         VARCHAR(20),
+    id_card       VARCHAR(20),
+    source        TINYINT      DEFAULT 2,
+    status        TINYINT      DEFAULT 1,
+    created_at    DATETIME,
+    updated_at    DATETIME,
+    deleted_at    DATETIME
+);
+
+DROP TABLE IF EXISTS dms_checkin_intake;
+CREATE TABLE dms_checkin_intake (
+    id                  BIGINT PRIMARY KEY AUTO_INCREMENT,
+    biz_no              VARCHAR(64) NOT NULL,
+    resident_id         BIGINT      NOT NULL,
+    source              TINYINT     DEFAULT 3,
+    expect_checkin_date DATE,
+    gender_limit_req    TINYINT     DEFAULT 0,
+    room_type_req       TINYINT,
+    building_id_req     BIGINT,
+    remark              VARCHAR(500),
+    status              TINYINT     DEFAULT 1,
+    raw_payload         CLOB,
+    created_at          DATETIME,
+    updated_at          DATETIME,
+    deleted_at          DATETIME
+);
+
+DROP TABLE IF EXISTS dms_checkin_record;
+CREATE TABLE dms_checkin_record (
+    id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+    intake_id    BIGINT NOT NULL,
+    resident_id  BIGINT NOT NULL,
+    building_id  BIGINT,
+    floor_id     BIGINT,
+    room_id      BIGINT,
+    bed_id       BIGINT,
+    checkin_date DATE,
+    status       TINYINT DEFAULT 1,
+    created_at   DATETIME,
+    updated_at   DATETIME,
+    deleted_at   DATETIME
+);

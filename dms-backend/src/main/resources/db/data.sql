@@ -20,3 +20,21 @@ VALUES (1, 'A', 3, NULL, 1, NOW(), NOW()),
        (1, 'B', 3, NULL, 1, NOW(), NOW()),
        (2, 'A', 3, 1, 2, NOW(), NOW()),
        (2, 'B', 3, NULL, 1, NOW(), NOW());
+
+INSERT INTO dms_resident (employee_no, real_name, gender, resident_type, dept_name, phone, id_card, source, status, created_at, updated_at)
+VALUES ('E1001', '张三', 1, 1, '研发部', '13800000001', '110101199001011234', 1, 1, NOW(), NOW()),
+       ('E1002', '李四', 2, 1, '财务部', '13800000002', '110101199202022345', 1, 1, NOW(), NOW()),
+       ('E2001', '王五', 1, 2, '外包-保洁', '13800000003', '110101199303033456', 1, 1, NOW(), NOW());
+
+-- 让 A102 已占床位指向居住人 1（张三）
+UPDATE dms_bed SET current_user_id = 1 WHERE room_id = 2 AND bed_number = 'A';
+
+-- 张三已入住档案（对应种子里 A102-A 床）
+INSERT INTO dms_checkin_intake (biz_no, resident_id, source, expect_checkin_date, gender_limit_req, room_type_req, building_id_req, remark, status, raw_payload, created_at, updated_at)
+VALUES ('SEED-IN-1', 1, 3, '2026-06-01', 1, 2, 1, '种子-已入住', 2, NULL, NOW(), NOW());
+INSERT INTO dms_checkin_record (intake_id, resident_id, building_id, floor_id, room_id, bed_id, checkin_date, status, created_at, updated_at)
+VALUES (1, 1, 1, 1, 2, 3, '2026-06-01', 1, NOW(), NOW());
+
+-- 李四：一条待分配意向单（演示用）
+INSERT INTO dms_checkin_intake (biz_no, resident_id, source, expect_checkin_date, gender_limit_req, room_type_req, building_id_req, remark, status, raw_payload, created_at, updated_at)
+VALUES ('SEED-IN-2', 2, 1, '2026-06-20', 2, 2, 1, '种子-待分配', 1, NULL, NOW(), NOW());
