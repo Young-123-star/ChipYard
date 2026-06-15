@@ -12,6 +12,11 @@
         <el-menu-item-group title="视图">
           <el-menu-item index="/board"><el-icon><Grid /></el-icon><span>房间状态看板</span></el-menu-item>
         </el-menu-item-group>
+        <el-menu-item-group title="入住管理">
+          <el-menu-item index="/residents"><el-icon><User /></el-icon><span>居住人管理</span></el-menu-item>
+          <el-menu-item index="/intakes"><el-icon><DocumentAdd /></el-icon><span>入住意向单</span></el-menu-item>
+          <el-menu-item index="/records"><el-icon><Tickets /></el-icon><span>入住档案</span></el-menu-item>
+        </el-menu-item-group>
       </el-menu>
     </el-aside>
     <el-container>
@@ -33,7 +38,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
