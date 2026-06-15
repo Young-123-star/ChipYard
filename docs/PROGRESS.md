@@ -12,9 +12,9 @@
 - 落地 3 处（保留所有 `--dms-*` 变量名，业务页零改动）：
   - `src/styles/theme.css`：令牌全面调色——主题蓝 `--dms-accent:#1f6feb`、冷调浅灰底、毛玻璃卡→干净白卡（去 backdrop-filter）、新增侧栏色板 `--dms-nav-*`（提亮版 top `#1a59ac`/bottom `#134890`、选中 `#2f80f7`）、Element Plus primary 变量改蓝、状态色微调。
   - `src/layout/index.vue`：侧栏深蓝实色渐变 + 白字、品牌加圆角 logo 块「C」、菜单按 `el-menu-item-group` 分「资源管理/视图」、选中项亮蓝填充块、顶栏纯白。
-  - 侧栏亮度按用户两次反馈逐步提亮，最终 top `#2569c8`/bottom `#1a57ac`/选中 `#4791f8`。
-  - `src/views/login/index.vue`：登录页重做为「左深蓝品牌栏 + 右白卡表单」分栏（左侧复用 `--dms-nav-*`，含 logo 标/大标题/功能勾选清单/版权），删除旧 `login-bg.svg`（已废弃）。
-- 真实前端验证：登录→楼栋(卡片)→看板，控制台零报错。截图 `docs/style-previews/blue-applied-{login,buildings,board}.jpeg`。
+  - 侧栏亮度反复试了两版提亮（#1a59ac、#2569c8），**最终按用户要求回到初始深海军蓝** top `#0c2f63`/bottom `#0a2750`/选中 `#1f6feb`（即最初示例 blue-theme-preview 的配色）。
+  - 登录页一度改为「左深蓝品牌栏 + 右白卡」分栏，**用户不满意，已回退为原 Apple 风**（字标渐变 + SVG 电路背景 + 毛玻璃卡，`login-bg.svg` 保留）；登录按钮随主题自然变蓝。
+- 真实前端验证：登录→楼栋/楼层(表格)→看板，控制台零报错。截图 `docs/style-previews/blue-applied-{buildings,board}.jpeg`。
 - P2P 参考图（`docs/style-previews/P2PStyle*.png`，10 张）已留档入库。
 - 待办：用户用 GitHub Desktop 推送 `feat/ui-blue-theme` 并建 PR（CLI 推送被防火墙拦，`gh` 未装）。
 

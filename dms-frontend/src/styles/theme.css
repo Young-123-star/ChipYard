@@ -20,14 +20,14 @@
   --dms-bad: #d23b34;
   --dms-hold: #2f6fbe;
 
-  /* 蓝色侧栏色板（再提亮版） */
-  --dms-nav-top: #2569c8;
-  --dms-nav-bottom: #1a57ac;
-  --dms-nav-text: rgba(255, 255, 255, 0.85);
+  /* 深蓝侧栏色板（初始深海军蓝） */
+  --dms-nav-top: #0c2f63;
+  --dms-nav-bottom: #0a2750;
+  --dms-nav-text: rgba(255, 255, 255, 0.78);
   --dms-nav-text-strong: #ffffff;
-  --dms-nav-active: #4791f8;
-  --dms-nav-hover: rgba(255, 255, 255, 0.14);
-  --dms-nav-divider: rgba(255, 255, 255, 0.16);
+  --dms-nav-active: #1f6feb;
+  --dms-nav-hover: rgba(255, 255, 255, 0.08);
+  --dms-nav-divider: rgba(255, 255, 255, 0.1);
 
   /* 几何 */
   --dms-radius-card: 14px;
