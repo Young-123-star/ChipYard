@@ -33,7 +33,7 @@ public class HcpEmployeeAdapter {
         r.setPhone(dto.getMobile());
         r.setIdCard(dto.getIdCard());
         r.setStatus(1);
-        Long residentId = residentService.upsertByEmployeeNo(r, 2);
+        Long residentId = residentService.upsertByEmployeeNo(r, 1);
 
         CreateIntakeCommand cmd = new CreateIntakeCommand();
         cmd.setBizNo("HCP-" + dto.getEmployeeNo() + "-" + (dto.getEntryDate() == null ? "NA" : dto.getEntryDate()));
