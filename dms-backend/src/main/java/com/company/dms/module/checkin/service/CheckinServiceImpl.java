@@ -185,4 +185,28 @@ public class CheckinServiceImpl implements CheckinService {
 
         return rec.getId();
     }
+
+    @Override
+    public CheckinRecord getRecord(Long id) {
+        CheckinRecord r = recordMapper.selectById(id);
+        if (r == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "入住档案不存在");
+        return r;
+    }
+
+    @Override
+    public CheckinRecord findActiveRecordByResident(Long residentId) {
+        return recordMapper.selectOne(Wrappers.<CheckinRecord>lambdaQuery()
+                .eq(CheckinRecord::getResidentId, residentId)
+                .eq(CheckinRecord::getStatus, 1)
+                .last("limit 1"));
+    }
+
+    @Override
+    public void markCheckedOut(Long recordId, LocalDate checkoutDate) {
+        CheckinRecord r = getRecord(recordId);
+        if (r.getStatus() != 1) throw new BizException("该入住档案非在住状态");
+        r.setStatus(2);
+        r.setCheckoutDate(checkoutDate);
+        recordMapper.updateById(r);
+    }
 }
