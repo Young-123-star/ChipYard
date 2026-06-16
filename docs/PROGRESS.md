@@ -3,8 +3,19 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-16 收工·下午）
-**第二阶段第三个子项目「费用管理（住宿费账单闭环）」已全部实现完成，分支 `feat/fee-module`（从合并了退宿的最新 main 切出，10 个 Task + 子 Agent 驱动 + TDD）。后端 75 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+## 当前阶段（2026-06-16 收工·晚）
+**第二阶段第四个子项目「退宿欠费结算挂账（费用×退宿打通）」已全部实现完成，分支 `feat/checkout-arrears`（从最新 main 切出，7 个 Task + 子 Agent 驱动 + TDD）。后端 83 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 费用管理（PR #7）、退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+
+### 退宿欠费结算挂账子项目（已实现完成，2026-06-16，分支 feat/checkout-arrears）
+- 设计/计划：`docs/superpowers/specs/2026-06-16-退宿欠费结算挂账-design.md`、`docs/superpowers/plans/2026-06-16-退宿欠费结算挂账.md`
+- 把费用与退宿打通：办理退宿（`CheckoutServiceImpl.confirm`，同一 `@Transactional`）末尾自动「欠费结算挂账」——该在住档案未缴账单置「挂账(4)」，退宿单回填「离场欠费金额」，退宿**不阻断**（挂账放行）。
+- 数据改动仅 2 处：`dms_checkout_order` 加 `arrears_amount DECIMAL(10,2) DEFAULT 0`；账单状态新增取值 **4=挂账**（无新表）。
+- fee 模块新增 `listUnpaidByRecord` / `settleArrearsForRecord`；`pay` 守卫放宽为「未缴(1)或挂账(4)可缴」（挂账可后续结清→已缴）；新增只读 `GET /api/fee/arrears?checkinRecordId=`（{count,totalAmount} 预览）。
+- checkout 模块：`CheckoutOrder`/`CheckoutOrderVO` 加 `arrearsAmount`；confirm 注入 `FeeBillService` 结算。模块依赖方向 checkout→fee（无环）。
+- 前端：退宿单「办理退宿」弹窗欠费预览（alert）、列表加「离场欠费」列；账单页 `BILL_STATUS` 加「挂账」可筛选、挂账账单仍可缴费。
+- 后端测试：FeeArrearsService(listUnpaid/settle/pay放宽)、FeeArrearsController(arrears 接口+鉴权)、CheckoutArrears(confirm 集成)，全量回归 **83 测试全过**。
+- Live 联调（curl，admin/admin123）：欠费预览(1/800)→办理退宿→退宿单 arrearsAmount=800.00+status=2→账单 status=4 挂账→挂账缴费→预览归 0，全通过。
+- 非目标（后续）：滞纳金、部分缴费、坏账核销、催缴通知、账龄报表、退宿硬拦截。
 
 ### 费用管理子项目（已实现完成，2026-06-16，分支 feat/fee-module）
 - 设计/计划：`docs/superpowers/specs/2026-06-16-费用管理子项目-design.md`、`docs/superpowers/plans/2026-06-16-费用管理子项目.md`
