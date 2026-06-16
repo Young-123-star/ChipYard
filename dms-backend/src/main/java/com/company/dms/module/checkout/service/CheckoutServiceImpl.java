@@ -31,11 +31,17 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CheckoutOrderMapper orderMapper;
     private final ResidentService residentService;
     private final CheckinService checkinService;
+    private final com.company.dms.module.resource.service.BedService bedService;
+    private final com.company.dms.module.resource.service.RoomService roomService;
 
-    public CheckoutServiceImpl(CheckoutOrderMapper orderMapper, ResidentService residentService, CheckinService checkinService) {
+    public CheckoutServiceImpl(CheckoutOrderMapper orderMapper, ResidentService residentService, CheckinService checkinService,
+                               com.company.dms.module.resource.service.BedService bedService,
+                               com.company.dms.module.resource.service.RoomService roomService) {
         this.orderMapper = orderMapper;
         this.residentService = residentService;
         this.checkinService = checkinService;
+        this.bedService = bedService;
+        this.roomService = roomService;
     }
 
     @Override
@@ -126,7 +132,22 @@ public class CheckoutServiceImpl implements CheckoutService {
     @Override
     @Transactional
     public void confirm(Long orderId, LocalDate checkoutDate) {
-        // 在 Task 7 实现
-        throw new UnsupportedOperationException("confirm 在 Task 7 实现");
+        CheckoutOrder order = getOrder(orderId);
+        if (order.getStatus() != 1) throw new BizException("仅待退宿的单可办理退宿");
+        if (order.getCheckinRecordId() == null) throw new BizException("该退宿单无关联在住档案，无法办理");
+
+        CheckinRecord record = checkinService.getRecord(order.getCheckinRecordId());
+        if (record.getStatus() != 1) throw new BizException("关联入住档案非在住状态");
+
+        // 释放床位 + 刷新房间统计
+        bedService.release(record.getBedId());
+        roomService.refreshOccupancy(record.getRoomId());
+
+        // 档案归档
+        checkinService.markCheckedOut(record.getId(), checkoutDate != null ? checkoutDate : LocalDate.now());
+
+        // 退宿单完成
+        order.setStatus(2);
+        orderMapper.updateById(order);
     }
 }
