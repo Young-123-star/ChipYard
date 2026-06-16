@@ -38,3 +38,6 @@ VALUES (1, 1, 1, 1, 2, 3, '2026-06-01', 1, NOW(), NOW());
 -- 李四：一条待分配意向单（演示用）
 INSERT INTO dms_checkin_intake (biz_no, resident_id, source, expect_checkin_date, gender_limit_req, room_type_req, building_id_req, remark, status, raw_payload, created_at, updated_at)
 VALUES ('SEED-IN-2', 2, 1, '2026-06-20', 2, 2, 1, '种子-待分配', 1, NULL, NOW(), NOW());
+
+INSERT INTO dms_checkout_order (biz_no, resident_id, checkin_record_id, source, reason, expect_checkout_date, status, raw_payload, created_at, updated_at)
+VALUES ('SEED-CO-1', 1, 1, 1, '种子-退宿申请', '2026-07-01', 1, NULL, NOW(), NOW());
