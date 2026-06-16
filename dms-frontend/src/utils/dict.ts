@@ -64,6 +64,18 @@ export const INTAKE_SOURCE = [
   { value: 3, label: '手工' }
 ]
 
+export const CHECKOUT_STATUS = [
+  { value: 1, label: '待退宿', type: 'warning' },
+  { value: 2, label: '已退宿', type: 'success' },
+  { value: 3, label: '已取消', type: 'info' }
+]
+
+export const CHECKOUT_SOURCE = [
+  { value: 1, label: '退宿申请' },
+  { value: 2, label: '离职' },
+  { value: 3, label: '手工' }
+]
+
 export function labelOf(dict: { value: number; label: string }[], value?: number): string {
   const item = dict.find((d) => d.value === value)
   return item ? item.label : '-'

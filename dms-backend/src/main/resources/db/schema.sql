@@ -125,3 +125,21 @@ CREATE TABLE dms_checkin_record (
     updated_at   DATETIME,
     deleted_at   DATETIME
 );
+
+ALTER TABLE dms_checkin_record ADD COLUMN checkout_date DATE;
+
+DROP TABLE IF EXISTS dms_checkout_order;
+CREATE TABLE dms_checkout_order (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    biz_no               VARCHAR(64) NOT NULL,
+    resident_id          BIGINT      NOT NULL,
+    checkin_record_id    BIGINT,
+    source               TINYINT     DEFAULT 3,
+    reason               VARCHAR(500),
+    expect_checkout_date DATE,
+    status               TINYINT     DEFAULT 1,
+    raw_payload          CLOB,
+    created_at           DATETIME,
+    updated_at           DATETIME,
+    deleted_at           DATETIME
+);

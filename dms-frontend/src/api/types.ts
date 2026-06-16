@@ -129,3 +129,18 @@ export interface CheckinRecord {
   checkinDate?: string
   status: number
 }
+
+export interface CheckoutOrder {
+  id: number
+  bizNo: string
+  residentId: number
+  residentName?: string
+  employeeNo?: string
+  checkinRecordId?: number
+  roomId?: number
+  bedId?: number
+  source: number
+  reason?: string
+  expectCheckoutDate?: string
+  status: number
+}

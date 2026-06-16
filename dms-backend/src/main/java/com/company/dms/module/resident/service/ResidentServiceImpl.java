@@ -88,4 +88,11 @@ public class ResidentServiceImpl implements ResidentService {
         residentMapper.insert(r);
         return r.getId();
     }
+
+    @Override
+    public void markResigned(Long id) {
+        Resident r = getById(id);
+        r.setStatus(0);
+        residentMapper.updateById(r);
+    }
 }

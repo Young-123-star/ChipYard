@@ -16,6 +16,7 @@
           <el-menu-item index="/residents"><el-icon><User /></el-icon><span>居住人管理</span></el-menu-item>
           <el-menu-item index="/intakes"><el-icon><DocumentAdd /></el-icon><span>入住意向单</span></el-menu-item>
           <el-menu-item index="/records"><el-icon><Tickets /></el-icon><span>入住档案</span></el-menu-item>
+          <el-menu-item index="/checkout-orders"><el-icon><SwitchButton /></el-icon><span>退宿单</span></el-menu-item>
         </el-menu-item-group>
       </el-menu>
     </el-aside>
@@ -38,7 +39,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()

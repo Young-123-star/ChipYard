@@ -3,10 +3,38 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-15）
-**第二阶段第一个子项目「入住管理」已在分支 `feat/checkin-module` 完成实现并端到端联调通过（41 后端测试全过，前端 vue-tsc 零错误）。等待用户推送建 PR。** 之前的蓝色主题（PR #4）已合并入 main。
+## 当前阶段（2026-06-16 收工）
+**第二阶段第二个子项目「退宿管理」已全部实现完成，分支 `feat/checkout-module`（12 个 Task + 子 Agent 驱动 + TDD 实现）。后端 62 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
 
-### 入住管理子项目（2026-06-15，分支 feat/checkin-module，子 Agent 驱动 + 两阶段审查实现）
+### 退宿管理子项目（已实现完成，2026-06-16，分支 feat/checkout-module）
+- 设计/计划：`docs/superpowers/specs/2026-06-15-退宿管理子项目-design.md`、`docs/superpowers/plans/2026-06-15-退宿管理子项目.md`
+- 新增 `checkout` 模块（entity/mapper/dto/vo/service/controller）+ 扩 `integration/oa`（两个 webhook + 两个适配器）+ 扩 `checkin`/`resident` 服务方法。
+- 新增 1 表 `dms_checkout_order` + `dms_checkin_record` 加 `checkout_date` 列 + 一条待退宿单种子（SEED-CO-1）。
+- 关键修复：`Bed.currentUserId` 加 `@TableField(updateStrategy=FieldStrategy.ALWAYS)`，使 `release` 置 null 能持久化（入住遗留 Bug，已 live 验证 bed3 退宿后 current_user_id=null）。
+- 两个 OA webhook（`/api/integration/oa/checkout-application`、`/resignation`，需 `X-Integration-Token`，按 bizNo 幂等）匹配级联四 outcome：NO_RESIDENT / NO_ACTIVE_CHECKIN / RESIGNED_NO_CHECKIN（离职无在住置离职不建单）/ ORDER_CREATED（离职额外置居住人离职）。
+- 办理退宿 `confirm`（单 `@Transactional`）：释放床位 + 刷新房间统计 + 在住档案置已退宿+回填 checkout_date + 退宿单置已退宿。
+- 前端「入住管理」菜单组加「退宿单」页（列表/筛选/手工新建/办理退宿/取消）；types/dict/api/checkout 已加；vue-tsc 通过。
+- 后端测试：BedRelease/CheckinRecordQuery/ResidentResign/CheckoutOrderService/CheckoutConfirmService/CheckoutController/OaCheckoutWebhook，全量回归 **62 测试全过**。
+- Live 联调（curl，admin/admin123）：4 种 webhook outcome + 幂等 + 错误 token(40100) 全验证；登录→列退宿单→办理退宿→单变已退宿、bed3 释放(current_user_id=null/status=1) 全通过。中文编码正常。
+- 未做（依赖费用子项目，非目标）：费用结算/退宿检查/损坏赔偿。
+- 后续子项目：**费用**（水电费/账单/结算）。
+- 待办：浏览器可视化 E2E + 截图未做（已 live curl 全覆盖同一流程）；用户 GitHub Desktop 推送建 PR。
+
+### 下次开工第一步（退宿实现）
+1. 读本文件 + `docs/superpowers/specs/2026-06-15-退宿管理子项目-design.md` + `docs/superpowers/plans/2026-06-15-退宿管理子项目.md` 恢复上下文。
+2. 确认在分支 `feat/checkout-module`（已从最新 main 切出）。
+3. 用 **superpowers:subagent-driven-development** 照计划逐个任务实现（12 个任务，TDD + 两阶段审查 + 最后整体审查），完成后端到端联调 + 更新本文件，再交用户 GitHub Desktop 推送建 PR。
+4. 退宿后的下一个子项目：**费用**（水电费/账单/结算；退宿的费用结算挂账依赖它）。
+
+### 退宿管理子项目（设计+计划已就绪，2026-06-15，分支 feat/checkout-module）
+- 入口：OA **退宿申请单** + OA **离职单** 两个 webhook（复用 `X-Integration-Token`，按 biz_no 幂等）；保留手工新建。
+- 匹配级联四种 outcome：无居住人→NO_RESIDENT「无居住记录」；离职无在住→置离职+RESIGNED_NO_CHECKIN（不建单）；退宿申请无在住→NO_ACTIVE_CHECKIN（拒绝）；在住→建待退宿单（离职额外置居住人离职）。
+- 办理退宿（单事务）：释放床位 + 刷新房间统计 + 在住档案置已退宿+回填 checkout_date + 退宿单置已退宿。
+- 关键技术点：修复 `Bed.currentUserId` 的 `@TableField(updateStrategy=ALWAYS)`（入住遗留占位）；CheckinService 加 getRecord/findActiveRecordByResident/markCheckedOut；ResidentService 加 markResigned。
+- 新增 `checkout` 模块 + 扩 `integration/oa`；前端「入住管理」菜单组加「退宿单」页。
+- 费用结算/退宿检查/损坏赔偿 = 非目标（依赖费用子项目）。
+
+### 入住管理子项目（已合并 PR #5，2026-06-15，分支 feat/checkin-module，子 Agent 驱动 + 两阶段审查实现）
 - 设计/计划：`docs/superpowers/specs/2026-06-15-入住管理子项目-design.md`、`docs/superpowers/plans/2026-06-15-入住管理子项目.md`
 - 新增三模块：`resident`（居住人/员工档案）、`checkin`（意向单 intake + 入住档案 record）、`integration`（OA/HCP webhook 防腐层 + 出站客户端预留 + token 守卫）
 - 新增 3 表：`dms_resident`/`dms_checkin_intake`/`dms_checkin_record`（schema+seed）

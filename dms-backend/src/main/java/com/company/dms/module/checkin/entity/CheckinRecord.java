@@ -18,5 +18,6 @@ public class CheckinRecord extends BaseEntity {
     private Long roomId;
     private Long bedId;
     private LocalDate checkinDate;
+    private LocalDate checkoutDate;
     private Integer status;
 }
