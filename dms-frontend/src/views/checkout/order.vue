@@ -79,7 +79,8 @@
       <el-alert v-if="arrears.count > 0" type="warning" :closable="false" show-icon style="margin-bottom: 14px"
         :title="`待结算欠费：${arrears.count} 张 / ¥${Number(arrears.totalAmount).toFixed(2)}`"
         description="确认退宿将把以上未缴账单挂账。" />
-      <el-alert v-else type="success" :closable="false" show-icon style="margin-bottom: 14px" title="无待结算欠费" />
+      <el-alert v-else-if="arrearsLoaded" type="success" :closable="false" show-icon style="margin-bottom: 14px" title="无待结算欠费" />
+      <el-alert v-else type="info" :closable="false" show-icon style="margin-bottom: 14px" title="欠费信息加载失败，请确认后重试" />
       <el-form label-width="90px">
         <el-form-item label="退宿日期"><el-date-picker v-model="checkoutDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item>
       </el-form>
@@ -116,6 +117,7 @@ const confirmVisible = ref(false)
 const current = ref<CheckoutOrder>()
 const checkoutDate = ref<string>()
 const arrears = ref<{ count: number; totalAmount: number }>({ count: 0, totalAmount: 0 })
+const arrearsLoaded = ref(false)
 
 async function reload() {
   loading.value = true
@@ -154,9 +156,17 @@ async function openConfirm(row: CheckoutOrder) {
   current.value = row
   checkoutDate.value = undefined
   arrears.value = { count: 0, totalAmount: 0 }
+  arrearsLoaded.value = false
   confirmVisible.value = true
   if (row.checkinRecordId) {
-    arrears.value = await getArrears(row.checkinRecordId)
+    try {
+      arrears.value = await getArrears(row.checkinRecordId)
+      arrearsLoaded.value = true
+    } catch {
+      arrearsLoaded.value = false
+    }
+  } else {
+    arrearsLoaded.value = true
   }
 }
 async function onConfirm() {

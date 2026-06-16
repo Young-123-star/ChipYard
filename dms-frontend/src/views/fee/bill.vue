@@ -40,11 +40,9 @@
       <el-table-column prop="paidAt" label="缴费时间" width="170" />
       <el-table-column label="操作" width="160">
         <template #default="{ row }">
-          <template v-if="row.status === 1">
-            <el-button link type="primary" @click="openPay(row)">缴费</el-button>
-            <el-button link type="danger" @click="onVoid(row)">作废</el-button>
-          </template>
-          <span v-else style="color: var(--dms-ink-2); font-size: 12px">—</span>
+          <el-button v-if="row.status === 1 || row.status === 4" link type="primary" @click="openPay(row)">缴费</el-button>
+          <el-button v-if="row.status === 1" link type="danger" @click="onVoid(row)">作废</el-button>
+          <span v-if="row.status === 2 || row.status === 3" style="color: var(--dms-ink-2); font-size: 12px">—</span>
         </template>
       </el-table-column>
     </el-table>
