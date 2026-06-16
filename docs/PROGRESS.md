@@ -3,8 +3,20 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-16 收工）
-**第二阶段第二个子项目「退宿管理」已全部实现完成，分支 `feat/checkout-module`（12 个 Task + 子 Agent 驱动 + TDD 实现）。后端 62 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+## 当前阶段（2026-06-16 收工·下午）
+**第二阶段第三个子项目「费用管理（住宿费账单闭环）」已全部实现完成，分支 `feat/fee-module`（从合并了退宿的最新 main 切出，10 个 Task + 子 Agent 驱动 + TDD）。后端 75 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+
+### 费用管理子项目（已实现完成，2026-06-16，分支 feat/fee-module）
+- 设计/计划：`docs/superpowers/specs/2026-06-16-费用管理子项目-design.md`、`docs/superpowers/plans/2026-06-16-费用管理子项目.md`
+- 新增 `fee` 模块（entity/mapper/dto/vo/service/controller）：收费标准 `FeeStandardService` CRUD（房型唯一）+ 账单 `FeeBillService`（生成/缴费/作废/列表）。
+- 新增 2 表：`dms_fee_standard`（room_type→月单价）/`dms_fee_bill`（账单，关联在住档案 + 金额快照）+ 种子（3 收费标准 + 张三 2026-06 账单）。
+- CheckinService 加 `listActiveRecords()`（列出在住档案，供账单生成遍历）。
+- 核心流程：选账期一键生成账单（`@Transactional`，对所有在住档案各生成一张、金额=房型月单价快照、`(档案,账期)` 幂等跳过、无标准跳过并回报 `{generated,skipped}`）；缴费（未缴→已缴+时间/方式，非未缴拒绝）；作废（未缴→作废）；欠费=列表按未缴筛选。
+- 前端新增菜单组「费用管理」：收费标准页（增改删）/ 住宿费账单页（账期/状态筛选 + 汇总条 + 生成账单 + 缴费现金/转账 + 作废）。
+- 后端测试：CheckinListActive/FeeStandardService(CRUD查重)/FeeBillService(生成幂等+快照+跳过/缴费/作废状态守卫)/FeeController(鉴权)，全量回归 **75 测试全过**。
+- Live 联调（curl，admin/admin123）：收费标准列表(中文)/生成 2026-07(1/0)/幂等重生(0/1)/账单列表(张三·A102·room_type2·800.00 回显)/缴费→已缴+paidAt/重复缴费拒绝(50000)/无token→401，全通过。中文编码正常。
+- 非目标（后续）：水电抄表、押金、滞纳金/催缴、部分缴费、退宿欠费拦截/结算挂账、按天比例计费。
+- 后续可做方向：水电费抄表计费 / 押金 / 退宿欠费结算挂账（打通退宿模块）。
 
 ### 退宿管理子项目（已实现完成，2026-06-16，分支 feat/checkout-module）
 - 设计/计划：`docs/superpowers/specs/2026-06-15-退宿管理子项目-design.md`、`docs/superpowers/plans/2026-06-15-退宿管理子项目.md`

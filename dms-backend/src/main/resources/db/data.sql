@@ -41,3 +41,11 @@ VALUES ('SEED-IN-2', 2, 1, '2026-06-20', 2, 2, 1, '种子-待分配', 1, NULL, N
 
 INSERT INTO dms_checkout_order (biz_no, resident_id, checkin_record_id, source, reason, expect_checkout_date, status, raw_payload, created_at, updated_at)
 VALUES ('SEED-CO-1', 1, 1, 1, '种子-退宿申请', '2026-07-01', 1, NULL, NOW(), NOW());
+
+INSERT INTO dms_fee_standard (room_type, monthly_price, remark, created_at, updated_at) VALUES
+    (1, 1200.00, '单人间', NOW(), NOW()),
+    (2, 800.00,  '双人间', NOW(), NOW()),
+    (3, 500.00,  '四人间', NOW(), NOW());
+
+INSERT INTO dms_fee_bill (bill_no, checkin_record_id, resident_id, room_id, period, amount, status, created_at, updated_at)
+VALUES ('BILL-1-202606', 1, 1, 2, '2026-06', 800.00, 1, NOW(), NOW());

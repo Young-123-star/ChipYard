@@ -144,3 +144,27 @@ export interface CheckoutOrder {
   expectCheckoutDate?: string
   status: number
 }
+
+export interface FeeStandard {
+  id: number
+  roomType: number
+  monthlyPrice: number
+  remark?: string
+}
+
+export interface FeeBill {
+  id: number
+  billNo: string
+  checkinRecordId: number
+  residentId: number
+  residentName?: string
+  employeeNo?: string
+  roomId?: number
+  roomNumber?: string
+  roomType?: number
+  period: string
+  amount: number
+  status: number
+  paidAt?: string
+  payMethod?: number
+}

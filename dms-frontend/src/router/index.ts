@@ -16,7 +16,9 @@ const routes: RouteRecordRaw[] = [
       { path: 'residents', name: 'residents', meta: { title: '居住人管理' }, component: () => import('@/views/resident/index.vue') },
       { path: 'intakes', name: 'intakes', meta: { title: '入住意向单' }, component: () => import('@/views/checkin/intake.vue') },
       { path: 'records', name: 'records', meta: { title: '入住档案' }, component: () => import('@/views/checkin/record.vue') },
-      { path: 'checkout-orders', name: 'checkout-orders', meta: { title: '退宿单' }, component: () => import('@/views/checkout/order.vue') }
+      { path: 'checkout-orders', name: 'checkout-orders', meta: { title: '退宿单' }, component: () => import('@/views/checkout/order.vue') },
+      { path: 'fee-standards', name: 'fee-standards', meta: { title: '收费标准' }, component: () => import('@/views/fee/standard.vue') },
+      { path: 'fee-bills', name: 'fee-bills', meta: { title: '住宿费账单' }, component: () => import('@/views/fee/bill.vue') }
     ]
   }
 ]
