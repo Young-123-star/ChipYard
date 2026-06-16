@@ -12,4 +12,9 @@ public class NoopOaClient implements OaClient {
     public void notifyCheckinCompleted(String bizNo) {
         log.info("[OA-预留] 入住完成回写占位，bizNo={}", bizNo);
     }
+
+    @Override
+    public void notifyCheckoutCompleted(String bizNo) {
+        log.info("[OA-预留] 退宿完成回写占位，bizNo={}", bizNo);
+    }
 }
