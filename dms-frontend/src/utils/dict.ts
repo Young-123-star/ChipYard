@@ -76,6 +76,17 @@ export const CHECKOUT_SOURCE = [
   { value: 3, label: '手工' }
 ]
 
+export const BILL_STATUS = [
+  { value: 1, label: '未缴', type: 'warning' },
+  { value: 2, label: '已缴', type: 'success' },
+  { value: 3, label: '已作废', type: 'info' }
+]
+
+export const PAY_METHOD = [
+  { value: 1, label: '现金' },
+  { value: 2, label: '转账' }
+]
+
 export function labelOf(dict: { value: number; label: string }[], value?: number): string {
   const item = dict.find((d) => d.value === value)
   return item ? item.label : '-'
