@@ -18,6 +18,10 @@
           <el-menu-item index="/records"><el-icon><Tickets /></el-icon><span>入住档案</span></el-menu-item>
           <el-menu-item index="/checkout-orders"><el-icon><SwitchButton /></el-icon><span>退宿单</span></el-menu-item>
         </el-menu-item-group>
+        <el-menu-item-group title="费用管理">
+          <el-menu-item index="/fee-standards"><el-icon><PriceTag /></el-icon><span>收费标准</span></el-menu-item>
+          <el-menu-item index="/fee-bills"><el-icon><Money /></el-icon><span>住宿费账单</span></el-menu-item>
+        </el-menu-item-group>
       </el-menu>
     </el-aside>
     <el-container>
@@ -39,7 +43,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
