@@ -143,3 +143,31 @@ CREATE TABLE dms_checkout_order (
     updated_at           DATETIME,
     deleted_at           DATETIME
 );
+
+DROP TABLE IF EXISTS dms_fee_standard;
+CREATE TABLE dms_fee_standard (
+    id            BIGINT PRIMARY KEY AUTO_INCREMENT,
+    room_type     TINYINT        NOT NULL,
+    monthly_price DECIMAL(10,2)  NOT NULL,
+    remark        VARCHAR(200),
+    created_at    DATETIME,
+    updated_at    DATETIME,
+    deleted_at    DATETIME
+);
+
+DROP TABLE IF EXISTS dms_fee_bill;
+CREATE TABLE dms_fee_bill (
+    id                BIGINT PRIMARY KEY AUTO_INCREMENT,
+    bill_no           VARCHAR(64)   NOT NULL,
+    checkin_record_id BIGINT        NOT NULL,
+    resident_id       BIGINT        NOT NULL,
+    room_id           BIGINT,
+    period            VARCHAR(7)    NOT NULL,
+    amount            DECIMAL(10,2) NOT NULL,
+    status            TINYINT       DEFAULT 1,
+    paid_at           DATETIME,
+    pay_method        TINYINT,
+    created_at        DATETIME,
+    updated_at        DATETIME,
+    deleted_at        DATETIME
+);
