@@ -1,6 +1,7 @@
 package com.company.dms.module.checkout.vo;
 
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -17,4 +18,5 @@ public class CheckoutOrderVO {
     private String reason;
     private LocalDate expectCheckoutDate;
     private Integer status;
+    private BigDecimal arrearsAmount;
 }

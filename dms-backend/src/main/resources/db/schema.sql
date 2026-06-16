@@ -139,6 +139,7 @@ CREATE TABLE dms_checkout_order (
     expect_checkout_date DATE,
     status               TINYINT     DEFAULT 1,
     raw_payload          CLOB,
+    arrears_amount       DECIMAL(10,2) DEFAULT 0,
     created_at           DATETIME,
     updated_at           DATETIME,
     deleted_at           DATETIME

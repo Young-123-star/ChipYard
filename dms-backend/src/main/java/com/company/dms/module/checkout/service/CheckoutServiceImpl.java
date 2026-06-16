@@ -33,15 +33,18 @@ public class CheckoutServiceImpl implements CheckoutService {
     private final CheckinService checkinService;
     private final com.company.dms.module.resource.service.BedService bedService;
     private final com.company.dms.module.resource.service.RoomService roomService;
+    private final com.company.dms.module.fee.service.FeeBillService feeBillService;
 
     public CheckoutServiceImpl(CheckoutOrderMapper orderMapper, ResidentService residentService, CheckinService checkinService,
                                com.company.dms.module.resource.service.BedService bedService,
-                               com.company.dms.module.resource.service.RoomService roomService) {
+                               com.company.dms.module.resource.service.RoomService roomService,
+                               com.company.dms.module.fee.service.FeeBillService feeBillService) {
         this.orderMapper = orderMapper;
         this.residentService = residentService;
         this.checkinService = checkinService;
         this.bedService = bedService;
         this.roomService = roomService;
+        this.feeBillService = feeBillService;
     }
 
     @Override
@@ -145,6 +148,9 @@ public class CheckoutServiceImpl implements CheckoutService {
 
         // 档案归档
         checkinService.markCheckedOut(record.getId(), checkoutDate != null ? checkoutDate : LocalDate.now());
+
+        // 欠费结算挂账：未缴账单 → 挂账，回填离场欠费金额
+        order.setArrearsAmount(feeBillService.settleArrearsForRecord(record.getId()));
 
         // 退宿单完成
         order.setStatus(2);

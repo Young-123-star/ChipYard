@@ -117,7 +117,7 @@ public class FeeBillServiceImpl implements FeeBillService {
     @Override
     public void pay(Long id, Integer payMethod) {
         FeeBill b = getBill(id);
-        if (b.getStatus() != 1) throw new BizException("仅未缴账单可缴费");
+        if (b.getStatus() != 1 && b.getStatus() != 4) throw new BizException("仅未缴或挂账账单可缴费");
         b.setStatus(2);
         b.setPaidAt(LocalDateTime.now());
         b.setPayMethod(payMethod);
@@ -130,5 +130,24 @@ public class FeeBillServiceImpl implements FeeBillService {
         if (b.getStatus() != 1) throw new BizException("仅未缴账单可作废");
         b.setStatus(3);
         billMapper.updateById(b);
+    }
+
+    @Override
+    public java.util.List<FeeBill> listUnpaidByRecord(Long checkinRecordId) {
+        return billMapper.selectList(Wrappers.<FeeBill>lambdaQuery()
+                .eq(FeeBill::getCheckinRecordId, checkinRecordId)
+                .eq(FeeBill::getStatus, 1));
+    }
+
+    @Override
+    public java.math.BigDecimal settleArrearsForRecord(Long checkinRecordId) {
+        java.util.List<FeeBill> unpaid = listUnpaidByRecord(checkinRecordId);
+        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+        for (FeeBill b : unpaid) {
+            total = total.add(b.getAmount());
+            b.setStatus(4);
+            billMapper.updateById(b);
+        }
+        return total;
     }
 }

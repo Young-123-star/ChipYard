@@ -17,4 +17,8 @@ public interface FeeBillService {
     void pay(Long id, Integer payMethod);
     /** 作废：未缴 → 作废。 */
     void voidBill(Long id);
+    /** 查某在住档案的未缴(1)账单。 */
+    java.util.List<FeeBill> listUnpaidByRecord(Long checkinRecordId);
+    /** 结算挂账：该档案未缴账单置挂账(4)，返回欠费总额（无则 0）。 */
+    java.math.BigDecimal settleArrearsForRecord(Long checkinRecordId);
 }

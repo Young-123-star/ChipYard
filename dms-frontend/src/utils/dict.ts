@@ -79,7 +79,8 @@ export const CHECKOUT_SOURCE = [
 export const BILL_STATUS = [
   { value: 1, label: '未缴', type: 'warning' },
   { value: 2, label: '已缴', type: 'success' },
-  { value: 3, label: '已作废', type: 'info' }
+  { value: 3, label: '已作废', type: 'info' },
+  { value: 4, label: '挂账', type: 'danger' }
 ]
 
 export const PAY_METHOD = [

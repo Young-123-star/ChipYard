@@ -143,6 +143,7 @@ export interface CheckoutOrder {
   reason?: string
   expectCheckoutDate?: string
   status: number
+  arrearsAmount?: number
 }
 
 export interface FeeStandard {
