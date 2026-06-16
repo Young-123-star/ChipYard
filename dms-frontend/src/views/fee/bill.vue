@@ -17,7 +17,7 @@
     </el-form>
 
     <div style="margin-bottom: 10px; color: var(--dms-ink-2); font-size: 13px">
-      共 {{ total }} 张 · 已缴 {{ paidCount }} · 未缴 {{ unpaidCount }} · 金额合计 ¥{{ amountSum.toFixed(2) }}
+      共 {{ total }} 张 · 本页：已缴 {{ paidCount }} · 未缴 {{ unpaidCount }} · 金额合计 ¥{{ amountSum.toFixed(2) }}
     </div>
 
     <el-table v-loading="loading" :data="list">

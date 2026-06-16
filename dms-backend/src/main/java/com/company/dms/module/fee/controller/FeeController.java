@@ -5,6 +5,7 @@ import com.company.dms.common.result.R;
 import com.company.dms.module.fee.dto.BillQuery;
 import com.company.dms.module.fee.dto.FeeStandardDTO;
 import com.company.dms.module.fee.dto.GenerateBillsDTO;
+import com.company.dms.module.fee.dto.PayBillDTO;
 import com.company.dms.module.fee.entity.FeeStandard;
 import com.company.dms.module.fee.service.FeeBillService;
 import com.company.dms.module.fee.service.FeeStandardService;
@@ -16,7 +17,6 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Tag(name = "费用管理")
 @RestController
@@ -73,8 +73,8 @@ public class FeeController {
 
     @Operation(summary = "缴费")
     @PostMapping("/bills/{id}/pay")
-    public R<Void> pay(@PathVariable Long id, @RequestBody Map<String, Integer> body) {
-        billService.pay(id, body.get("payMethod"));
+    public R<Void> pay(@PathVariable Long id, @Valid @RequestBody PayBillDTO dto) {
+        billService.pay(id, dto.getPayMethod());
         return R.ok();
     }
 
