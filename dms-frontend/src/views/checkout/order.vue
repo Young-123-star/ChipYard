@@ -32,6 +32,12 @@
           <el-tag :type="tagTypeOf(CHECKOUT_STATUS, row.status) as any" size="small" round>{{ labelOf(CHECKOUT_STATUS, row.status) }}</el-tag>
         </template>
       </el-table-column>
+      <el-table-column label="离场欠费" width="110">
+        <template #default="{ row }">
+          <span v-if="row.arrearsAmount && row.arrearsAmount > 0" style="color: var(--el-color-danger)">¥{{ Number(row.arrearsAmount).toFixed(2) }}</span>
+          <span v-else style="color: var(--dms-ink-2)">-</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="160">
         <template #default="{ row }">
           <template v-if="row.status === 1">
@@ -70,6 +76,10 @@
         <el-descriptions-item label="居住人">{{ current?.residentName }}（{{ current?.employeeNo }}）</el-descriptions-item>
         <el-descriptions-item label="所退房间/床位">房间 {{ current?.roomId ?? '-' }} / 床位 {{ current?.bedId ?? '-' }}</el-descriptions-item>
       </el-descriptions>
+      <el-alert v-if="arrears.count > 0" type="warning" :closable="false" show-icon style="margin-bottom: 14px"
+        :title="`待结算欠费：${arrears.count} 张 / ¥${Number(arrears.totalAmount).toFixed(2)}`"
+        description="确认退宿将把以上未缴账单挂账。" />
+      <el-alert v-else type="success" :closable="false" show-icon style="margin-bottom: 14px" title="无待结算欠费" />
       <el-form label-width="90px">
         <el-form-item label="退宿日期"><el-date-picker v-model="checkoutDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item>
       </el-form>
@@ -85,6 +95,7 @@
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageCheckoutOrders, createCheckoutOrder, confirmCheckout, cancelCheckout } from '@/api/checkout'
+import { getArrears } from '@/api/fee'
 import { pageRecords } from '@/api/checkin'
 import type { CheckoutOrder, CheckinRecord } from '@/api/types'
 import { CHECKOUT_STATUS, CHECKOUT_SOURCE, labelOf, tagTypeOf } from '@/utils/dict'
@@ -104,6 +115,7 @@ const createRules = { residentId: [{ required: true, message: '请选择居住�
 const confirmVisible = ref(false)
 const current = ref<CheckoutOrder>()
 const checkoutDate = ref<string>()
+const arrears = ref<{ count: number; totalAmount: number }>({ count: 0, totalAmount: 0 })
 
 async function reload() {
   loading.value = true
@@ -138,10 +150,14 @@ async function onCreate() {
   }
 }
 
-function openConfirm(row: CheckoutOrder) {
+async function openConfirm(row: CheckoutOrder) {
   current.value = row
   checkoutDate.value = undefined
+  arrears.value = { count: 0, totalAmount: 0 }
   confirmVisible.value = true
+  if (row.checkinRecordId) {
+    arrears.value = await getArrears(row.checkinRecordId)
+  }
 }
 async function onConfirm() {
   if (!current.value) return
