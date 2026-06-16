@@ -14,4 +14,7 @@ public interface ResidentService {
     void delete(Long id);
     /** 按工号 upsert：存在则更新返回原 id，不存在则插入。source=居住人来源（1HCP 2手工 3OA）。 */
     Long upsertByEmployeeNo(ResidentSaveDTO dto, int source);
+
+    /** 标记居住人离职（status=0）。 */
+    void markResigned(Long id);
 }
