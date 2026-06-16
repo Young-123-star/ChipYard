@@ -209,4 +209,10 @@ public class CheckinServiceImpl implements CheckinService {
         r.setCheckoutDate(checkoutDate);
         recordMapper.updateById(r);
     }
+
+    @Override
+    public java.util.List<CheckinRecord> listActiveRecords() {
+        return recordMapper.selectList(Wrappers
+                .<CheckinRecord>lambdaQuery().eq(CheckinRecord::getStatus, 1));
+    }
 }

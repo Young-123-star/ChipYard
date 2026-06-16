@@ -25,4 +25,6 @@ public interface CheckinService {
     CheckinRecord findActiveRecordByResident(Long residentId);
     /** 办理退宿：置档案已退宿(2) + 回填退宿日。 */
     void markCheckedOut(Long recordId, LocalDate checkoutDate);
+    /** 列出所有在住(status=1)档案。 */
+    java.util.List<CheckinRecord> listActiveRecords();
 }
