@@ -40,3 +40,7 @@ export function payBill(id: number, data: { payMethod: number }): Promise<void> 
 export function voidBill(id: number): Promise<void> {
   return request.post(`/fee/bills/${id}/void`)
 }
+
+export function getArrears(checkinRecordId: number): Promise<{ count: number; totalAmount: number }> {
+  return request.get('/fee/arrears', { params: { checkinRecordId } })
+}
