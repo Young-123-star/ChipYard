@@ -15,7 +15,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'board', name: 'board', meta: { title: '房间状态看板' }, component: () => import('@/views/resource/board.vue') },
       { path: 'residents', name: 'residents', meta: { title: '居住人管理' }, component: () => import('@/views/resident/index.vue') },
       { path: 'intakes', name: 'intakes', meta: { title: '入住意向单' }, component: () => import('@/views/checkin/intake.vue') },
-      { path: 'records', name: 'records', meta: { title: '入住档案' }, component: () => import('@/views/checkin/record.vue') }
+      { path: 'records', name: 'records', meta: { title: '入住档案' }, component: () => import('@/views/checkin/record.vue') },
+      { path: 'checkout-orders', name: 'checkout-orders', meta: { title: '退宿单' }, component: () => import('@/views/checkout/order.vue') }
     ]
   }
 ]
