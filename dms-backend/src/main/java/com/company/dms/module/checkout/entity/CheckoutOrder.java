@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableName;
 import com.company.dms.common.mybatis.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
@@ -19,4 +20,5 @@ public class CheckoutOrder extends BaseEntity {
     private LocalDate expectCheckoutDate;
     private Integer status;
     private String rawPayload;
+    private BigDecimal arrearsAmount;
 }
