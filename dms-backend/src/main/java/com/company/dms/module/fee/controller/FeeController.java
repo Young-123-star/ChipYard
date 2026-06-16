@@ -6,9 +6,11 @@ import com.company.dms.module.fee.dto.BillQuery;
 import com.company.dms.module.fee.dto.FeeStandardDTO;
 import com.company.dms.module.fee.dto.GenerateBillsDTO;
 import com.company.dms.module.fee.dto.PayBillDTO;
+import com.company.dms.module.fee.entity.FeeBill;
 import com.company.dms.module.fee.entity.FeeStandard;
 import com.company.dms.module.fee.service.FeeBillService;
 import com.company.dms.module.fee.service.FeeStandardService;
+import com.company.dms.module.fee.vo.ArrearsVO;
 import com.company.dms.module.fee.vo.FeeBillVO;
 import com.company.dms.module.fee.vo.GenerateResultVO;
 import io.swagger.v3.oas.annotations.Operation;
@@ -16,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Tag(name = "费用管理")
@@ -83,5 +86,13 @@ public class FeeController {
     public R<Void> voidBill(@PathVariable Long id) {
         billService.voidBill(id);
         return R.ok();
+    }
+
+    @Operation(summary = "查在住档案待结算欠费（预览）")
+    @GetMapping("/arrears")
+    public R<ArrearsVO> arrears(@RequestParam Long checkinRecordId) {
+        List<FeeBill> unpaid = billService.listUnpaidByRecord(checkinRecordId);
+        BigDecimal total = unpaid.stream().map(FeeBill::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+        return R.ok(ArrearsVO.of(unpaid.size(), total));
     }
 }
