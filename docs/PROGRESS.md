@@ -3,8 +3,19 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
-## 当前阶段（2026-06-16 收工·晚）
-**第二阶段第四个子项目「退宿欠费结算挂账（费用×退宿打通）」已全部实现完成，分支 `feat/checkout-arrears`（从最新 main 切出，7 个 Task + 子 Agent 驱动 + TDD）。后端 83 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 费用管理（PR #7）、退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+## 当前阶段（2026-06-17 收工）
+**第二阶段第五个子项目「水电费抄表计费」已全部实现完成，分支 `feat/utility-billing`（从最新 main 切出，10 个 Task + TDD；本轮子 Agent 派发遇 API 529 持续过载，改为主循环内联实现，仍逐 Task 红→绿+提交）。后端 100 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 退宿欠费挂账（PR #8）、费用管理（PR #7）、退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+
+### 水电费抄表计费子项目（已实现完成，2026-06-17，分支 feat/utility-billing）
+- 设计/计划：`docs/superpowers/specs/2026-06-17-水电费抄表计费-design.md`、`docs/superpowers/plans/2026-06-17-水电费抄表计费.md`
+- 按房间抄水/电表 → 用量×全局单价算费 → 按房间在住人均摊（余数并入第一张）→ 复用 `dms_fee_bill`（加 `bill_type` 1住宿费/2电费/3水费 + `remark`）开账单，自动走缴费/退宿挂账/欠费预览。
+- 新增 2 表：`dms_meter_reading`（抄表台账，幂等键 room+period+type）/`dms_utility_rate`（单行单价配置）+ 种子（电1.00/水5.00 + A102 房 2026-06 电30/水40 抄表）。
+- 两步流程：`MeterService.saveReading`（自动取上期读数、算用量金额、幂等 upsert）→ `generateUtilityBills`（`@Transactional` 按在住人均摊建单）。
+- 衔接：`getByRecordAndPeriod` 加 billType 参数、住宿费 generate 限定 bill_type=1 防串味；`CheckinService.listActiveRecordsByRoom`；账单列表加 billType 筛选。`createUtilityBill` 落 UBILL-E/W 单号。
+- 前端：「费用管理」加「抄表/水电」页（单价配置 + 楼栋→房间联动录入 + 台账表 + 生成账单）；账单页加类型列/筛选 + 明细列。
+- 后端测试：FeeBillType（类型隔离）/MeterService（抄表自动算量幂等）/UtilityBillGenerate（均摊+余数+无在住跳过+幂等）/MeterController（接口鉴权）/CheckinActiveByRoom，全量回归 **100 测试全过**。
+- Live 联调（curl，admin/admin123）：单价/台账/生成(2·0)/电费账单回显 remark「电费 30.00度×1.00 ÷1人」/录入 2026-07/幂等重生(0·2)，全通过。
+- 非目标（后续）：阶梯水电价、按期可变单价、整栋总表分摊、滞纳金、用量趋势图。
 
 ### 退宿欠费结算挂账子项目（已实现完成，2026-06-16，分支 feat/checkout-arrears）
 - 设计/计划：`docs/superpowers/specs/2026-06-16-退宿欠费结算挂账-design.md`、`docs/superpowers/plans/2026-06-16-退宿欠费结算挂账.md`

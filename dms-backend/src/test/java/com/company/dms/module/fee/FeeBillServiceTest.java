@@ -24,7 +24,7 @@ class FeeBillServiceTest {
         // 张三 record1 在住，room2=room_type2，标准 800.00；账期 2026-07 尚无账单
         GenerateResultVO r = billService.generate("2026-07");
         assertEquals(1, r.getGenerated(), "应为张三生成 1 张");
-        FeeBill bill = billService.getByRecordAndPeriod(1L, "2026-07");
+        FeeBill bill = billService.getByRecordAndPeriod(1L, "2026-07", 1);
         assertNotNull(bill);
         assertEquals(0, new BigDecimal("800.00").compareTo(bill.getAmount()), "金额=房型月单价快照");
         assertEquals(1, bill.getStatus(), "新账单未缴");

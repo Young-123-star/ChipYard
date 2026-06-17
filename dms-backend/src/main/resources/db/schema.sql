@@ -168,6 +168,34 @@ CREATE TABLE dms_fee_bill (
     status            TINYINT       DEFAULT 1,
     paid_at           DATETIME,
     pay_method        TINYINT,
+    bill_type         TINYINT       DEFAULT 1,
+    remark            VARCHAR(200),
+    created_at        DATETIME,
+    updated_at        DATETIME,
+    deleted_at        DATETIME
+);
+
+DROP TABLE IF EXISTS dms_meter_reading;
+CREATE TABLE dms_meter_reading (
+    id              BIGINT PRIMARY KEY AUTO_INCREMENT,
+    room_id         BIGINT        NOT NULL,
+    period          VARCHAR(7)    NOT NULL,
+    meter_type      TINYINT       NOT NULL,
+    prev_reading    DECIMAL(12,2) DEFAULT 0,
+    current_reading DECIMAL(12,2) NOT NULL,
+    consumption     DECIMAL(12,2) DEFAULT 0,
+    unit_price      DECIMAL(10,2) DEFAULT 0,
+    amount          DECIMAL(10,2) DEFAULT 0,
+    created_at      DATETIME,
+    updated_at      DATETIME,
+    deleted_at      DATETIME
+);
+
+DROP TABLE IF EXISTS dms_utility_rate;
+CREATE TABLE dms_utility_rate (
+    id                BIGINT PRIMARY KEY AUTO_INCREMENT,
+    electricity_price DECIMAL(10,2) NOT NULL,
+    water_price       DECIMAL(10,2) NOT NULL,
     created_at        DATETIME,
     updated_at        DATETIME,
     deleted_at        DATETIME

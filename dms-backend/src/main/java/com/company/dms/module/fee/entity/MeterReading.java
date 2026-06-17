@@ -5,22 +5,18 @@ import com.company.dms.common.mybatis.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("dms_fee_bill")
-public class FeeBill extends BaseEntity {
+@TableName("dms_meter_reading")
+public class MeterReading extends BaseEntity {
     private Long id;
-    private String billNo;
-    private Long checkinRecordId;
-    private Long residentId;
     private Long roomId;
     private String period;
+    private Integer meterType;
+    private BigDecimal prevReading;
+    private BigDecimal currentReading;
+    private BigDecimal consumption;
+    private BigDecimal unitPrice;
     private BigDecimal amount;
-    private Integer status;
-    private LocalDateTime paidAt;
-    private Integer payMethod;
-    private Integer billType;
-    private String remark;
 }

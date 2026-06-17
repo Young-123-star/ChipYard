@@ -5,14 +5,20 @@ import com.company.dms.common.result.R;
 import com.company.dms.module.fee.dto.BillQuery;
 import com.company.dms.module.fee.dto.FeeStandardDTO;
 import com.company.dms.module.fee.dto.GenerateBillsDTO;
+import com.company.dms.module.fee.dto.MeterQuery;
+import com.company.dms.module.fee.dto.MeterReadingDTO;
 import com.company.dms.module.fee.dto.PayBillDTO;
+import com.company.dms.module.fee.dto.UtilityRateDTO;
 import com.company.dms.module.fee.entity.FeeBill;
 import com.company.dms.module.fee.entity.FeeStandard;
+import com.company.dms.module.fee.entity.UtilityRate;
 import com.company.dms.module.fee.service.FeeBillService;
 import com.company.dms.module.fee.service.FeeStandardService;
+import com.company.dms.module.fee.service.MeterService;
 import com.company.dms.module.fee.vo.ArrearsVO;
 import com.company.dms.module.fee.vo.FeeBillVO;
 import com.company.dms.module.fee.vo.GenerateResultVO;
+import com.company.dms.module.fee.vo.MeterReadingVO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -28,10 +34,12 @@ public class FeeController {
 
     private final FeeStandardService standardService;
     private final FeeBillService billService;
+    private final MeterService meterService;
 
-    public FeeController(FeeStandardService standardService, FeeBillService billService) {
+    public FeeController(FeeStandardService standardService, FeeBillService billService, MeterService meterService) {
         this.standardService = standardService;
         this.billService = billService;
+        this.meterService = meterService;
     }
 
     // ---- 收费标准 ----
@@ -94,5 +102,37 @@ public class FeeController {
         List<FeeBill> unpaid = billService.listUnpaidByRecord(checkinRecordId);
         BigDecimal total = unpaid.stream().map(FeeBill::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
         return R.ok(ArrearsVO.of(unpaid.size(), total));
+    }
+
+    // ---- 水电抄表 ----
+    @Operation(summary = "查水电单价")
+    @GetMapping("/utility-rate")
+    public R<UtilityRate> utilityRate() {
+        return R.ok(meterService.getRate());
+    }
+
+    @Operation(summary = "改水电单价")
+    @PutMapping("/utility-rate")
+    public R<Void> updateRate(@Valid @RequestBody UtilityRateDTO dto) {
+        meterService.updateRate(dto);
+        return R.ok();
+    }
+
+    @Operation(summary = "抄表台账分页")
+    @GetMapping("/meter-readings")
+    public R<PageResult<MeterReadingVO>> meterReadings(MeterQuery query) {
+        return R.ok(meterService.pageReadings(query));
+    }
+
+    @Operation(summary = "录入/更新抄表读数")
+    @PostMapping("/meter-readings")
+    public R<Long> saveReading(@Valid @RequestBody MeterReadingDTO dto) {
+        return R.ok(meterService.saveReading(dto));
+    }
+
+    @Operation(summary = "按账期生成水电账单")
+    @PostMapping("/utility-bills/generate")
+    public R<GenerateResultVO> generateUtility(@Valid @RequestBody GenerateBillsDTO dto) {
+        return R.ok(meterService.generateUtilityBills(dto.getPeriod()));
     }
 }

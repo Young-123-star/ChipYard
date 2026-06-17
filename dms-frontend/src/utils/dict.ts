@@ -88,6 +88,17 @@ export const PAY_METHOD = [
   { value: 2, label: '转账' }
 ]
 
+export const BILL_TYPE = [
+  { value: 1, label: '住宿费' },
+  { value: 2, label: '电费' },
+  { value: 3, label: '水费' }
+]
+
+export const METER_TYPE = [
+  { value: 1, label: '电表' },
+  { value: 2, label: '水表' }
+]
+
 export function labelOf(dict: { value: number; label: string }[], value?: number): string {
   const item = dict.find((d) => d.value === value)
   return item ? item.label : '-'

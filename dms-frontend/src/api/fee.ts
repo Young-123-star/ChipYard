@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { FeeStandard, FeeBill, PageResult } from './types'
+import type { FeeStandard, FeeBill, UtilityRate, MeterReading, PageResult } from './types'
 
 export function listStandards(): Promise<FeeStandard[]> {
   return request.get('/fee/standards')
@@ -20,6 +20,7 @@ export function deleteStandard(id: number): Promise<void> {
 export interface BillQuery {
   period?: string
   status?: number
+  billType?: number
   residentId?: number
   page?: number
   size?: number
@@ -43,4 +44,32 @@ export function voidBill(id: number): Promise<void> {
 
 export function getArrears(checkinRecordId: number): Promise<{ count: number; totalAmount: number }> {
   return request.get('/fee/arrears', { params: { checkinRecordId } })
+}
+
+export function getUtilityRate(): Promise<UtilityRate> {
+  return request.get('/fee/utility-rate')
+}
+
+export function updateUtilityRate(data: { electricityPrice: number; waterPrice: number }): Promise<void> {
+  return request.put('/fee/utility-rate', data)
+}
+
+export interface MeterQuery {
+  period?: string
+  roomId?: number
+  meterType?: number
+  page?: number
+  size?: number
+}
+
+export function pageMeterReadings(params: MeterQuery): Promise<PageResult<MeterReading>> {
+  return request.get('/fee/meter-readings', { params })
+}
+
+export function saveMeterReading(data: { roomId: number; period: string; meterType: number; currentReading: number }): Promise<number> {
+  return request.post('/fee/meter-readings', data)
+}
+
+export function generateUtilityBills(data: { period: string }): Promise<{ generated: number; skipped: number }> {
+  return request.post('/fee/utility-bills/generate', data)
 }

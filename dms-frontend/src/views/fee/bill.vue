@@ -10,6 +10,11 @@
           <el-option v-for="s in BILL_STATUS" :key="s.value" :label="s.label" :value="s.value" />
         </el-select>
       </el-form-item>
+      <el-form-item label="类型">
+        <el-select v-model="query.billType" placeholder="全部" clearable style="width: 110px" @change="reload">
+          <el-option v-for="t in BILL_TYPE" :key="t.value" :label="t.label" :value="t.value" />
+        </el-select>
+      </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="reload">查询</el-button>
         <el-button type="success" @click="openGenerate">生成账单</el-button>
@@ -29,9 +34,13 @@
         <template #default="{ row }">{{ row.roomNumber ?? '-' }}</template>
       </el-table-column>
       <el-table-column prop="period" label="账期" width="100" />
+      <el-table-column label="类型" width="90">
+        <template #default="{ row }">{{ labelOf(BILL_TYPE, row.billType ?? 1) }}</template>
+      </el-table-column>
       <el-table-column label="金额" width="110">
         <template #default="{ row }">¥{{ Number(row.amount).toFixed(2) }}</template>
       </el-table-column>
+      <el-table-column prop="remark" label="明细" show-overflow-tooltip />
       <el-table-column label="状态" width="90">
         <template #default="{ row }">
           <el-tag :type="tagTypeOf(BILL_STATUS, row.status) as any" size="small" round>{{ labelOf(BILL_STATUS, row.status) }}</el-tag>
@@ -91,13 +100,13 @@ import { reactive, ref, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageBills, generateBills, payBill, voidBill } from '@/api/fee'
 import type { FeeBill } from '@/api/types'
-import { BILL_STATUS, PAY_METHOD, labelOf, tagTypeOf } from '@/utils/dict'
+import { BILL_STATUS, BILL_TYPE, PAY_METHOD, labelOf, tagTypeOf } from '@/utils/dict'
 
 const loading = ref(false)
 const saving = ref(false)
 const list = ref<FeeBill[]>([])
 const total = ref(0)
-const query = reactive({ period: undefined as string | undefined, status: undefined as number | undefined, page: 1, size: 10 })
+const query = reactive({ period: undefined as string | undefined, status: undefined as number | undefined, billType: undefined as number | undefined, page: 1, size: 10 })
 
 const paidCount = computed(() => list.value.filter((b) => b.status === 2).length)
 const unpaidCount = computed(() => list.value.filter((b) => b.status === 1).length)
