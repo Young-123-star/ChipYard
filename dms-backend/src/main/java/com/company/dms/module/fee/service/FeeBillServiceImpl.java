@@ -83,10 +83,11 @@ public class FeeBillServiceImpl implements FeeBillService {
     }
 
     @Override
-    public FeeBill getByRecordAndPeriod(Long checkinRecordId, String period) {
+    public FeeBill getByRecordAndPeriod(Long checkinRecordId, String period, Integer billType) {
         return billMapper.selectOne(Wrappers.<FeeBill>lambdaQuery()
                 .eq(FeeBill::getCheckinRecordId, checkinRecordId)
                 .eq(FeeBill::getPeriod, period)
+                .eq(FeeBill::getBillType, billType)
                 .last("limit 1"));
     }
 
@@ -99,7 +100,7 @@ public class FeeBillServiceImpl implements FeeBillService {
             Room room = roomService.getById(rec.getRoomId());
             FeeStandard std = standardService.findByRoomType(room.getRoomType());
             if (std == null) { skipped++; continue; }                 // 无收费标准
-            if (getByRecordAndPeriod(rec.getId(), period) != null) { skipped++; continue; } // 幂等
+            if (getByRecordAndPeriod(rec.getId(), period, 1) != null) { skipped++; continue; } // 幂等(住宿费)
             FeeBill bill = new FeeBill();
             bill.setBillNo("BILL-" + rec.getId() + "-" + period.replace("-", ""));
             bill.setCheckinRecordId(rec.getId());
@@ -107,6 +108,7 @@ public class FeeBillServiceImpl implements FeeBillService {
             bill.setRoomId(rec.getRoomId());
             bill.setPeriod(period);
             bill.setAmount(std.getMonthlyPrice());
+            bill.setBillType(1);
             bill.setStatus(1);
             billMapper.insert(bill);
             generated++;
@@ -130,6 +132,24 @@ public class FeeBillServiceImpl implements FeeBillService {
         if (b.getStatus() != 1) throw new BizException("仅未缴账单可作废");
         b.setStatus(3);
         billMapper.updateById(b);
+    }
+
+    @Override
+    public Long createUtilityBill(Long checkinRecordId, Long residentId, Long roomId, String period,
+                                  Integer billType, java.math.BigDecimal amount, String remark) {
+        FeeBill bill = new FeeBill();
+        String code = billType == 2 ? "E" : "W";
+        bill.setBillNo("UBILL-" + code + "-" + checkinRecordId + "-" + period.replace("-", ""));
+        bill.setCheckinRecordId(checkinRecordId);
+        bill.setResidentId(residentId);
+        bill.setRoomId(roomId);
+        bill.setPeriod(period);
+        bill.setBillType(billType);
+        bill.setAmount(amount);
+        bill.setRemark(remark);
+        bill.setStatus(1);
+        billMapper.insert(bill);
+        return bill.getId();
     }
 
     @Override
