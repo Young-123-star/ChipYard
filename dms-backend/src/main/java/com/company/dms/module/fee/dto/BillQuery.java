@@ -6,6 +6,7 @@ import lombok.Data;
 public class BillQuery {
     private String period;
     private Integer status;
+    private Integer billType;
     private Long residentId;
     private long page = 1;
     private long size = 10;

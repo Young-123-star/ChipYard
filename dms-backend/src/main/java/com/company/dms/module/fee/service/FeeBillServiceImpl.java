@@ -50,6 +50,7 @@ public class FeeBillServiceImpl implements FeeBillService {
                 Wrappers.<FeeBill>lambdaQuery()
                         .eq(query.getPeriod() != null && !query.getPeriod().isBlank(), FeeBill::getPeriod, query.getPeriod())
                         .eq(query.getStatus() != null, FeeBill::getStatus, query.getStatus())
+                        .eq(query.getBillType() != null, FeeBill::getBillType, query.getBillType())
                         .eq(query.getResidentId() != null, FeeBill::getResidentId, query.getResidentId())
                         .orderByDesc(FeeBill::getId));
         Page<FeeBillVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
