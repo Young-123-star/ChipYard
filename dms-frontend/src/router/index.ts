@@ -19,7 +19,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'checkout-orders', name: 'checkout-orders', meta: { title: '退宿单' }, component: () => import('@/views/checkout/order.vue') },
       { path: 'fee-standards', name: 'fee-standards', meta: { title: '收费标准' }, component: () => import('@/views/fee/standard.vue') },
       { path: 'fee-bills', name: 'fee-bills', meta: { title: '住宿费账单' }, component: () => import('@/views/fee/bill.vue') },
-      { path: 'fee-meter', name: 'fee-meter', meta: { title: '抄表/水电' }, component: () => import('@/views/fee/meter.vue') }
+      { path: 'fee-meter', name: 'fee-meter', meta: { title: '抄表/水电' }, component: () => import('@/views/fee/meter.vue') },
+      { path: 'report', name: 'report', meta: { title: '统计报表' }, component: () => import('@/views/report/index.vue') }
     ]
   }
 ]

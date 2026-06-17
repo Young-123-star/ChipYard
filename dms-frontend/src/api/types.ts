@@ -190,3 +190,37 @@ export interface MeterReading {
   unitPrice: number
   amount: number
 }
+
+export interface PeriodSummary {
+  period: string
+  rentTotal: number
+  elecTotal: number
+  waterTotal: number
+  total: number
+  paid: number
+  unpaid: number
+  collectRate: number
+}
+
+export interface BuildingSummary {
+  buildingId: number
+  buildingName: string
+  total: number
+  paid: number
+  unpaid: number
+  collectRate: number
+}
+
+export interface ArrearsRank {
+  residentId: number
+  residentName?: string
+  employeeNo?: string
+  unpaidAmount: number
+  unpaidCount: number
+}
+
+export interface UsageTrend {
+  period: string
+  electricity: number
+  water: number
+}
