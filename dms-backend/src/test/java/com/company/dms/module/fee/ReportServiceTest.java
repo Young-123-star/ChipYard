@@ -20,6 +20,7 @@ class ReportServiceTest {
 
     @Autowired ReportService reportService;
     @Autowired FeeBillMapper billMapper;
+    @Autowired com.company.dms.module.fee.mapper.MeterReadingMapper readingMapper;
 
     private int seq = 0;
 
@@ -98,6 +99,40 @@ class ReportServiceTest {
         assertEquals(0, unpaid0.add(new BigDecimal("60.00")).compareTo(vo.getUnpaid()));
         assertEquals(0, vo.getPaid().add(vo.getUnpaid()).compareTo(vo.getTotal()),
                 "应收=已缴+未缴（作废已排除）");
+    }
+
+    private void reading(String period, int meterType, String consumption) {
+        com.company.dms.module.fee.entity.MeterReading m = new com.company.dms.module.fee.entity.MeterReading();
+        m.setRoomId(2L);
+        m.setPeriod(period);
+        m.setMeterType(meterType);
+        m.setPrevReading(BigDecimal.ZERO);
+        m.setCurrentReading(new BigDecimal(consumption));
+        m.setConsumption(new BigDecimal(consumption));
+        m.setUnitPrice(BigDecimal.ONE);
+        m.setAmount(new BigDecimal(consumption));
+        readingMapper.insert(m);
+    }
+
+    private com.company.dms.module.fee.vo.UsageTrendVO usage(String period) {
+        return reportService.getUsageTrend().stream()
+                .filter(v -> v.getPeriod().equals(period)).findFirst().orElseThrow();
+    }
+
+    @Test
+    void usage_trend_sums_by_type_and_period() {
+        reading("2099-07", 1, "55.00");  // 电
+        reading("2099-07", 1, "45.00");  // 电
+        reading("2099-07", 2, "20.00");  // 水
+
+        com.company.dms.module.fee.vo.UsageTrendVO vo = usage("2099-07");
+        assertEquals(0, new BigDecimal("100.00").compareTo(vo.getElectricity()), "电用量合计");
+        assertEquals(0, new BigDecimal("20.00").compareTo(vo.getWater()), "水用量合计");
+
+        List<com.company.dms.module.fee.vo.UsageTrendVO> list = reportService.getUsageTrend();
+        for (int i = 1; i < list.size(); i++) {
+            assertTrue(list.get(i - 1).getPeriod().compareTo(list.get(i).getPeriod()) <= 0, "period 升序");
+        }
     }
 
     @Test

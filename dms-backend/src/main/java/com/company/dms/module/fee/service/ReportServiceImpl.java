@@ -17,15 +17,18 @@ import java.util.TreeMap;
 public class ReportServiceImpl implements ReportService {
 
     private final FeeBillMapper billMapper;
+    private final com.company.dms.module.fee.mapper.MeterReadingMapper readingMapper;
     private final com.company.dms.module.resource.service.RoomService roomService;
     private final com.company.dms.module.resource.service.BuildingService buildingService;
     private final com.company.dms.module.resident.service.ResidentService residentService;
 
     public ReportServiceImpl(FeeBillMapper billMapper,
+                             com.company.dms.module.fee.mapper.MeterReadingMapper readingMapper,
                              com.company.dms.module.resource.service.RoomService roomService,
                              com.company.dms.module.resource.service.BuildingService buildingService,
                              com.company.dms.module.resident.service.ResidentService residentService) {
         this.billMapper = billMapper;
+        this.readingMapper = readingMapper;
         this.roomService = roomService;
         this.buildingService = buildingService;
         this.residentService = residentService;
@@ -131,5 +134,26 @@ public class ReportServiceImpl implements ReportService {
                         com.company.dms.module.fee.vo.ArrearsRankVO::getUnpaidAmount).reversed())
                 .limit(top)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public List<com.company.dms.module.fee.vo.UsageTrendVO> getUsageTrend() {
+        List<com.company.dms.module.fee.entity.MeterReading> readings =
+                readingMapper.selectList(Wrappers.<com.company.dms.module.fee.entity.MeterReading>lambdaQuery());
+        Map<String, com.company.dms.module.fee.vo.UsageTrendVO> map = new TreeMap<>(); // period 升序
+        for (com.company.dms.module.fee.entity.MeterReading m : readings) {
+            com.company.dms.module.fee.vo.UsageTrendVO vo = map.computeIfAbsent(m.getPeriod(), p -> {
+                com.company.dms.module.fee.vo.UsageTrendVO v = new com.company.dms.module.fee.vo.UsageTrendVO();
+                v.setPeriod(p);
+                v.setElectricity(BigDecimal.ZERO);
+                v.setWater(BigDecimal.ZERO);
+                return v;
+            });
+            if (m.getMeterType() != null && m.getMeterType() == 1)
+                vo.setElectricity(vo.getElectricity().add(m.getConsumption()));
+            else if (m.getMeterType() != null && m.getMeterType() == 2)
+                vo.setWater(vo.getWater().add(m.getConsumption()));
+        }
+        return new ArrayList<>(map.values());
     }
 }
