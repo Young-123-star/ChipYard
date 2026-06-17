@@ -75,4 +75,28 @@ class ReportServiceTest {
                     "period 升序");
         }
     }
+
+    private com.company.dms.module.fee.vo.BuildingSummaryVO building(long buildingId) {
+        return reportService.getBuildingSummary().stream()
+                .filter(v -> v.getBuildingId().equals(buildingId)).findFirst().orElseThrow();
+    }
+
+    @Test
+    void building_summary_aggregates_and_resolves_name() {
+        // 种子已有 room2(building1) 一张未缴 800；用 delta 断言避免种子干扰
+        com.company.dms.module.fee.vo.BuildingSummaryVO base = building(1L);
+        BigDecimal paid0 = base.getPaid();
+        BigDecimal unpaid0 = base.getUnpaid();
+
+        bill("2099-05", 1, "500.00", 2, 1L);  // room2→building1 已缴
+        bill("2099-05", 2, "60.00", 1, 1L);   // room2→building1 未缴
+        bill("2099-05", 1, "999.00", 3, 1L);  // 作废 → 不计
+
+        com.company.dms.module.fee.vo.BuildingSummaryVO vo = building(1L);
+        assertEquals("A栋员工宿舍", vo.getBuildingName());
+        assertEquals(0, paid0.add(new BigDecimal("500.00")).compareTo(vo.getPaid()));
+        assertEquals(0, unpaid0.add(new BigDecimal("60.00")).compareTo(vo.getUnpaid()));
+        assertEquals(0, vo.getPaid().add(vo.getUnpaid()).compareTo(vo.getTotal()),
+                "应收=已缴+未缴（作废已排除）");
+    }
 }
