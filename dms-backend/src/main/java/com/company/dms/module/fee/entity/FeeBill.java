@@ -21,4 +21,6 @@ public class FeeBill extends BaseEntity {
     private Integer status;
     private LocalDateTime paidAt;
     private Integer payMethod;
+    private Integer billType;
+    private String remark;
 }
