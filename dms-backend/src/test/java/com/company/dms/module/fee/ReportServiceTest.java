@@ -99,4 +99,31 @@ class ReportServiceTest {
         assertEquals(0, vo.getPaid().add(vo.getUnpaid()).compareTo(vo.getTotal()),
                 "应收=已缴+未缴（作废已排除）");
     }
+
+    @Test
+    void arrears_ranking_groups_sorts_and_limits() {
+        // resident 2：未缴+挂账共 1000.00 / 3 张（独立账期，避免种子干扰）
+        bill("2099-06", 1, "600.00", 1, 2L);  // 未缴
+        bill("2099-06", 2, "300.00", 4, 2L);  // 挂账
+        bill("2099-06", 3, "100.00", 1, 2L);  // 未缴
+        bill("2099-06", 1, "777.00", 2, 2L);  // 已缴 → 不计欠费
+        bill("2099-06", 1, "888.00", 3, 2L);  // 作废 → 不计欠费
+
+        List<com.company.dms.module.fee.vo.ArrearsRankVO> rank = reportService.getArrearsRanking(10);
+        com.company.dms.module.fee.vo.ArrearsRankVO r2 = rank.stream()
+                .filter(v -> v.getResidentId().equals(2L)).findFirst().orElseThrow();
+        assertEquals(0, new BigDecimal("1000.00").compareTo(r2.getUnpaidAmount()), "仅未缴+挂账");
+        assertEquals(3, r2.getUnpaidCount());
+        assertNotNull(r2.getResidentName(), "回显居住人姓名");
+
+        // 降序
+        for (int i = 1; i < rank.size(); i++) {
+            assertTrue(rank.get(i - 1).getUnpaidAmount().compareTo(rank.get(i).getUnpaidAmount()) >= 0,
+                    "按欠费额降序");
+        }
+        // limit 生效：resident2(1000) > 种子 resident1(800)，top1 必为 resident2
+        List<com.company.dms.module.fee.vo.ArrearsRankVO> top1 = reportService.getArrearsRanking(1);
+        assertEquals(1, top1.size());
+        assertEquals(2L, top1.get(0).getResidentId());
+    }
 }

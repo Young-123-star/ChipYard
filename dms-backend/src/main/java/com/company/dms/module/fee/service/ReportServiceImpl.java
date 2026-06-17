@@ -19,13 +19,16 @@ public class ReportServiceImpl implements ReportService {
     private final FeeBillMapper billMapper;
     private final com.company.dms.module.resource.service.RoomService roomService;
     private final com.company.dms.module.resource.service.BuildingService buildingService;
+    private final com.company.dms.module.resident.service.ResidentService residentService;
 
     public ReportServiceImpl(FeeBillMapper billMapper,
                              com.company.dms.module.resource.service.RoomService roomService,
-                             com.company.dms.module.resource.service.BuildingService buildingService) {
+                             com.company.dms.module.resource.service.BuildingService buildingService,
+                             com.company.dms.module.resident.service.ResidentService residentService) {
         this.billMapper = billMapper;
         this.roomService = roomService;
         this.buildingService = buildingService;
+        this.residentService = residentService;
     }
 
     /** 收缴率 = paid×100/total，2 位 HALF_UP；total 为 0 时返回 0。 */
@@ -98,5 +101,35 @@ public class ReportServiceImpl implements ReportService {
             vo.setCollectRate(collectRate(vo.getPaid(), vo.getTotal()));
         }
         return result;
+    }
+
+    @Override
+    public List<com.company.dms.module.fee.vo.ArrearsRankVO> getArrearsRanking(int limit) {
+        int top = limit <= 0 ? 10 : limit;
+        List<FeeBill> bills = billMapper.selectList(
+                Wrappers.<FeeBill>lambdaQuery().in(FeeBill::getStatus, 1, 4)); // 未缴 + 挂账
+        Map<Long, com.company.dms.module.fee.vo.ArrearsRankVO> map = new java.util.HashMap<>();
+        for (FeeBill b : bills) {
+            com.company.dms.module.fee.vo.ArrearsRankVO vo = map.get(b.getResidentId());
+            if (vo == null) {
+                vo = new com.company.dms.module.fee.vo.ArrearsRankVO();
+                vo.setResidentId(b.getResidentId());
+                vo.setUnpaidAmount(BigDecimal.ZERO);
+                vo.setUnpaidCount(0);
+                try {
+                    com.company.dms.module.resident.entity.Resident r = residentService.getById(b.getResidentId());
+                    vo.setResidentName(r.getRealName());
+                    vo.setEmployeeNo(r.getEmployeeNo());
+                } catch (Exception ignore) { /* 居住人不存在则留空 */ }
+                map.put(b.getResidentId(), vo);
+            }
+            vo.setUnpaidAmount(vo.getUnpaidAmount().add(b.getAmount()));
+            vo.setUnpaidCount(vo.getUnpaidCount() + 1);
+        }
+        return map.values().stream()
+                .sorted(java.util.Comparator.comparing(
+                        com.company.dms.module.fee.vo.ArrearsRankVO::getUnpaidAmount).reversed())
+                .limit(top)
+                .collect(java.util.stream.Collectors.toList());
     }
 }

@@ -1,5 +1,6 @@
 package com.company.dms.module.fee.service;
 
+import com.company.dms.module.fee.vo.ArrearsRankVO;
 import com.company.dms.module.fee.vo.BuildingSummaryVO;
 import com.company.dms.module.fee.vo.PeriodSummaryVO;
 import java.util.List;
@@ -10,4 +11,7 @@ public interface ReportService {
 
     /** 按楼栋汇总（buildingId 升序）。 */
     List<BuildingSummaryVO> getBuildingSummary();
+
+    /** 欠费排行（未缴+挂账，按欠费额降序取前 limit；limit<=0 视为 10）。 */
+    List<ArrearsRankVO> getArrearsRanking(int limit);
 }
