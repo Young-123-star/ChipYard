@@ -27,4 +27,6 @@ public interface CheckinService {
     void markCheckedOut(Long recordId, LocalDate checkoutDate);
     /** 列出所有在住(status=1)档案。 */
     java.util.List<CheckinRecord> listActiveRecords();
+    /** 按房间取在住(status=1)档案。 */
+    java.util.List<CheckinRecord> listActiveRecordsByRoom(Long roomId);
 }

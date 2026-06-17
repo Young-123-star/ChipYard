@@ -215,4 +215,12 @@ public class CheckinServiceImpl implements CheckinService {
         return recordMapper.selectList(Wrappers
                 .<CheckinRecord>lambdaQuery().eq(CheckinRecord::getStatus, 1));
     }
+
+    @Override
+    public java.util.List<CheckinRecord> listActiveRecordsByRoom(Long roomId) {
+        return recordMapper.selectList(Wrappers
+                .<CheckinRecord>lambdaQuery()
+                .eq(CheckinRecord::getStatus, 1)
+                .eq(CheckinRecord::getRoomId, roomId));
+    }
 }
