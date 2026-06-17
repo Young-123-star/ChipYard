@@ -4,7 +4,17 @@
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
 ## 当前阶段（2026-06-17 收工）
-**第二阶段第五个子项目「水电费抄表计费」已全部实现完成，分支 `feat/utility-billing`（从最新 main 切出，10 个 Task + TDD；本轮子 Agent 派发遇 API 529 持续过载，改为主循环内联实现，仍逐 Task 红→绿+提交）。后端 100 测试全过，live curl 端到端联调通过。待用户用 GitHub Desktop 推送建 PR。** 退宿欠费挂账（PR #8）、费用管理（PR #7）、退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+**第二阶段第六个子项目「账单报表/用量趋势」已全部实现完成，分支 `feat/report-stats`（从最新 main 切出，8 个 Task + TDD，子 Agent 驱动逐 Task 实现+两阶段审查+最终整体审查）。后端全量回归 111 测试全过，前端 `vue-tsc --noEmit` 零错误。待用户用 GitHub Desktop 推送建 PR（基于 main，无合并顺序约束）。** 水电费抄表计费（PR #9）、退宿欠费挂账（PR #8）、费用管理（PR #7）、退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
+
+### 账单报表/用量趋势子项目（已实现完成，2026-06-17，分支 feat/report-stats）
+- 设计/计划：`docs/superpowers/specs/2026-06-17-账单报表用量趋势-design.md`、`docs/superpowers/plans/2026-06-17-账单报表用量趋势.md`
+- 只读统计模块：对 `dms_fee_bill` + `dms_meter_reading` 做内存聚合，**不新增表、纯读**。`module/fee` 下新增 `ReportService`/`ReportServiceImpl`/`ReportController` + 4 个 VO，名称回显复用 `RoomService`/`BuildingService`/`ResidentService`。
+- 四个接口（均 GET、JWT、挂 `/api/report`）：`period-summary`（按账期，住宿/电/水拆分+收缴率）、`building-summary`（按楼栋）、`arrears-ranking?limit=10`（欠费排行）、`usage-trend`（水电用量趋势）。
+- 统一口径：应收=非作废账单(status≠3)；已缴=status2；未缴=status1(未缴)+4(挂账)；收缴率=已缴×100/应收（2 位 HALF_UP，应收0→0）；billType 2电/3水/其余住宿。全程 `BigDecimal`，`TreeMap` 实现 period/buildingId 升序。
+- 前端：引入 `echarts`+`vue-echarts`（`main.ts` 按需注册 + 全局 `<v-chart>`）；新增菜单组「统计报表」+ `views/report/index.vue` 一页（账期组合图柱+收缴率双轴 / 用量趋势折线 / 楼栋横向柱 / 欠费 Top10 表）；`api/report.ts` + types 加 4 VO 接口。
+- 后端测试：ReportServiceTest（账期拆分+收缴率+作废不计+未缴含挂账+total0→0+升序、楼栋 delta 断言+名称回显、欠费分组+降序+limit、用量按表型分账期合计）、ReportControllerTest（四接口+鉴权401），全量回归 **111 测试全过**。前端 `vue-tsc --noEmit` 零错误。
+- 已知（非本次范围）：`npm run build`（vue-tsc -b）因 **既有** `vite.config.ts` 引 `node:url` 而项目未装 `@types/node` 报错（main 上同样存在，与本功能无关，沿用既有 `vue-tsc --noEmit` 门禁）。
+- 非目标（后续）：报表导出 CSV/Excel、按房间/楼层下钻、自定义时间范围、同比/环比、定时快照/缓存。
 
 ### 水电费抄表计费子项目（已实现完成，2026-06-17，分支 feat/utility-billing）
 - 设计/计划：`docs/superpowers/specs/2026-06-17-水电费抄表计费-design.md`、`docs/superpowers/plans/2026-06-17-水电费抄表计费.md`
