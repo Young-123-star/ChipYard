@@ -168,4 +168,25 @@ export interface FeeBill {
   status: number
   paidAt?: string
   payMethod?: number
+  billType?: number
+  remark?: string
+}
+
+export interface UtilityRate {
+  id: number
+  electricityPrice: number
+  waterPrice: number
+}
+
+export interface MeterReading {
+  id: number
+  roomId: number
+  roomNumber?: string
+  period: string
+  meterType: number
+  prevReading: number
+  currentReading: number
+  consumption: number
+  unitPrice: number
+  amount: number
 }
