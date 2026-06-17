@@ -14,13 +14,17 @@ import com.company.dms.module.fee.mapper.MeterReadingMapper;
 import com.company.dms.module.fee.mapper.UtilityRateMapper;
 import com.company.dms.module.fee.vo.GenerateResultVO;
 import com.company.dms.module.fee.vo.MeterReadingVO;
+import com.company.dms.module.checkin.entity.CheckinRecord;
+import com.company.dms.module.checkin.service.CheckinService;
 import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.service.RoomService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,11 +33,16 @@ public class MeterServiceImpl implements MeterService {
     private final MeterReadingMapper readingMapper;
     private final UtilityRateMapper rateMapper;
     private final RoomService roomService;
+    private final CheckinService checkinService;
+    private final FeeBillService feeBillService;
 
-    public MeterServiceImpl(MeterReadingMapper readingMapper, UtilityRateMapper rateMapper, RoomService roomService) {
+    public MeterServiceImpl(MeterReadingMapper readingMapper, UtilityRateMapper rateMapper, RoomService roomService,
+                            CheckinService checkinService, FeeBillService feeBillService) {
         this.readingMapper = readingMapper;
         this.rateMapper = rateMapper;
         this.roomService = roomService;
+        this.checkinService = checkinService;
+        this.feeBillService = feeBillService;
     }
 
     @Override
@@ -114,7 +123,32 @@ public class MeterServiceImpl implements MeterService {
     }
 
     @Override
+    @Transactional
     public GenerateResultVO generateUtilityBills(String period) {
-        throw new UnsupportedOperationException("在 Task 6 实现");
+        List<MeterReading> readings = readingMapper.selectList(Wrappers.<MeterReading>lambdaQuery()
+                .eq(MeterReading::getPeriod, period));
+        int generated = 0, skipped = 0;
+        for (MeterReading reading : readings) {
+            List<CheckinRecord> occupants = checkinService.listActiveRecordsByRoom(reading.getRoomId());
+            if (occupants.isEmpty()) { skipped++; continue; }              // 无在住，无法分摊
+            Integer billType = reading.getMeterType() == 1 ? 2 : 3;        // 电→2 水→3
+            // 幂等：该读数已生成（以第一个在住人是否已有该期该类型账单为准）
+            if (feeBillService.getByRecordAndPeriod(occupants.get(0).getId(), period, billType) != null) {
+                skipped++; continue;
+            }
+            int n = occupants.size();
+            BigDecimal each = reading.getAmount().divide(BigDecimal.valueOf(n), 2, RoundingMode.HALF_UP);
+            BigDecimal remainder = reading.getAmount().subtract(each.multiply(BigDecimal.valueOf(n)));
+            String unit = reading.getMeterType() == 1 ? "度" : "吨";
+            String typeName = reading.getMeterType() == 1 ? "电费" : "水费";
+            String remark = typeName + " " + reading.getConsumption() + unit + "×" + reading.getUnitPrice() + " ÷" + n + "人";
+            for (int i = 0; i < n; i++) {
+                CheckinRecord occ = occupants.get(i);
+                BigDecimal share = i == 0 ? each.add(remainder) : each;
+                feeBillService.createUtilityBill(occ.getId(), occ.getResidentId(), reading.getRoomId(), period, billType, share, remark);
+                generated++;
+            }
+        }
+        return GenerateResultVO.of(generated, skipped);
     }
 }
