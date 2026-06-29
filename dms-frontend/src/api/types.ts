@@ -224,3 +224,22 @@ export interface UsageTrend {
   electricity: number
   water: number
 }
+
+export interface RepairOrder {
+  id: number
+  orderNo: string
+  roomId: number
+  roomNumber?: string
+  buildingName?: string
+  residentId?: number
+  residentName?: string
+  title: string
+  description?: string
+  priority: number
+  status: number
+  handler?: string
+  acceptedAt?: string
+  result?: string
+  completedAt?: string
+  remark?: string
+}

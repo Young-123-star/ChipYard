@@ -200,3 +200,23 @@ CREATE TABLE dms_utility_rate (
     updated_at        DATETIME,
     deleted_at        DATETIME
 );
+
+DROP TABLE IF EXISTS dms_repair_order;
+CREATE TABLE dms_repair_order (
+    id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+    order_no     VARCHAR(64)  NOT NULL,
+    room_id      BIGINT       NOT NULL,
+    resident_id  BIGINT,
+    title        VARCHAR(100) NOT NULL,
+    description  VARCHAR(500),
+    priority     TINYINT      DEFAULT 1,
+    status       TINYINT      DEFAULT 1,
+    handler      VARCHAR(50),
+    accepted_at  DATETIME,
+    result       VARCHAR(500),
+    completed_at DATETIME,
+    remark       VARCHAR(200),
+    created_at   DATETIME,
+    updated_at   DATETIME,
+    deleted_at   DATETIME
+);
