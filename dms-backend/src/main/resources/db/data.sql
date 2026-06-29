@@ -56,3 +56,8 @@ VALUES (1, 1.00, 5.00, NOW(), NOW());
 INSERT INTO dms_meter_reading (room_id, period, meter_type, prev_reading, current_reading, consumption, unit_price, amount, created_at, updated_at) VALUES
     (2, '2026-06', 1, 100.00, 130.00, 30.00, 1.00, 30.00, NOW(), NOW()),
     (2, '2026-06', 2, 50.00,  58.00,  8.00,  5.00, 40.00, NOW(), NOW());
+
+INSERT INTO dms_repair_order (order_no, room_id, resident_id, title, description, priority, status, handler, accepted_at, result, completed_at, remark, created_at, updated_at)
+VALUES ('SEED-RO-1', 2, 1, '空调漏水', 'A102 空调内机滴水', 2, 1, NULL, NULL, NULL, NULL, '种子-待受理', NOW(), NOW()),
+       ('SEED-RO-2', 1, NULL, '门锁松动', 'A101 门锁松动需检修', 1, 2, '维修班张工', NOW(), NULL, NULL, '种子-处理中', NOW(), NOW()),
+       ('SEED-RO-3', 2, 1, '灯管损坏', '已更换灯管', 1, 3, '维修班李工', NOW(), '已更换灯管', NOW(), '种子-已完成', NOW(), NOW());

@@ -20,7 +20,8 @@ const routes: RouteRecordRaw[] = [
       { path: 'fee-standards', name: 'fee-standards', meta: { title: '收费标准' }, component: () => import('@/views/fee/standard.vue') },
       { path: 'fee-bills', name: 'fee-bills', meta: { title: '住宿费账单' }, component: () => import('@/views/fee/bill.vue') },
       { path: 'fee-meter', name: 'fee-meter', meta: { title: '抄表/水电' }, component: () => import('@/views/fee/meter.vue') },
-      { path: 'report', name: 'report', meta: { title: '统计报表' }, component: () => import('@/views/report/index.vue') }
+      { path: 'report', name: 'report', meta: { title: '统计报表' }, component: () => import('@/views/report/index.vue') },
+      { path: 'repair-orders', name: 'repair-orders', meta: { title: '维修工单' }, component: () => import('@/views/repair/index.vue') }
     ]
   }
 ]

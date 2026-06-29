@@ -99,6 +99,19 @@ export const METER_TYPE = [
   { value: 2, label: '水表' }
 ]
 
+
+export const REPAIR_STATUS = [
+  { value: 1, label: '待受理', type: 'warning' },
+  { value: 2, label: '处理中', type: 'primary' },
+  { value: 3, label: '已完成', type: 'success' },
+  { value: 4, label: '已取消', type: 'info' }
+]
+
+export const REPAIR_PRIORITY = [
+  { value: 1, label: '普通', type: 'info' },
+  { value: 2, label: '紧急', type: 'danger' }
+]
+
 export function labelOf(dict: { value: number; label: string }[], value?: number): string {
   const item = dict.find((d) => d.value === value)
   return item ? item.label : '-'

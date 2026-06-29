@@ -23,6 +23,9 @@
           <el-menu-item index="/fee-bills"><el-icon><Money /></el-icon><span>住宿费账单</span></el-menu-item>
           <el-menu-item index="/fee-meter"><el-icon><Odometer /></el-icon><span>抄表/水电</span></el-menu-item>
         </el-menu-item-group>
+        <el-menu-item-group title="维修管理">
+          <el-menu-item index="/repair-orders"><el-icon><Tools /></el-icon><span>维修工单</span></el-menu-item>
+        </el-menu-item-group>
         <el-menu-item-group title="统计报表">
           <el-menu-item index="/report"><el-icon><TrendCharts /></el-icon><span>账单报表</span></el-menu-item>
         </el-menu-item-group>
@@ -47,7 +50,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money, Odometer, TrendCharts } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money, Odometer, TrendCharts, Tools } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()
