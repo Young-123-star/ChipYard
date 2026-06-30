@@ -20,6 +20,7 @@ import com.company.dms.module.resource.service.BuildingService;
 import com.company.dms.module.resource.service.RoomService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -81,6 +82,7 @@ public class RepairServiceImpl implements RepairService {
     }
 
     @Override
+    @Transactional
     public void accept(Long id, RepairAcceptDTO dto) {
         RepairOrder order = getOrder(id);
         if (order.getStatus() != 1) throw new BizException("only pending repair order can be accepted");
@@ -88,9 +90,11 @@ public class RepairServiceImpl implements RepairService {
         order.setHandler(dto.getHandler());
         order.setAcceptedAt(LocalDateTime.now());
         repairOrderMapper.updateById(order);
+        roomService.updateStatus(order.getRoomId(), 3);
     }
 
     @Override
+    @Transactional
     public void complete(Long id, RepairCompleteDTO dto) {
         RepairOrder order = getOrder(id);
         if (order.getStatus() != 2) throw new BizException("only processing repair order can be completed");
@@ -98,14 +102,25 @@ public class RepairServiceImpl implements RepairService {
         order.setResult(dto.getResult());
         order.setCompletedAt(LocalDateTime.now());
         repairOrderMapper.updateById(order);
+        refreshRoomIfNoProcessingOrders(order.getRoomId());
     }
 
     @Override
+    @Transactional
     public void cancel(Long id) {
         RepairOrder order = getOrder(id);
         if (order.getStatus() != 1 && order.getStatus() != 2) throw new BizException("only pending or processing repair order can be canceled");
+        boolean wasProcessing = order.getStatus() == 2;
         order.setStatus(4);
         repairOrderMapper.updateById(order);
+        if (wasProcessing) refreshRoomIfNoProcessingOrders(order.getRoomId());
+    }
+
+    private void refreshRoomIfNoProcessingOrders(Long roomId) {
+        Long processing = repairOrderMapper.selectCount(Wrappers.<RepairOrder>lambdaQuery()
+                .eq(RepairOrder::getRoomId, roomId)
+                .eq(RepairOrder::getStatus, 2));
+        if (processing == 0) roomService.restoreStatusFromOccupancy(roomId);
     }
 
     private String nextOrderNo() {

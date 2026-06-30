@@ -132,4 +132,24 @@ public class RoomServiceImpl implements RoomService {
         }
         roomMapper.updateById(room);
     }
+
+    @Override
+    public void updateStatus(Long roomId, Integer status) {
+        Room room = getById(roomId);
+        room.setStatus(status);
+        roomMapper.updateById(room);
+    }
+
+    @Override
+    public void restoreStatusFromOccupancy(Long roomId) {
+        Room room = getById(roomId);
+        long occupied = bedMapper.selectCount(com.baomidou.mybatisplus.core.toolkit.Wrappers.<com.company.dms.module.resource.entity.Bed>lambdaQuery()
+                .eq(com.company.dms.module.resource.entity.Bed::getRoomId, roomId)
+                .eq(com.company.dms.module.resource.entity.Bed::getStatus, 2));
+        room.setOccupiedBeds((int) occupied);
+        int bedCount = room.getBedCount() == null ? 0 : room.getBedCount();
+        room.setStatus(occupied >= bedCount ? 2 : 1);
+        roomMapper.updateById(room);
+    }
+
 }

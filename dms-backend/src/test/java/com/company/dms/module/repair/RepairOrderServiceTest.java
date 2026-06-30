@@ -9,6 +9,7 @@ import com.company.dms.module.repair.dto.RepairQuery;
 import com.company.dms.module.repair.entity.RepairOrder;
 import com.company.dms.module.repair.service.RepairService;
 import com.company.dms.module.repair.vo.RepairOrderVO;
+import com.company.dms.module.resource.service.RoomService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RepairOrderServiceTest {
 
     @Autowired RepairService repairService;
+    @Autowired RoomService roomService;
 
     @Test
     void create_generates_pending_order() {
@@ -100,6 +102,39 @@ class RepairOrderServiceTest {
         assertEquals("A102", vo.getRoomNumber());
         assertEquals("A栋员工宿舍", vo.getBuildingName());
         assertEquals("张三", vo.getResidentName());
+    }
+
+    @Test
+    void accept_marks_room_repairing_and_complete_restores_room_status() {
+        Long id = createPending();
+
+        RepairAcceptDTO accept = new RepairAcceptDTO();
+        accept.setHandler("worker a");
+        repairService.accept(id, accept);
+
+        assertEquals(3, roomService.getById(2L).getStatus());
+
+        RepairCompleteDTO complete = new RepairCompleteDTO();
+        complete.setResult("fixed");
+        repairService.complete(id, complete);
+
+        assertEquals(1, roomService.getById(2L).getStatus());
+    }
+
+    @Test
+    void cancel_processing_restores_room_status_after_last_processing_order() {
+        Long first = createPending();
+        Long second = createPending();
+        RepairAcceptDTO accept = new RepairAcceptDTO();
+        accept.setHandler("worker a");
+        repairService.accept(first, accept);
+        repairService.accept(second, accept);
+
+        repairService.cancel(first);
+        assertEquals(3, roomService.getById(2L).getStatus());
+
+        repairService.cancel(second);
+        assertEquals(1, roomService.getById(2L).getStatus());
     }
 
     private Long createPending() {
