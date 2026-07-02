@@ -104,7 +104,7 @@ CREATE TABLE dms_checkin_intake (
     building_id_req     BIGINT,
     remark              VARCHAR(500),
     status              TINYINT     DEFAULT 1,
-    raw_payload         CLOB,
+    raw_payload         TEXT,
     created_at          DATETIME,
     updated_at          DATETIME,
     deleted_at          DATETIME
@@ -138,7 +138,7 @@ CREATE TABLE dms_checkout_order (
     reason               VARCHAR(500),
     expect_checkout_date DATE,
     status               TINYINT     DEFAULT 1,
-    raw_payload          CLOB,
+    raw_payload          TEXT,
     arrears_amount       DECIMAL(10,2) DEFAULT 0,
     created_at           DATETIME,
     updated_at           DATETIME,

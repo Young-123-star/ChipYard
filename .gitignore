@@ -25,3 +25,6 @@ out*.txt
 
 # 本地服务器运行日志
 *.log
+
+# Docker deployment secrets
+.env
