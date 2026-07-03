@@ -13,6 +13,8 @@ spring:
       encoding: UTF-8
       schema-locations: classpath:db/schema.sql
       data-locations: classpath:db/data.sql
+  flyway:
+    enabled: false
   h2:
     console:
       enabled: true
