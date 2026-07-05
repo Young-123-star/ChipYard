@@ -40,14 +40,16 @@
 - 页面冒烟：用户已验证页面正常。
 - 暂不改 README；README 等项目进入相对稳定版本后再整理为项目入口页。
 
-### 2026-07-05 部署后安全小修（已完成，待推送/部署）
+### 2026-07-05 部署后安全小修（已完成并部署）
 - 处理 Spring Security generated password warning：新增显式 `UserDetailsService` bean，不提供默认用户；项目登录仍走既有 `/api/auth/login` + JWT 流程。
 - 生产密钥配置收敛：`application-prod.yml` 移除 `JWT_SECRET` / `INTEGRATION_TOKEN` 默认 fallback，生产环境必须由服务器环境变量显式提供。
 - 验证：`SecurityConfigTest`、`AuthControllerTest`、`JwtUtilTest` 通过；后端全量 `mvn test` 通过，124 tests passed；测试启动日志不再出现 generated password warning。
-- 部署前检查：服务器 `.env` 必须已有非空 `JWT_SECRET` 和 `INTEGRATION_TOKEN`，否则 prod 启动会失败。
+- 部署验证：服务器 `.env` 已确认有非空 `JWT_SECRET` 和 `INTEGRATION_TOKEN`；通过 SSH remote 拉取远程后 `docker compose up -d --build` 重建成功。
+- 日志验证：后端 `prod` profile 正常启动，Flyway schema version 3 已是最新；`Using generated security password` warning 已消失。
+- 页面冒烟：用户已验证登录和页面正常。
+
 ### 下一步候选（不发散）
-- 下一步部署本次安全小修：推送远程后服务器先确认 `.env` 中 `JWT_SECRET` / `INTEGRATION_TOKEN` 存在，再 `git pull --ff-only origin main && docker compose up -d --build`。
-- 后续业务如继续做维修，只优先考虑小闭环增强：维修工单联动房间「维修中」状态；维修费用、SLA、维修人员实体、报修端继续后置。
+- 下一步可进入小闭环业务增强：维修工单联动房间「维修中」状态；维修费用、SLA、维修人员实体、报修端继续后置。
 - 报表增强优先级靠后；如做，先做 CSV 导出，Excel/缓存/同比环比暂不做。
 
 ## 当前阶段（2026-06-17 收工）
