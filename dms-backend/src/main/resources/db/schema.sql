@@ -25,7 +25,8 @@ CREATE TABLE dms_building (
     remark        VARCHAR(500),
     created_at    DATETIME,
     updated_at    DATETIME,
-    deleted_at    DATETIME
+    deleted_at    DATETIME,
+    active_unique_key TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END)
 );
 
 DROP TABLE IF EXISTS dms_floor;
@@ -59,7 +60,8 @@ CREATE TABLE dms_room (
     remark        VARCHAR(500),
     created_at    DATETIME,
     updated_at    DATETIME,
-    deleted_at    DATETIME
+    deleted_at    DATETIME,
+    active_unique_key TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END)
 );
 
 DROP TABLE IF EXISTS dms_bed;
@@ -72,7 +74,8 @@ CREATE TABLE dms_bed (
     status          TINYINT DEFAULT 1,
     created_at      DATETIME,
     updated_at      DATETIME,
-    deleted_at      DATETIME
+    deleted_at      DATETIME,
+    active_unique_key TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END)
 );
 
 DROP TABLE IF EXISTS dms_resident;
@@ -220,3 +223,6 @@ CREATE TABLE dms_repair_order (
     updated_at   DATETIME,
     deleted_at   DATETIME
 );
+CREATE UNIQUE INDEX uk_dms_building_code_active ON dms_building (building_code, active_unique_key);
+CREATE UNIQUE INDEX uk_dms_room_building_number_active ON dms_room (building_id, room_number, active_unique_key);
+CREATE UNIQUE INDEX uk_dms_bed_room_number_active ON dms_bed (room_id, bed_number, active_unique_key);

@@ -24,6 +24,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public R<Void> handleOther(Exception e) {
-        return R.fail(ResultCode.SYSTEM_ERROR.getCode(), e.getMessage());
+        return R.fail(ResultCode.SYSTEM_ERROR);
     }
 }

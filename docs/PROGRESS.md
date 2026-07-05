@@ -3,6 +3,44 @@
 > 每次开发推进前先读本文件恢复上下文；推进结束前更新本文件。
 > 设计文档：`docs/superpowers/specs/2026-06-11-宿舍管理系统DEMO-design.md`
 
+## 当前阶段（2026-07-05）
+**项目 DEMO 已部署到服务器，当前进入生产化收敛阶段。** README 仅临时记录过 2026-07-03 的部署安全化改造；README 暂不作为开发流水账，后续仍以本文件恢复上下文。
+
+### 已部署/版本基线
+- 本地 `main` 跟踪 `origin/main`，当前工作区干净。
+- 最近部署安全化改造：`c9dc615 chore: harden docker database deployment 20260703`。
+- 前端版本：`dms-frontend/package.json` = `0.0.1`。
+- 后端版本：`dms-backend/pom.xml` = `0.0.1-SNAPSHOT`。
+- 生产部署方式：Docker Compose + MySQL 8；生产数据库迁移由 Flyway 管理，详见 `docs/DEPLOY.md`。
+
+### 2026-07-03 部署安全化改造（已完成）
+- 背景：项目已部署到服务器，生产 MySQL 会产生真实数据，不能继续依赖 `SQL_INIT_MODE=always` 反复执行 `schema.sql/data.sql`。
+- 生产 `prod` 环境关闭 Spring SQL 初始化：`spring.sql.init.mode=never`。
+- 生产 `prod` 环境启用 Flyway：`classpath:db/migration`，并开启 `baseline-on-migrate` 兼容服务器已有库。
+- 新增生产迁移脚本：`V1__init_schema.sql`、`V2__demo_seed_data.sql`。
+- 从 `docker-compose.yml` / `.env.example` 移除 `SQL_INIT_MODE`。
+- 新增部署文档：`docs/DEPLOY.md`；明确不要执行 `docker compose down -v`。
+- 验证记录：后端 `mvn test`，共 120 个测试通过。
+
+### 维修工单管理（文档显示已完成，需纳入当前基线）
+- 设计/计划：`docs/superpowers/specs/2026-06-17-维修工单管理-design.md`、`docs/superpowers/plans/2026-06-17-维修工单管理.md`。
+- PR 文档：`docs/PR-维修工单管理.md`。
+- 范围：新增后端 `repair` 模块；新增 `dms_repair_order` 表和 3 条演示种子；前端新增「维修管理 / 维修工单」页面；支持建单、列表、详情、受理、完成、取消。
+- 验证记录：后端 `mvn test` 118 tests passed；前端 `npm run build` 通过。
+- 非目标：不联动房间状态，不生成维修费用账单，不接 OA/webhook 或居住人自助端。
+
+### 2026-07-05 生产化收敛（已完成）
+- 完善本进度文档，补齐部署后基线与维修工单状态。
+- 全局未知异常提示收敛：兜底异常不再把内部 `e.getMessage()` 返回前端，统一返回 `ResultCode.SYSTEM_ERROR`；业务异常、参数校验等用户可见提示保持原逻辑。
+- DB 核心唯一约束：本地 H2 `schema.sql` 同步约束；生产新增 Flyway `V3__resource_active_unique_constraints.sql`，覆盖 `building_code`、`building_id + room_number`、`room_id + bed_number`。
+- 验证：后端 `mvn test` 通过，123 tests passed。
+- 暂不改 README；README 等项目进入相对稳定版本后再整理为项目入口页。
+
+### 下一步候选（不发散）
+- 先完成当前三项生产化收敛并跑回归。
+- 后续业务如继续做维修，只优先考虑小闭环增强：维修工单联动房间「维修中」状态；维修费用、SLA、维修人员实体、报修端继续后置。
+- 报表增强优先级靠后；如做，先做 CSV 导出，Excel/缓存/同比环比暂不做。
+
 ## 当前阶段（2026-06-17 收工）
 **第二阶段第六个子项目「账单报表/用量趋势」已全部实现完成，分支 `feat/report-stats`（从最新 main 切出，8 个 Task + TDD，子 Agent 驱动逐 Task 实现+两阶段审查+最终整体审查）。后端全量回归 111 测试全过，前端 `vue-tsc --noEmit` 零错误。待用户用 GitHub Desktop 推送建 PR（基于 main，无合并顺序约束）。** 水电费抄表计费（PR #9）、退宿欠费挂账（PR #8）、费用管理（PR #7）、退宿管理（PR #6）、入住管理（PR #5）、蓝色主题（PR #4）均已合并入 main。
 
