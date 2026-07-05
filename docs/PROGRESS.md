@@ -34,10 +34,14 @@
 - 全局未知异常提示收敛：兜底异常不再把内部 `e.getMessage()` 返回前端，统一返回 `ResultCode.SYSTEM_ERROR`；业务异常、参数校验等用户可见提示保持原逻辑。
 - DB 核心唯一约束：本地 H2 `schema.sql` 同步约束；生产新增 Flyway `V3__resource_active_unique_constraints.sql`，覆盖 `building_code`、`building_id + room_number`、`room_id + bed_number`。
 - 验证：后端 `mvn test` 通过，123 tests passed。
+- 远程同步：本地 `main` 与 `origin/main` 均指向 `28fb57c chore: production hardening and DB constraints`。
+- 服务器部署：`docker compose up -d --build` 后 `mysql` healthy，`backend`/`frontend` 均 Up；后端以 `prod` profile 启动。
+- Flyway 线上状态：`V3__resource_active_unique_constraints.sql` 已成功执行，`flyway_schema_history` 显示 version 3 `resource active unique constraints` success=1。
+- 页面冒烟：用户已验证页面正常。
 - 暂不改 README；README 等项目进入相对稳定版本后再整理为项目入口页。
 
 ### 下一步候选（不发散）
-- 先完成当前三项生产化收敛并跑回归。
+- 下一步先做部署后安全小修：处理 Spring Security generated password warning，并确认生产 `JWT_SECRET` / `INTEGRATION_TOKEN` 非默认值。
 - 后续业务如继续做维修，只优先考虑小闭环增强：维修工单联动房间「维修中」状态；维修费用、SLA、维修人员实体、报修端继续后置。
 - 报表增强优先级靠后；如做，先做 CSV 导出，Excel/缓存/同比环比暂不做。
 
