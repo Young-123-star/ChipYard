@@ -18,7 +18,7 @@ spring:
 
 dms:
   jwt:
-    secret: ${JWT_SECRET:change-this-secret-before-deploying-chipyard}
+    secret: ${JWT_SECRET}
 
 integration:
-  token: ${INTEGRATION_TOKEN:change-this-token-before-deploying-chipyard}
+  token: ${INTEGRATION_TOKEN}
