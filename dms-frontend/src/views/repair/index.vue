@@ -47,8 +47,8 @@
 
     <el-dialog v-model='createVisible' title='新建维修工单' width='520px'>
       <el-form ref='createRef' :model='createForm' :rules='createRules' label-width='90px'>
-        <el-form-item label='房间ID' prop='roomId'><el-input-number v-model='createForm.roomId' :min='1' style='width: 100%' /></el-form-item>
-        <el-form-item label='报修人ID'><el-input-number v-model='createForm.residentId' :min='1' style='width: 100%' /></el-form-item>
+        <el-form-item label='房间' prop='roomCode'><el-input v-model='createForm.roomCode' placeholder='房间号或ID' style='width: 100%' /></el-form-item>
+        <el-form-item label='报修人'><el-input v-model='createForm.residentCode' placeholder='工号或ID' style='width: 100%' /></el-form-item>
         <el-form-item label='故障简述' prop='title'><el-input v-model='createForm.title' /></el-form-item>
         <el-form-item label='紧急程度'><el-select v-model='createForm.priority' style='width: 100%'><el-option v-for='p in REPAIR_PRIORITY' :key='p.value' :label='p.label' :value='p.value' /></el-select></el-form-item>
         <el-form-item label='描述'><el-input v-model='createForm.description' type='textarea' /></el-form-item>
@@ -86,8 +86,8 @@ const query = reactive({ status: undefined as number | undefined, priority: unde
 
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
-const createForm = reactive<{ roomId?: number; residentId?: number; title?: string; description?: string; priority?: number }>({ priority: 1 })
-const createRules = { roomId: [{ required: true, message: '请输入房间ID', trigger: 'blur' }], title: [{ required: true, message: '请输入故障简述', trigger: 'blur' }] }
+const createForm = reactive<{ roomCode?: string; residentCode?: string; title?: string; description?: string; priority?: number }>({ priority: 1 })
+const createRules = { roomCode: [{ required: true, message: '请输入房间号或ID', trigger: 'blur' }], title: [{ required: true, message: '请输入故障简述', trigger: 'blur' }] }
 
 const current = ref<RepairOrder>()
 const acceptVisible = ref(false)
@@ -106,7 +106,7 @@ async function reload() {
   }
 }
 function onPageChange(page: number) { query.page = page; reload() }
-function openCreate() { Object.assign(createForm, { roomId: undefined, residentId: undefined, title: '', description: '', priority: 1 }); createVisible.value = true }
+function openCreate() { Object.assign(createForm, { roomCode: '', residentCode: '', title: '', description: '', priority: 1 }); createVisible.value = true }
 async function onCreate() {
   await createRef.value?.validate()
   saving.value = true

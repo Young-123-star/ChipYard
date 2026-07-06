@@ -43,6 +43,20 @@ class RepairOrderServiceTest {
     }
 
     @Test
+    void create_accepts_room_number_and_employee_no() {
+        RepairCreateDTO dto = new RepairCreateDTO();
+        dto.setRoomCode("A102");
+        dto.setResidentCode("E1001");
+        dto.setTitle("door");
+
+        Long id = repairService.create(dto);
+
+        RepairOrder order = repairService.getOrder(id);
+        assertEquals(2L, order.getRoomId());
+        assertEquals(1L, order.getResidentId());
+    }
+
+    @Test
     void create_rejects_missing_room() {
         RepairCreateDTO dto = new RepairCreateDTO();
         dto.setRoomId(999L);

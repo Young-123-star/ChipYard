@@ -1,14 +1,14 @@
 package com.company.dms.module.repair.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
 public class RepairCreateDTO {
-    @NotNull
     private Long roomId;
     private Long residentId;
+    private String roomCode;
+    private String residentCode;
     @NotBlank
     private String title;
     private String description;
