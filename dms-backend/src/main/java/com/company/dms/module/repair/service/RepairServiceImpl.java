@@ -69,6 +69,7 @@ public class RepairServiceImpl implements RepairService {
     }
 
     @Override
+    @Transactional
     public Long create(RepairCreateDTO dto) {
         roomService.getById(dto.getRoomId());
         if (dto.getResidentId() != null) residentService.getById(dto.getResidentId());
@@ -78,6 +79,7 @@ public class RepairServiceImpl implements RepairService {
         order.setPriority(dto.getPriority() == null ? 1 : dto.getPriority());
         order.setStatus(1);
         repairOrderMapper.insert(order);
+        roomService.updateStatus(order.getRoomId(), 3);
         return order.getId();
     }
 
@@ -102,7 +104,7 @@ public class RepairServiceImpl implements RepairService {
         order.setResult(dto.getResult());
         order.setCompletedAt(LocalDateTime.now());
         repairOrderMapper.updateById(order);
-        refreshRoomIfNoProcessingOrders(order.getRoomId());
+        refreshRoomIfNoOpenOrders(order.getRoomId());
     }
 
     @Override
@@ -110,17 +112,16 @@ public class RepairServiceImpl implements RepairService {
     public void cancel(Long id) {
         RepairOrder order = getOrder(id);
         if (order.getStatus() != 1 && order.getStatus() != 2) throw new BizException("only pending or processing repair order can be canceled");
-        boolean wasProcessing = order.getStatus() == 2;
         order.setStatus(4);
         repairOrderMapper.updateById(order);
-        if (wasProcessing) refreshRoomIfNoProcessingOrders(order.getRoomId());
+        refreshRoomIfNoOpenOrders(order.getRoomId());
     }
 
-    private void refreshRoomIfNoProcessingOrders(Long roomId) {
-        Long processing = repairOrderMapper.selectCount(Wrappers.<RepairOrder>lambdaQuery()
+    private void refreshRoomIfNoOpenOrders(Long roomId) {
+        Long open = repairOrderMapper.selectCount(Wrappers.<RepairOrder>lambdaQuery()
                 .eq(RepairOrder::getRoomId, roomId)
-                .eq(RepairOrder::getStatus, 2));
-        if (processing == 0) roomService.restoreStatusFromOccupancy(roomId);
+                .in(RepairOrder::getStatus, 1, 2));
+        if (open == 0) roomService.restoreStatusFromOccupancy(roomId);
     }
 
     private String nextOrderNo() {

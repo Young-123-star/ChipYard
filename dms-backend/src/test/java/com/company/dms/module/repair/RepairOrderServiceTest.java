@@ -27,7 +27,7 @@ class RepairOrderServiceTest {
     @Test
     void create_generates_pending_order() {
         RepairCreateDTO dto = new RepairCreateDTO();
-        dto.setRoomId(2L);
+        dto.setRoomId(4L);
         dto.setResidentId(1L);
         dto.setTitle("空调漏水");
         dto.setPriority(2);
@@ -37,8 +37,9 @@ class RepairOrderServiceTest {
         RepairOrder order = repairService.getOrder(id);
         assertTrue(order.getOrderNo().startsWith("RO-"));
         assertEquals(1, order.getStatus());
-        assertEquals(2L, order.getRoomId());
+        assertEquals(4L, order.getRoomId());
         assertEquals(1L, order.getResidentId());
+        assertEquals(3, roomService.getById(4L).getStatus());
     }
 
     @Test
@@ -78,6 +79,7 @@ class RepairOrderServiceTest {
         Long pending = createPending();
         repairService.cancel(pending);
         assertEquals(4, repairService.getOrder(pending).getStatus());
+        assertEquals(1, roomService.getById(4L).getStatus());
 
         Long processing = createPending();
         RepairAcceptDTO accept = new RepairAcceptDTO();
@@ -88,8 +90,20 @@ class RepairOrderServiceTest {
     }
 
     @Test
+    void cancel_pending_keeps_room_repairing_until_last_open_order_is_closed() {
+        Long first = createPending();
+        Long second = createPending();
+
+        repairService.cancel(first);
+        assertEquals(3, roomService.getById(4L).getStatus());
+
+        repairService.cancel(second);
+        assertEquals(1, roomService.getById(4L).getStatus());
+    }
+
+    @Test
     void page_filters_and_returns_display_names() {
-        Long id = createPending();
+        Long id = createPending(2L);
         RepairQuery query = new RepairQuery();
         query.setStatus(1);
         query.setPriority(1);
@@ -112,13 +126,13 @@ class RepairOrderServiceTest {
         accept.setHandler("worker a");
         repairService.accept(id, accept);
 
-        assertEquals(3, roomService.getById(2L).getStatus());
+        assertEquals(3, roomService.getById(4L).getStatus());
 
         RepairCompleteDTO complete = new RepairCompleteDTO();
         complete.setResult("fixed");
         repairService.complete(id, complete);
 
-        assertEquals(1, roomService.getById(2L).getStatus());
+        assertEquals(1, roomService.getById(4L).getStatus());
     }
 
     @Test
@@ -131,15 +145,19 @@ class RepairOrderServiceTest {
         repairService.accept(second, accept);
 
         repairService.cancel(first);
-        assertEquals(3, roomService.getById(2L).getStatus());
+        assertEquals(3, roomService.getById(4L).getStatus());
 
         repairService.cancel(second);
-        assertEquals(1, roomService.getById(2L).getStatus());
+        assertEquals(1, roomService.getById(4L).getStatus());
     }
 
     private Long createPending() {
+        return createPending(4L);
+    }
+
+    private Long createPending(Long roomId) {
         RepairCreateDTO dto = new RepairCreateDTO();
-        dto.setRoomId(2L);
+        dto.setRoomId(roomId);
         dto.setResidentId(1L);
         dto.setTitle("门锁故障");
         dto.setPriority(1);
