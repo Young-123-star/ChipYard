@@ -71,10 +71,12 @@ public class RepairServiceImpl implements RepairService {
     @Override
     @Transactional
     public Long create(RepairCreateDTO dto) {
-        roomService.getById(dto.getRoomId());
-        if (dto.getResidentId() != null) residentService.getById(dto.getResidentId());
+        Long roomId = resolveRoomId(dto);
+        Long residentId = resolveResidentId(dto);
         RepairOrder order = new RepairOrder();
         BeanUtils.copyProperties(dto, order);
+        order.setRoomId(roomId);
+        order.setResidentId(residentId);
         order.setOrderNo(nextOrderNo());
         order.setPriority(dto.getPriority() == null ? 1 : dto.getPriority());
         order.setStatus(1);
@@ -83,6 +85,28 @@ public class RepairServiceImpl implements RepairService {
         return order.getId();
     }
 
+    private Long resolveRoomId(RepairCreateDTO dto) {
+        if (dto.getRoomId() != null) return roomService.getById(dto.getRoomId()).getId();
+        String code = trimToNull(dto.getRoomCode());
+        if (code == null) throw new BizException("room is required");
+        if (code.chars().allMatch(Character::isDigit)) return roomService.getById(Long.valueOf(code)).getId();
+        return roomService.getByRoomNumber(code).getId();
+    }
+
+    private Long resolveResidentId(RepairCreateDTO dto) {
+        if (dto.getResidentId() != null) return residentService.getById(dto.getResidentId()).getId();
+        String code = trimToNull(dto.getResidentCode());
+        if (code == null) return null;
+        if (code.chars().allMatch(Character::isDigit)) return residentService.getById(Long.valueOf(code)).getId();
+        Resident resident = residentService.getByEmployeeNo(code);
+        if (resident == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "resident not found");
+        return resident.getId();
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.trim().isEmpty()) return null;
+        return value.trim();
+    }
     @Override
     @Transactional
     public void accept(Long id, RepairAcceptDTO dto) {

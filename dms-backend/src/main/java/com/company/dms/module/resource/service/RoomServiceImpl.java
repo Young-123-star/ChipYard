@@ -92,6 +92,14 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    public Room getByRoomNumber(String roomNumber) {
+        Room r = roomMapper.selectOne(Wrappers.<Room>lambdaQuery()
+                .eq(Room::getRoomNumber, roomNumber).last("limit 1"));
+        if (r == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "room not found");
+        return r;
+    }
+
+    @Override
     public Long create(RoomSaveDTO dto) {
         Long count = roomMapper.selectCount(Wrappers.<Room>lambdaQuery()
                 .eq(Room::getBuildingId, dto.getBuildingId())
