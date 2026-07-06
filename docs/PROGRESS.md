@@ -55,6 +55,7 @@
 - 非目标：本次不做维修费用、SLA、维修人员实体、报修端或审批流。
 - 验证：`RepairOrderServiceTest` 通过；后端全量 `mvn test` 通过，125 tests passed。
 - 2026-07-06 建单输入优化：维修工单弹窗的房间/报修人改为可直接输入文本；后端兼容数字 ID、房间号和员工工号。验证：`RepairOrderServiceTest` 9 tests passed，后端全量 `mvn test` 126 tests passed，前端 `npm run build` 通过。
+- 部署验证：已部署到服务器，维修工单建单输入功能测试正常。
 
 ### 下一步候选（不发散）
 - 维修工单房间状态联动已完成；维修费用、SLA、维修人员实体、报修端继续后置。
