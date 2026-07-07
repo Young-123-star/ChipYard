@@ -128,7 +128,14 @@
             <el-option v-for="s in ROOM_STATUS" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="配套设施"><el-input v-model="form.facilities" type="textarea" placeholder='JSON，如 {"air_conditioner":1}' /></el-form-item>
+        <el-form-item label="配套设施">
+          <div class="facility-editor">
+            <div v-for="item in FACILITY_OPTIONS" :key="item.key" class="facility-row">
+              <el-checkbox v-model="facilityValues[item.key].enabled">{{ item.label }}</el-checkbox>
+              <el-input-number v-model="facilityValues[item.key].count" :min="1" :max="20" size="small" :disabled="!facilityValues[item.key].enabled" />
+            </div>
+          </div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
@@ -172,11 +179,59 @@ const rules = {
   bedCount: [{ required: true, message: '请输入床位数', trigger: 'blur' }]
 }
 
-const FACILITY_NAMES: Record<string, string> = {
-  air_conditioner: '空调',
-  water_heater: '热水器',
-  wardrobe: '衣柜',
-  desk: '书桌'
+const FACILITY_OPTIONS = [
+  { key: 'air_conditioner', label: '空调' },
+  { key: 'water_heater', label: '热水器' },
+  { key: 'wardrobe', label: '衣柜' },
+  { key: 'desk', label: '书桌' }
+] as const
+
+type FacilityKey = typeof FACILITY_OPTIONS[number]['key']
+
+type FacilityValue = { enabled: boolean; count: number }
+
+const FACILITY_NAMES: Record<string, string> = Object.fromEntries(FACILITY_OPTIONS.map((item) => [item.key, item.label]))
+const facilityValues = reactive<Record<FacilityKey, FacilityValue>>(
+  Object.fromEntries(FACILITY_OPTIONS.map((item) => [item.key, { enabled: false, count: 1 }])) as Record<FacilityKey, FacilityValue>
+)
+const extraFacilities = ref<Record<string, number>>({})
+
+function resetFacilityValues() {
+  FACILITY_OPTIONS.forEach((item) => {
+    facilityValues[item.key].enabled = false
+    facilityValues[item.key].count = 1
+  })
+  extraFacilities.value = {}
+}
+
+function loadFacilities(json?: string) {
+  resetFacilityValues()
+  if (!json) return
+  try {
+    const obj = JSON.parse(json) as Record<string, unknown>
+    Object.entries(obj).forEach(([k, v]) => {
+      const count = Number(v)
+      if (!Number.isFinite(count) || count <= 0) return
+      if (Object.prototype.hasOwnProperty.call(facilityValues, k)) {
+        const key = k as FacilityKey
+        facilityValues[key].enabled = true
+        facilityValues[key].count = count
+      } else {
+        extraFacilities.value[k] = count
+      }
+    })
+  } catch {
+    extraFacilities.value = {}
+  }
+}
+
+function serializeFacilities(): string {
+  const obj: Record<string, number> = { ...extraFacilities.value }
+  FACILITY_OPTIONS.forEach((item) => {
+    if (facilityValues[item.key].enabled) obj[item.key] = facilityValues[item.key].count || 1
+    else delete obj[item.key]
+  })
+  return Object.keys(obj).length ? JSON.stringify(obj) : ''
 }
 
 function parseFacilities(json?: string): string[] {
@@ -187,7 +242,7 @@ function parseFacilities(json?: string): string[] {
       .filter(([, v]) => Number(v) > 0)
       .map(([k, v]) => {
         const name = FACILITY_NAMES[k] || k
-        return Number(v) > 1 ? `${name}×${v}` : name
+        return Number(v) > 1 ? `${name}x${v}` : name
       })
   } catch {
     return []
@@ -238,12 +293,14 @@ async function reload() {
 
 async function openCreate() {
   Object.assign(form, { id: undefined, buildingId: undefined, floorId: undefined, roomNumber: '', roomType: 2, bedCount: 1, area: undefined, orientation: '', genderLimit: 0, status: 1, facilities: '' })
+  loadFacilities('')
   formFloors.value = []
   dialogVisible.value = true
 }
 
 async function openEdit(row: Room) {
   Object.assign(form, row)
+  loadFacilities(row.facilities)
   formFloors.value = await listFloors(row.buildingId)
   dialogVisible.value = true
 }
@@ -252,6 +309,7 @@ async function onSave() {
   await formRef.value?.validate()
   saving.value = true
   try {
+    form.facilities = serializeFacilities()
     if (form.id) {
       await updateRoom(form.id, form)
     } else {
@@ -298,6 +356,8 @@ onMounted(async () => {
 .summary-bar b.free { color: #1d8a3e; }
 .fac-tag { margin-right: 4px; }
 .fac-none { color: var(--dms-ink-2); }
+.facility-editor { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
+.facility-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .expand-box { padding: 6px 16px 14px 48px; }
 .expand-info { display: flex; gap: 24px; font-size: 13px; color: var(--dms-ink-2); margin-bottom: 10px; }
 .expand-info b { color: var(--dms-ink); font-weight: 600; margin-left: 4px; }

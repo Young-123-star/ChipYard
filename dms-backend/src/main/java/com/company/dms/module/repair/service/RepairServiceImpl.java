@@ -97,10 +97,10 @@ public class RepairServiceImpl implements RepairService {
         if (dto.getResidentId() != null) return residentService.getById(dto.getResidentId()).getId();
         String code = trimToNull(dto.getResidentCode());
         if (code == null) return null;
-        if (code.chars().allMatch(Character::isDigit)) return residentService.getById(Long.valueOf(code)).getId();
         Resident resident = residentService.getByEmployeeNo(code);
-        if (resident == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "resident not found");
-        return resident.getId();
+        if (resident != null) return resident.getId();
+        if (code.chars().allMatch(Character::isDigit)) return residentService.getById(Long.valueOf(code)).getId();
+        throw new BizException(ResultCode.NOT_FOUND.getCode(), "resident not found");
     }
 
     private String trimToNull(String value) {

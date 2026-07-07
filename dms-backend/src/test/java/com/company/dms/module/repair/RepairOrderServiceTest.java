@@ -9,6 +9,8 @@ import com.company.dms.module.repair.dto.RepairQuery;
 import com.company.dms.module.repair.entity.RepairOrder;
 import com.company.dms.module.repair.service.RepairService;
 import com.company.dms.module.repair.vo.RepairOrderVO;
+import com.company.dms.module.resident.dto.ResidentSaveDTO;
+import com.company.dms.module.resident.service.ResidentService;
 import com.company.dms.module.resource.service.RoomService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +25,7 @@ class RepairOrderServiceTest {
 
     @Autowired RepairService repairService;
     @Autowired RoomService roomService;
+    @Autowired ResidentService residentService;
 
     @Test
     void create_generates_pending_order() {
@@ -54,6 +57,27 @@ class RepairOrderServiceTest {
         RepairOrder order = repairService.getOrder(id);
         assertEquals(2L, order.getRoomId());
         assertEquals(1L, order.getResidentId());
+    }
+
+    @Test
+    void create_accepts_numeric_employee_no_with_leading_zero() {
+        ResidentSaveDTO resident = new ResidentSaveDTO();
+        resident.setEmployeeNo("06880");
+        resident.setRealName("worker");
+        resident.setGender(1);
+        resident.setResidentType(1);
+        resident.setStatus(1);
+        Long residentId = residentService.create(resident);
+
+        RepairCreateDTO dto = new RepairCreateDTO();
+        dto.setRoomCode("A102");
+        dto.setResidentCode("06880");
+        dto.setTitle("door");
+
+        Long id = repairService.create(dto);
+
+        RepairOrder order = repairService.getOrder(id);
+        assertEquals(residentId, order.getResidentId());
     }
 
     @Test
