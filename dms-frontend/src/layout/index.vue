@@ -3,31 +3,34 @@
     <el-aside width="232px" class="aside">
       <div class="logo"><span class="logo-mark">C</span>ChipMore <span class="logo-accent">Dorm</span></div>
       <el-menu :default-active="route.path" router class="menu">
-        <el-menu-item-group title="资源管理">
-          <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>楼栋管理</span></el-menu-item>
-          <el-menu-item index="/floors"><el-icon><Files /></el-icon><span>楼层管理</span></el-menu-item>
-          <el-menu-item index="/rooms"><el-icon><House /></el-icon><span>房间管理</span></el-menu-item>
-          <el-menu-item index="/beds"><el-icon><Bell /></el-icon><span>床位管理</span></el-menu-item>
+        <el-menu-item-group title="&#36164;&#28304;&#31649;&#29702;">
+          <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>&#27004;&#26635;&#31649;&#29702;</span></el-menu-item>
+          <el-menu-item index="/floors"><el-icon><Files /></el-icon><span>&#27004;&#23618;&#31649;&#29702;</span></el-menu-item>
+          <el-menu-item index="/rooms"><el-icon><House /></el-icon><span>&#25151;&#38388;&#31649;&#29702;</span></el-menu-item>
+          <el-menu-item index="/beds"><el-icon><Bell /></el-icon><span>&#24202;&#20301;&#31649;&#29702;</span></el-menu-item>
         </el-menu-item-group>
-        <el-menu-item-group title="视图">
-          <el-menu-item index="/board"><el-icon><Grid /></el-icon><span>房间状态看板</span></el-menu-item>
+        <el-menu-item-group title="&#35270;&#22270;">
+          <el-menu-item index="/board"><el-icon><Grid /></el-icon><span>&#25151;&#38388;&#29366;&#24577;&#30475;&#26495;</span></el-menu-item>
         </el-menu-item-group>
-        <el-menu-item-group title="入住管理">
-          <el-menu-item index="/residents"><el-icon><User /></el-icon><span>居住人管理</span></el-menu-item>
-          <el-menu-item index="/intakes"><el-icon><DocumentAdd /></el-icon><span>入住意向单</span></el-menu-item>
-          <el-menu-item index="/records"><el-icon><Tickets /></el-icon><span>入住档案</span></el-menu-item>
-          <el-menu-item index="/checkout-orders"><el-icon><SwitchButton /></el-icon><span>退宿单</span></el-menu-item>
+        <el-menu-item-group title="&#20837;&#20303;&#31649;&#29702;">
+          <el-menu-item index="/residents"><el-icon><User /></el-icon><span>&#23621;&#20303;&#20154;&#31649;&#29702;</span></el-menu-item>
+          <el-menu-item index="/intakes"><el-icon><DocumentAdd /></el-icon><span>&#20837;&#20303;&#24847;&#21521;&#21333;</span></el-menu-item>
+          <el-menu-item index="/records"><el-icon><Tickets /></el-icon><span>&#20837;&#20303;&#26723;&#26696;</span></el-menu-item>
+          <el-menu-item index="/checkout-orders"><el-icon><SwitchButton /></el-icon><span>&#36864;&#23487;&#21333;</span></el-menu-item>
         </el-menu-item-group>
-        <el-menu-item-group title="费用管理">
-          <el-menu-item index="/fee-standards"><el-icon><PriceTag /></el-icon><span>收费标准</span></el-menu-item>
-          <el-menu-item index="/fee-bills"><el-icon><Money /></el-icon><span>住宿费账单</span></el-menu-item>
-          <el-menu-item index="/fee-meter"><el-icon><Odometer /></el-icon><span>抄表/水电</span></el-menu-item>
+        <el-menu-item-group title="&#36153;&#29992;&#31649;&#29702;">
+          <el-menu-item index="/fee-standards"><el-icon><PriceTag /></el-icon><span>&#25910;&#36153;&#26631;&#20934;</span></el-menu-item>
+          <el-menu-item index="/fee-bills"><el-icon><Money /></el-icon><span>&#20303;&#23487;&#36153;&#36134;&#21333;</span></el-menu-item>
+          <el-menu-item index="/fee-meter"><el-icon><Odometer /></el-icon><span>&#25220;&#34920;/&#27700;&#30005;</span></el-menu-item>
         </el-menu-item-group>
-        <el-menu-item-group title="维修管理">
-          <el-menu-item index="/repair-orders"><el-icon><Tools /></el-icon><span>维修工单</span></el-menu-item>
+        <el-menu-item-group title="&#32500;&#20462;&#31649;&#29702;">
+          <el-menu-item index="/repair-orders"><el-icon><Tools /></el-icon><span>&#32500;&#20462;&#24037;&#21333;</span></el-menu-item>
         </el-menu-item-group>
-        <el-menu-item-group title="统计报表">
-          <el-menu-item index="/report"><el-icon><TrendCharts /></el-icon><span>账单报表</span></el-menu-item>
+        <el-menu-item-group title="&#31995;&#32479;&#24037;&#20855;">
+          <el-menu-item index="/data-import"><el-icon><UploadFilled /></el-icon><span>&#25968;&#25454;&#21021;&#22987;&#21270;</span></el-menu-item>
+        </el-menu-item-group>
+        <el-menu-item-group title="&#32479;&#35745;&#25253;&#34920;">
+          <el-menu-item index="/report"><el-icon><TrendCharts /></el-icon><span>&#36134;&#21333;&#25253;&#34920;</span></el-menu-item>
         </el-menu-item-group>
       </el-menu>
     </el-aside>
@@ -38,7 +41,7 @@
           <span class="user">{{ userStore.userInfo?.realName || 'admin' }}<el-icon><ArrowDown /></el-icon></span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              <el-dropdown-item command="logout">&#36864;&#20986;&#30331;&#24405;</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -50,7 +53,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money, Odometer, TrendCharts, Tools } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money, Odometer, TrendCharts, Tools, UploadFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()

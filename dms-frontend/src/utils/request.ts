@@ -18,11 +18,12 @@ service.interceptors.request.use((config) => {
 
 service.interceptors.response.use(
   (response) => {
+    if (response.config.responseType === 'blob') return response.data
     const res = response.data
     if (res.code === 0) {
       return res.data
     }
-    ElMessage.error(res.message || '请求失败')
+    ElMessage.error(res.message || '\u8bf7\u6c42\u5931\u8d25')
     return Promise.reject(new Error(res.message || 'Error'))
   },
   (error) => {
@@ -30,9 +31,9 @@ service.interceptors.response.use(
       const userStore = useUserStore()
       userStore.logout()
       router.push('/login')
-      ElMessage.error('登录已过期，请重新登录')
+      ElMessage.error('\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55')
     } else {
-      ElMessage.error(error.message || '网络错误')
+      ElMessage.error(error.message || '\u7f51\u7edc\u9519\u8bef')
     }
     return Promise.reject(error)
   }
