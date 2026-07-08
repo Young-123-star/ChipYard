@@ -14,6 +14,7 @@
       <el-form-item>
         <el-button type="primary" @click="reload">查询</el-button>
         <el-button type="success" @click="openCreate">手工新建</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>
 
@@ -112,8 +113,10 @@ import { pageRooms } from '@/api/room'
 import { listBeds } from '@/api/bed'
 import type { CheckinIntake, Resident, Building, Room, Bed } from '@/api/types'
 import { INTAKE_STATUS, INTAKE_SOURCE, GENDER_LIMIT, ROOM_TYPE, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<CheckinIntake[]>([])
 const total = ref(0)
@@ -208,6 +211,15 @@ async function onCancel(row: CheckinIntake) {
   await cancelIntake(row.id)
   ElMessage.success('已取消')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('checkin-intakes', { ...query })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(() => { reload(); loadResidents() })

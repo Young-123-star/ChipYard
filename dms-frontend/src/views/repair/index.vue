@@ -14,6 +14,7 @@
       <el-form-item>
         <el-button type='primary' @click='reload'>查询</el-button>
         <el-button type='success' @click='openCreate'>新建工单</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>
 
@@ -77,8 +78,10 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageRepairOrders, createRepairOrder, acceptRepairOrder, completeRepairOrder, cancelRepairOrder } from '@/api/repair'
 import type { RepairOrder } from '@/api/types'
 import { REPAIR_STATUS, REPAIR_PRIORITY, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<RepairOrder[]>([])
 const total = ref(0)
@@ -129,6 +132,15 @@ async function onCancel(row: RepairOrder) {
   await cancelRepairOrder(row.id)
   ElMessage.success('已取消')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('repair-orders', { ...query })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(reload)

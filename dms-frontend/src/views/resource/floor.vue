@@ -9,6 +9,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="success" :disabled="!buildingId" @click="openCreate">新增楼层</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
       </el-form>
 
@@ -67,6 +68,7 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings } from '@/api/building'
 import { listFloors, createFloor, updateFloor, deleteFloor } from '@/api/floor'
 import type { Building, Floor } from '@/api/types'
+import { exportLedger } from '@/api/export'
 
 const router = useRouter()
 
@@ -78,6 +80,7 @@ const buildings = ref<Building[]>([])
 const buildingId = ref<number>()
 const list = ref<Floor[]>([])
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 
 const dialogVisible = ref(false)
@@ -137,6 +140,15 @@ async function onDelete(row: Floor) {
   await deleteFloor(row.id)
   ElMessage.success('删除成功')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('floors', { buildingId: buildingId.value })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(loadBuildings)

@@ -25,6 +25,7 @@
         <el-form-item>
           <el-button type="primary" @click="reload">查询</el-button>
           <el-button type="success" @click="openCreate">新增</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
       </el-form>
 
@@ -155,6 +156,7 @@ import { pageRooms, roomSummary, createRoom, updateRoom, deleteRoom } from '@/ap
 import { listBeds } from '@/api/bed'
 import type { Building, Floor, Room, Bed, RoomSummary } from '@/api/types'
 import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const route = useRoute()
 const buildings = ref<Building[]>([])
@@ -163,6 +165,7 @@ const formFloors = ref<Floor[]>([])
 const list = ref<Room[]>([])
 const total = ref(0)
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const bedsMap = reactive<Record<number, Bed[] | undefined>>({})
 const summary = reactive<RoomSummary>({ total: 0, totalBeds: 0, occupiedBeds: 0, freeBeds: 0 })
@@ -328,6 +331,15 @@ async function onDelete(row: Room) {
   await deleteRoom(row.id)
   ElMessage.success('删除成功')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('rooms', { ...query })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(async () => {

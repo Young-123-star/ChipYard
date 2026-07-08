@@ -21,6 +21,7 @@
         <el-button type="primary" @click="reload">查询</el-button>
         <el-button type="success" @click="openReading">录入抄表</el-button>
         <el-button type="warning" @click="openGenerate">生成水电账单</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>
 
@@ -93,8 +94,10 @@ import { pageBuildings } from '@/api/building'
 import { pageRooms } from '@/api/room'
 import type { MeterReading, Building, Room } from '@/api/types'
 import { METER_TYPE, labelOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<MeterReading[]>([])
 const total = ref(0)
@@ -172,6 +175,15 @@ async function onGenerate() {
     genVisible.value = false
   } finally {
     saving.value = false
+  }
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('meter-readings', { ...query })
+  } finally {
+    exporting.value = false
   }
 }
 
