@@ -6,7 +6,8 @@
           <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
         </el-select>
       </el-form-item>
-      <el-form-item><el-button type="primary" @click="reload">查询</el-button></el-form-item>
+      <el-form-item><el-button type="primary" @click="reload">查询</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button></el-form-item>
     </el-form>
 
     <el-table v-loading="loading" :data="list">
@@ -37,8 +38,10 @@ import { reactive, ref, onMounted } from 'vue'
 import { pageRecords } from '@/api/checkin'
 import { pageBuildings } from '@/api/building'
 import type { CheckinRecord, Building } from '@/api/types'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const list = ref<CheckinRecord[]>([])
 const total = ref(0)
 const buildings = ref<Building[]>([])
@@ -62,5 +65,14 @@ async function loadBuildings() {
   const res = await pageBuildings({ page: 1, size: 100 })
   buildings.value = res.records
 }
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('checkin-records', { ...query })
+  } finally {
+    exporting.value = false
+  }
+}
+
 onMounted(() => { loadBuildings(); reload() })
 </script>

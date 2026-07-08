@@ -13,6 +13,7 @@
         <el-form-item>
           <el-button type="primary" @click="reload">查询</el-button>
           <el-button type="success" @click="openCreate">新增</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
       </el-form>
 
@@ -102,6 +103,7 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings, createBuilding, updateBuilding, deleteBuilding } from '@/api/building'
 import type { Building } from '@/api/types'
 import { BUILDING_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const router = useRouter()
 
@@ -119,6 +121,7 @@ function goRooms(b: Building) {
 }
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<Building[]>([])
 const total = ref(0)
@@ -181,6 +184,15 @@ async function onDelete(row: Building) {
   await deleteBuilding(row.id)
   ElMessage.success('删除成功')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('buildings', { ...query })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(reload)

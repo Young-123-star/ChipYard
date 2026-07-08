@@ -14,6 +14,7 @@
       <el-form-item>
         <el-button type="primary" @click="reload">查询</el-button>
         <el-button type="success" @click="openCreate">手工新建</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>
 
@@ -100,8 +101,10 @@ import { getArrears } from '@/api/fee'
 import { pageRecords } from '@/api/checkin'
 import type { CheckoutOrder, CheckinRecord } from '@/api/types'
 import { CHECKOUT_STATUS, CHECKOUT_SOURCE, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<CheckoutOrder[]>([])
 const total = ref(0)
@@ -186,6 +189,15 @@ async function onCancel(row: CheckoutOrder) {
   await cancelCheckout(row.id)
   ElMessage.success('已取消')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('checkout-orders', { ...query })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(() => { reload(); loadActiveResidents() })

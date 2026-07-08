@@ -18,6 +18,7 @@
       <el-form-item>
         <el-button type="primary" @click="reload">查询</el-button>
         <el-button type="success" @click="openGenerate">生成账单</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>
 
@@ -101,8 +102,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageBills, generateBills, payBill, voidBill } from '@/api/fee'
 import type { FeeBill } from '@/api/types'
 import { BILL_STATUS, BILL_TYPE, PAY_METHOD, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<FeeBill[]>([])
 const total = ref(0)
@@ -170,6 +173,15 @@ async function onVoid(row: FeeBill) {
   await voidBill(row.id)
   ElMessage.success('已作废')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('fee-bills', { ...query })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(reload)

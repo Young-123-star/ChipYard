@@ -2,6 +2,7 @@
   <el-card shadow="never">
     <div style="margin-bottom: 12px">
       <el-button type="success" @click="openCreate">新增收费标准</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
     </div>
 
     <el-table v-loading="loading" :data="list">
@@ -46,8 +47,10 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { listStandards, createStandard, updateStandard, deleteStandard } from '@/api/fee'
 import type { FeeStandard } from '@/api/types'
 import { ROOM_TYPE, labelOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 const list = ref<FeeStandard[]>([])
 
@@ -95,6 +98,15 @@ async function onDelete(row: FeeStandard) {
   await deleteStandard(row.id)
   ElMessage.success('已删除')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('fee-standards', undefined)
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(reload)

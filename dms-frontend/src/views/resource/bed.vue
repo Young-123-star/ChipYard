@@ -19,6 +19,7 @@
         </el-form-item>
         <el-form-item>
           <el-button type="success" :disabled="!roomId" @click="openCreate">新增床位</el-button>
+          <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
       </el-form>
 
@@ -72,6 +73,7 @@ import { pageRooms } from '@/api/room'
 import { listBeds, createBed, updateBed, deleteBed } from '@/api/bed'
 import type { Building, Floor, Room, Bed } from '@/api/types'
 import { BED_TYPE, BED_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
+import { exportLedger } from '@/api/export'
 
 const buildings = ref<Building[]>([])
 const floors = ref<Floor[]>([])
@@ -81,6 +83,7 @@ const buildingId = ref<number>()
 const floorId = ref<number>()
 const roomId = ref<number>()
 const loading = ref(false)
+const exporting = ref(false)
 const saving = ref(false)
 
 const dialogVisible = ref(false)
@@ -146,6 +149,15 @@ async function onDelete(row: Bed) {
   await deleteBed(row.id)
   ElMessage.success('删除成功')
   reload()
+}
+
+async function onExport() {
+  exporting.value = true
+  try {
+    await exportLedger('beds', { roomId: roomId.value })
+  } finally {
+    exporting.value = false
+  }
 }
 
 onMounted(loadBuildings)
