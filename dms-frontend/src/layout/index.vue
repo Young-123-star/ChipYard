@@ -27,6 +27,7 @@
           <el-menu-item index="/repair-orders"><el-icon><Tools /></el-icon><span>&#32500;&#20462;&#24037;&#21333;</span></el-menu-item>
         </el-menu-item-group>
         <el-menu-item-group title="&#31995;&#32479;&#24037;&#20855;">
+          <el-menu-item index="/dicts"><el-icon><Tickets /></el-icon><span>&#23383;&#20856;&#31649;&#29702;</span></el-menu-item>
           <el-menu-item index="/data-import"><el-icon><UploadFilled /></el-icon><span>&#25968;&#25454;&#21021;&#22987;&#21270;</span></el-menu-item>
         </el-menu-item-group>
         <el-menu-item-group title="&#32479;&#35745;&#25253;&#34920;">

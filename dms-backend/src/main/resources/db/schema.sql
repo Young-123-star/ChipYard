@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS sys_dict_item;
+DROP TABLE IF EXISTS sys_dict_type;
+
 DROP TABLE IF EXISTS sys_user;
 CREATE TABLE sys_user (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -222,6 +225,33 @@ CREATE TABLE dms_repair_order (
     created_at   DATETIME,
     updated_at   DATETIME,
     deleted_at   DATETIME
+);
+CREATE TABLE sys_dict_type (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    dict_type   VARCHAR(100) NOT NULL,
+    dict_name   VARCHAR(100) NOT NULL,
+    sort_order  INT DEFAULT 0,
+    status      TINYINT DEFAULT 1,
+    system_flag TINYINT DEFAULT 0,
+    remark      VARCHAR(500),
+    created_at  DATETIME,
+    updated_at  DATETIME,
+    deleted_at  DATETIME
+);
+
+CREATE TABLE sys_dict_item (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    dict_type   VARCHAR(100) NOT NULL,
+    dict_value  VARCHAR(100) NOT NULL,
+    dict_label  VARCHAR(100) NOT NULL,
+    sort_order  INT DEFAULT 0,
+    tag_type    VARCHAR(30),
+    status      TINYINT DEFAULT 1,
+    system_flag TINYINT DEFAULT 0,
+    remark      VARCHAR(500),
+    created_at  DATETIME,
+    updated_at  DATETIME,
+    deleted_at  DATETIME
 );
 CREATE UNIQUE INDEX uk_dms_building_code_active ON dms_building (building_code, active_unique_key);
 CREATE UNIQUE INDEX uk_dms_room_building_number_active ON dms_room (building_id, room_number, active_unique_key);
