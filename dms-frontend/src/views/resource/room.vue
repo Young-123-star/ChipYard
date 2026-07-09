@@ -53,7 +53,7 @@
                   </template>
                 </el-table-column>
               </el-table>
-              <div v-else class="expand-loading">床位加载中…</div>
+              <div v-else class="expand-loading">床位加载中...</div>
             </div>
           </template>
         </el-table-column>
@@ -98,7 +98,7 @@
       />
     </el-card>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑房间' : '新增房间'" width="520px">
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑房间' : '新增房间'" width="620px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="楼栋" prop="buildingId">
           <el-select v-model="form.buildingId" style="width: 100%" @change="onFormBuildingChange">
@@ -131,10 +131,21 @@
         </el-form-item>
         <el-form-item label="配套设施">
           <div class="facility-editor">
-            <div v-for="item in FACILITY_OPTIONS" :key="item.key" class="facility-row">
-              <el-checkbox v-model="facilityValues[item.key].enabled">{{ item.label }}</el-checkbox>
-              <el-input-number v-model="facilityValues[item.key].count" :min="1" :max="20" size="small" :disabled="!facilityValues[item.key].enabled" />
+            <div v-for="(row, index) in facilityRows" :key="index" class="facility-row">
+              <el-select
+                v-model="row.name"
+                filterable
+                allow-create
+                default-first-option
+                placeholder="选择或输入设施"
+                class="facility-name"
+              >
+                <el-option v-for="option in facilityOptions" :key="option.value" :label="option.label" :value="String(option.value)" />
+              </el-select>
+              <el-input-number v-model="row.count" :min="1" :max="99" controls-position="right" class="facility-count" />
+              <el-button link type="danger" @click="removeFacilityRow(index)">删除</el-button>
             </div>
+            <el-button type="primary" plain @click="addFacilityRow">添加设施</el-button>
           </div>
         </el-form-item>
       </el-form>
@@ -155,7 +166,7 @@ import { listFloors } from '@/api/floor'
 import { pageRooms, roomSummary, createRoom, updateRoom, deleteRoom } from '@/api/room'
 import { listBeds } from '@/api/bed'
 import type { Building, Floor, Room, Bed, RoomSummary } from '@/api/types'
-import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
+import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, ROOM_FACILITY, labelOf, tagTypeOf, loadDictOptions, clearDictCache, type DictOption } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
 
 const route = useRoute()
@@ -174,6 +185,9 @@ const query = reactive({ buildingId: undefined as number | undefined, floorId: u
 const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const form = reactive<Partial<Room>>({})
+const facilityOptions = ref<DictOption[]>(ROOM_FACILITY)
+type FacilityRow = { name: string; count: number }
+const facilityRows = ref<FacilityRow[]>([])
 const rules = {
   buildingId: [{ required: true, message: '请选择楼栋', trigger: 'change' }],
   floorId: [{ required: true, message: '请选择楼层', trigger: 'change' }],
@@ -182,57 +196,50 @@ const rules = {
   bedCount: [{ required: true, message: '请输入床位数', trigger: 'blur' }]
 }
 
-const FACILITY_OPTIONS = [
-  { key: 'air_conditioner', label: '空调' },
-  { key: 'water_heater', label: '热水器' },
-  { key: 'wardrobe', label: '衣柜' },
-  { key: 'desk', label: '书桌' }
-] as const
+const LEGACY_FACILITY_NAMES: Record<string, string> = {
+  air_conditioner: '空调',
+  water_heater: '热水器',
+  wardrobe: '衣柜',
+  desk: '书桌'
+}
 
-type FacilityKey = typeof FACILITY_OPTIONS[number]['key']
+async function loadFacilityOptions(refresh = false) {
+  if (refresh) clearDictCache('ROOM_FACILITY')
+  facilityOptions.value = await loadDictOptions('ROOM_FACILITY', ROOM_FACILITY)
+}
 
-type FacilityValue = { enabled: boolean; count: number }
-
-const FACILITY_NAMES: Record<string, string> = Object.fromEntries(FACILITY_OPTIONS.map((item) => [item.key, item.label]))
-const facilityValues = reactive<Record<FacilityKey, FacilityValue>>(
-  Object.fromEntries(FACILITY_OPTIONS.map((item) => [item.key, { enabled: false, count: 1 }])) as Record<FacilityKey, FacilityValue>
-)
-const extraFacilities = ref<Record<string, number>>({})
-
-function resetFacilityValues() {
-  FACILITY_OPTIONS.forEach((item) => {
-    facilityValues[item.key].enabled = false
-    facilityValues[item.key].count = 1
-  })
-  extraFacilities.value = {}
+function normalizeFacilityName(name: string): string {
+  return LEGACY_FACILITY_NAMES[name] || name
 }
 
 function loadFacilities(json?: string) {
-  resetFacilityValues()
+  facilityRows.value = []
   if (!json) return
   try {
     const obj = JSON.parse(json) as Record<string, unknown>
-    Object.entries(obj).forEach(([k, v]) => {
-      const count = Number(v)
-      if (!Number.isFinite(count) || count <= 0) return
-      if (Object.prototype.hasOwnProperty.call(facilityValues, k)) {
-        const key = k as FacilityKey
-        facilityValues[key].enabled = true
-        facilityValues[key].count = count
-      } else {
-        extraFacilities.value[k] = count
-      }
-    })
+    facilityRows.value = Object.entries(obj)
+      .map(([key, value]) => ({ name: normalizeFacilityName(key), count: Number(value) }))
+      .filter((item) => item.name && Number.isFinite(item.count) && item.count > 0)
   } catch {
-    extraFacilities.value = {}
+    facilityRows.value = []
   }
 }
 
+function addFacilityRow() {
+  facilityRows.value.push({ name: '', count: 1 })
+}
+
+function removeFacilityRow(index: number) {
+  facilityRows.value.splice(index, 1)
+}
+
 function serializeFacilities(): string {
-  const obj: Record<string, number> = { ...extraFacilities.value }
-  FACILITY_OPTIONS.forEach((item) => {
-    if (facilityValues[item.key].enabled) obj[item.key] = facilityValues[item.key].count || 1
-    else delete obj[item.key]
+  const obj: Record<string, number> = {}
+  facilityRows.value.forEach((row) => {
+    const name = row.name.trim()
+    const count = Number(row.count)
+    if (!name || !Number.isFinite(count) || count <= 0) return
+    obj[name] = (obj[name] || 0) + Math.floor(count)
   })
   return Object.keys(obj).length ? JSON.stringify(obj) : ''
 }
@@ -240,11 +247,11 @@ function serializeFacilities(): string {
 function parseFacilities(json?: string): string[] {
   if (!json) return []
   try {
-    const obj = JSON.parse(json)
+    const obj = JSON.parse(json) as Record<string, unknown>
     return Object.entries(obj)
       .filter(([, v]) => Number(v) > 0)
       .map(([k, v]) => {
-        const name = FACILITY_NAMES[k] || k
+        const name = normalizeFacilityName(k)
         return Number(v) > 1 ? `${name}x${v}` : name
       })
   } catch {
@@ -261,7 +268,7 @@ async function onExpand(row: Room, expanded: Room[]) {
 async function markRepair(row: Room, toRepair: boolean) {
   const target = toRepair ? 3 : 1
   const label = toRepair ? '标记维修' : '恢复空闲'
-  await ElMessageBox.confirm(`确认将房间「${row.roomNumber}」${label}？`, '提示', { type: 'warning' })
+  await ElMessageBox.confirm(`确认将房间“${row.roomNumber}”${label}？`, '提示', { type: 'warning' })
   await updateRoom(row.id, { ...row, status: target })
   ElMessage.success(`已${label}`)
   reload()
@@ -295,6 +302,7 @@ async function reload() {
 }
 
 async function openCreate() {
+  await loadFacilityOptions()
   Object.assign(form, { id: undefined, buildingId: undefined, floorId: undefined, roomNumber: '', roomType: 2, bedCount: 1, area: undefined, orientation: '', genderLimit: 0, status: 1, facilities: '' })
   loadFacilities('')
   formFloors.value = []
@@ -302,6 +310,7 @@ async function openCreate() {
 }
 
 async function openEdit(row: Room) {
+  await loadFacilityOptions()
   Object.assign(form, row)
   loadFacilities(row.facilities)
   formFloors.value = await listFloors(row.buildingId)
@@ -312,12 +321,13 @@ async function onSave() {
   await formRef.value?.validate()
   saving.value = true
   try {
-    form.facilities = serializeFacilities()
+    const payload = { ...form, facilities: serializeFacilities() }
     if (form.id) {
-      await updateRoom(form.id, form)
+      await updateRoom(form.id, payload)
     } else {
-      await createRoom(form)
+      await createRoom(payload)
     }
+    await loadFacilityOptions(true)
     ElMessage.success('保存成功')
     dialogVisible.value = false
     reload()
@@ -327,7 +337,7 @@ async function onSave() {
 }
 
 async function onDelete(row: Room) {
-  await ElMessageBox.confirm(`确认删除房间「${row.roomNumber}」？`, '提示', { type: 'warning' })
+  await ElMessageBox.confirm(`确认删除房间“${row.roomNumber}”？`, '提示', { type: 'warning' })
   await deleteRoom(row.id)
   ElMessage.success('删除成功')
   reload()
@@ -343,8 +353,7 @@ async function onExport() {
 }
 
 onMounted(async () => {
-  await loadBuildings()
-  // 接收楼层管理页跳转参数：/rooms?buildingId=&floorId=
+  await Promise.all([loadBuildings(), loadFacilityOptions()])
   const qb = Number(route.query.buildingId)
   const qf = Number(route.query.floorId)
   if (qb) {
@@ -358,21 +367,28 @@ onMounted(async () => {
 
 <style scoped>
 .summary-bar {
-  margin-bottom: 12px; padding: 9px 16px;
+  margin-bottom: 12px;
+  padding: 9px 16px;
   background: rgba(0, 113, 227, 0.06);
   border: 1px solid rgba(0, 113, 227, 0.12);
   border-radius: 10px;
-  font-size: 13px; color: var(--dms-ink-2);
+  font-size: 13px;
+  color: var(--dms-ink-2);
 }
 .summary-bar b { color: var(--dms-ink); font-weight: 700; margin: 0 2px; }
 .summary-bar b.free { color: #1d8a3e; }
-.fac-tag { margin-right: 4px; }
+.fac-tag { margin-right: 4px; margin-bottom: 4px; }
 .fac-none { color: var(--dms-ink-2); }
-.facility-editor { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 16px; }
-.facility-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.facility-editor { width: 100%; display: flex; flex-direction: column; gap: 10px; }
+.facility-row { display: grid; grid-template-columns: minmax(180px, 1fr) 130px 48px; align-items: center; gap: 10px; }
+.facility-name,
+.facility-count { width: 100%; }
 .expand-box { padding: 6px 16px 14px 48px; }
 .expand-info { display: flex; gap: 24px; font-size: 13px; color: var(--dms-ink-2); margin-bottom: 10px; }
 .expand-info b { color: var(--dms-ink); font-weight: 600; margin-left: 4px; }
 .bed-table { max-width: 480px; }
 .expand-loading { font-size: 12.5px; color: var(--dms-ink-2); }
+@media (max-width: 640px) {
+  .facility-row { grid-template-columns: 1fr; }
+}
 </style>
