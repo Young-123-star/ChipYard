@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout">
     <el-aside width="232px" class="aside">
-      <div class="logo"><img class="logo-mark" src="/logo.png" alt="" />ChipMore <span class="logo-accent">Dorm</span></div>
+      <div class="logo">ChipMore <span class="logo-accent">Dorm</span></div>
       <el-menu :default-active="route.path" router class="menu">
         <el-menu-item-group title="&#36164;&#28304;&#31649;&#29702;">
           <el-menu-item index="/buildings"><el-icon><OfficeBuilding /></el-icon><span>&#27004;&#26635;&#31649;&#29702;</span></el-menu-item>
@@ -88,15 +88,6 @@ function onCommand(cmd: string) {
   letter-spacing: -0.02em;
   border-bottom: 1px solid var(--dms-nav-divider);
   margin-bottom: 12px;
-}
-.logo-mark {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #fff;
-  object-fit: contain;
-  padding: 2px;
-  box-shadow: 0 2px 8px rgba(31, 111, 235, 0.35);
 }
 .logo-accent { color: #8fbaff; }
 .menu {
