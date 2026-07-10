@@ -26,6 +26,9 @@
         <el-menu-item-group title="&#32500;&#20462;&#31649;&#29702;">
           <el-menu-item index="/repair-orders"><el-icon><Tools /></el-icon><span>&#32500;&#20462;&#24037;&#21333;</span></el-menu-item>
         </el-menu-item-group>
+        <el-menu-item-group title="&#23433;&#20840;&#24033;&#26816;">
+          <el-menu-item index="/inspections"><el-icon><CircleCheck /></el-icon><span>&#24033;&#26816;&#31649;&#29702;</span></el-menu-item>
+        </el-menu-item-group>
         <el-menu-item-group title="&#31995;&#32479;&#24037;&#20855;">
           <el-menu-item index="/dicts"><el-icon><Tickets /></el-icon><span>&#23383;&#20856;&#31649;&#29702;</span></el-menu-item>
           <el-menu-item index="/data-import"><el-icon><UploadFilled /></el-icon><span>&#25968;&#25454;&#21021;&#22987;&#21270;</span></el-menu-item>
@@ -54,7 +57,7 @@
 
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router'
-import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money, Odometer, TrendCharts, Tools, UploadFilled } from '@element-plus/icons-vue'
+import { OfficeBuilding, Files, House, Bell, Grid, ArrowDown, User, DocumentAdd, Tickets, SwitchButton, PriceTag, Money, Odometer, TrendCharts, Tools, CircleCheck, UploadFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 
 const route = useRoute()

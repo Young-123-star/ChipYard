@@ -62,6 +62,12 @@ VALUES ('SEED-RO-1', 2, 1, '空调漏水', 'A102 空调内机滴水', 2, 1, NULL
        ('SEED-RO-2', 1, NULL, '门锁松动', 'A101 门锁松动需检修', 1, 2, '维修班张工', NOW(), NULL, NULL, '种子-处理中', NOW(), NOW()),
        ('SEED-RO-3', 2, 1, '灯管损坏', '已更换灯管', 1, 3, '维修班李工', NOW(), '已更换灯管', NOW(), '种子-已完成', NOW(), NOW());
 
+INSERT INTO dms_inspection_plan (plan_name, cycle_type, target_type, target_id, target_name, inspector, items_json, status, remark, created_at, updated_at)
+VALUES (STRINGDECODE('A\u680b\u65e5\u5e38\u5b89\u5168\u5de1\u68c0'), 1, 1, 1, STRINGDECODE('A\u680b\u5458\u5de5\u5bbf\u820d'), STRINGDECODE('\u5bbf\u820d\u7ba1\u7406\u5458'), STRINGDECODE('["\u6d88\u9632\u8bbe\u65bd","\u7528\u7535\u5b89\u5168","\u536b\u751f\u72b6\u51b5","\u8fdd\u89c4\u7535\u5668"]'), 1, STRINGDECODE('\u79cd\u5b50-\u542f\u7528\u8ba1\u5212'), NOW(), NOW());
+
+INSERT INTO dms_inspection_task (task_no, plan_id, plan_name, target_type, target_id, target_name, inspector, planned_date, items_json, status, created_at, updated_at)
+VALUES ('IT-20260710-1', 1, STRINGDECODE('A\u680b\u65e5\u5e38\u5b89\u5168\u5de1\u68c0'), 1, 1, STRINGDECODE('A\u680b\u5458\u5de5\u5bbf\u820d'), STRINGDECODE('\u5bbf\u820d\u7ba1\u7406\u5458'), '2026-07-10', STRINGDECODE('["\u6d88\u9632\u8bbe\u65bd","\u7528\u7535\u5b89\u5168","\u536b\u751f\u72b6\u51b5","\u8fdd\u89c4\u7535\u5668"]'), 1, NOW(), NOW());
+
 INSERT INTO sys_dict_type (dict_type, dict_name, sort_order, status, system_flag, created_at, updated_at) VALUES
 ('ROOM_TYPE', '房间类型', 10, 1, 1, NOW(), NOW()),
 ('ROOM_STATUS', '房间状态', 20, 1, 1, NOW(), NOW()),
@@ -136,3 +142,12 @@ INSERT INTO sys_dict_item (dict_type, dict_value, dict_label, sort_order, tag_ty
 ('ROOM_FACILITY', '热水器', '热水器', 2, 'success', 1, 1, NOW(), NOW()),
 ('ROOM_FACILITY', '衣柜', '衣柜', 3, 'warning', 1, 1, NOW(), NOW()),
 ('ROOM_FACILITY', '书桌', '书桌', 4, 'info', 1, 1, NOW(), NOW());
+
+INSERT INTO sys_dict_type (dict_type, dict_name, sort_order, status, system_flag, created_at, updated_at)
+VALUES ('INSPECTION_ITEM', STRINGDECODE('\u5de1\u68c0\u9879\u76ee'), 200, 1, 0, NOW(), NOW());
+
+INSERT INTO sys_dict_item (dict_type, dict_value, dict_label, sort_order, tag_type, status, system_flag, created_at, updated_at) VALUES
+('INSPECTION_ITEM', 'FIRE', STRINGDECODE('\u6d88\u9632\u8bbe\u65bd'), 1, 'danger', 1, 0, NOW(), NOW()),
+('INSPECTION_ITEM', 'ELECTRIC', STRINGDECODE('\u7528\u7535\u5b89\u5168'), 2, 'warning', 1, 0, NOW(), NOW()),
+('INSPECTION_ITEM', 'HYGIENE', STRINGDECODE('\u536b\u751f\u72b6\u51b5'), 3, 'success', 1, 0, NOW(), NOW()),
+('INSPECTION_ITEM', 'APPLIANCE', STRINGDECODE('\u8fdd\u89c4\u7535\u5668'), 4, 'info', 1, 0, NOW(), NOW());

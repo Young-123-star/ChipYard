@@ -48,6 +48,13 @@ public class FloorServiceImpl implements FloorService {
     }
 
     @Override
+    public Floor getById(Long id) {
+        Floor floor = floorMapper.selectById(id);
+        if (floor == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "?????");
+        return floor;
+    }
+
+    @Override
     public Long create(FloorSaveDTO dto) {
         Long count = floorMapper.selectCount(Wrappers.<Floor>lambdaQuery()
                 .eq(Floor::getBuildingId, dto.getBuildingId())

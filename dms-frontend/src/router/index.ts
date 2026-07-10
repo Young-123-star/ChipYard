@@ -22,6 +22,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'fee-meter', name: 'fee-meter', meta: { title: '\u6284\u8868/\u6c34\u7535' }, component: () => import('@/views/fee/meter.vue') },
       { path: 'report', name: 'report', meta: { title: '\u7edf\u8ba1\u62a5\u8868' }, component: () => import('@/views/report/index.vue') },
       { path: 'repair-orders', name: 'repair-orders', meta: { title: '\u7ef4\u4fee\u5de5\u5355' }, component: () => import('@/views/repair/index.vue') },
+      { path: 'inspections', name: 'inspections', meta: { title: '\u5de1\u68c0\u7ba1\u7406' }, component: () => import('@/views/inspection/index.vue') },
       { path: 'dicts', name: 'dicts', meta: { title: '\u5b57\u5178\u7ba1\u7406' }, component: () => import('@/views/system/dict.vue') },
       { path: 'data-import', name: 'data-import', meta: { title: '\u6570\u636e\u521d\u59cb\u5316' }, component: () => import('@/views/import/index.vue') }
     ]
