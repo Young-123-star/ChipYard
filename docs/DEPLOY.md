@@ -50,6 +50,30 @@ ALTER TABLE dms_repair_order ADD COLUMN rating TINYINT NULL;
 
 部署后后端启动时会自动执行一次。
 
+
+## GitHub Actions 手动部署
+
+仓库的 `CD` 工作流使用 GitHub `production` environment。首次执行前配置以下 secrets：
+
+- `DEPLOY_HOST`：服务器地址。
+- `DEPLOY_USER`：SSH 用户。
+- `DEPLOY_SSH_KEY`：对应用户的私钥。
+- `DEPLOY_PORT`：SSH 端口；留空时使用 22。
+- `DEPLOY_PATH`：服务器上的项目绝对路径。
+
+在 GitHub Actions 中选择 `CD` → `Run workflow`。工作流会在服务器执行 `git pull --ff-only origin main`、`docker compose up -d --build` 和 `docker compose ps`。
+
+部署完成后继续检查：
+
+```bash
+cd "$DEPLOY_PATH"
+docker compose logs --tail=100 backend
+docker compose exec mysql mysql -u root -p dms -e "select version, description, success from flyway_schema_history order by installed_rank;"
+```
+
+确认后端以 `prod` profile 启动、Flyway 最新版本成功、前后端容器为 Up，再进行登录和本次业务页面冒烟。日常 SSH 部署命令仍作为故障时的人工备用方式。
+
+
 ## 停止和重启
 
 ```bash

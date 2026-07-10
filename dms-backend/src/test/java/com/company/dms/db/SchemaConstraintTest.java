@@ -125,4 +125,20 @@ class SchemaConstraintTest {
                 "B"
         ));
     }
+
+    @Test
+    void inspection_plan_date_is_unique() {
+        jdbcTemplate.update(
+                "INSERT INTO dms_inspection_plan (id, plan_name, cycle_type, target_type, target_id, target_name, inspector, items_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                100L, "Plan", 1, 1, 1L, "Building", "Admin", "[]"
+        );
+        jdbcTemplate.update(
+                "INSERT INTO dms_inspection_task (task_no, plan_id, plan_name, target_type, target_id, target_name, inspector, planned_date, items_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "IT-1", 100L, "Plan", 1, 1L, "Building", "Admin", "2026-08-01", "[]"
+        );
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update(
+                "INSERT INTO dms_inspection_task (task_no, plan_id, plan_name, target_type, target_id, target_name, inspector, planned_date, items_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "IT-2", 100L, "Plan", 1, 1L, "Building", "Admin", "2026-08-01", "[]"
+        ));
+    }
 }

@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS dms_inspection_task;
+DROP TABLE IF EXISTS dms_inspection_plan;
 DROP TABLE IF EXISTS sys_dict_item;
 DROP TABLE IF EXISTS sys_dict_type;
 
@@ -225,6 +227,44 @@ CREATE TABLE dms_repair_order (
     created_at   DATETIME,
     updated_at   DATETIME,
     deleted_at   DATETIME
+);
+
+CREATE TABLE dms_inspection_plan (
+    id          BIGINT PRIMARY KEY AUTO_INCREMENT,
+    plan_name   VARCHAR(100) NOT NULL,
+    cycle_type  TINYINT NOT NULL,
+    target_type TINYINT NOT NULL,
+    target_id   BIGINT NOT NULL,
+    target_name VARCHAR(100) NOT NULL,
+    inspector   VARCHAR(50) NOT NULL,
+    items_json  TEXT NOT NULL,
+    status      TINYINT DEFAULT 1,
+    remark      VARCHAR(500),
+    created_at  DATETIME,
+    updated_at  DATETIME,
+    deleted_at  DATETIME
+);
+
+CREATE TABLE dms_inspection_task (
+    id                   BIGINT PRIMARY KEY AUTO_INCREMENT,
+    task_no              VARCHAR(64) NOT NULL,
+    plan_id              BIGINT NOT NULL,
+    plan_name            VARCHAR(100) NOT NULL,
+    target_type          TINYINT NOT NULL,
+    target_id            BIGINT NOT NULL,
+    target_name          VARCHAR(100) NOT NULL,
+    inspector            VARCHAR(50) NOT NULL,
+    planned_date         DATE NOT NULL,
+    items_json           TEXT NOT NULL,
+    results_json         TEXT,
+    status               TINYINT DEFAULT 1,
+    completed_at         DATETIME,
+    rectification_note   VARCHAR(500),
+    rectified_at         DATETIME,
+    created_at           DATETIME,
+    updated_at           DATETIME,
+    deleted_at           DATETIME,
+    CONSTRAINT uk_inspection_task_plan_date UNIQUE (plan_id, planned_date)
 );
 CREATE TABLE sys_dict_type (
     id          BIGINT PRIMARY KEY AUTO_INCREMENT,
