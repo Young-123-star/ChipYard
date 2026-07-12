@@ -1,12 +1,12 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query">
+    <el-form :inline="true" :model="query" @keyup.enter="reload">
       <el-form-item label="楼栋">
         <el-select v-model="query.buildingId" placeholder="全部" clearable style="width: 180px" @change="reload">
           <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
         </el-select>
       </el-form-item>
-      <el-form-item><el-button type="primary" @click="reload">查询</el-button>
+      <el-form-item><el-button @click="reload">查询</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button></el-form-item>
     </el-form>
 

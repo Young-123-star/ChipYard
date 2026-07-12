@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query">
+    <el-form :inline="true" :model="query" @keyup.enter="reload">
       <el-form-item label="姓名"><el-input v-model="query.realName" placeholder="姓名" clearable /></el-form-item>
       <el-form-item label="工号"><el-input v-model="query.employeeNo" placeholder="工号" clearable /></el-form-item>
       <el-form-item label="类型">
@@ -9,8 +9,8 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="reload">查询</el-button>
-        <el-button type="success" @click="openCreate">新增</el-button>
+        <el-button @click="reload">查询</el-button>
+        <el-button type="primary" @click="openCreate">新增</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>

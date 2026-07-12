@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query">
+    <el-form :inline="true" :model="query" @keyup.enter="reload">
       <el-form-item label="账期">
         <el-date-picker v-model="query.period" type="month" value-format="YYYY-MM" placeholder="全部" clearable
           style="width: 140px" @change="reload" />
@@ -16,8 +16,8 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="reload">查询</el-button>
-        <el-button type="success" @click="openGenerate">生成账单</el-button>
+        <el-button @click="reload">查询</el-button>
+        <el-button type="primary" @click="openGenerate">生成账单</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>

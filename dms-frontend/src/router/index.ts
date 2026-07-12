@@ -6,8 +6,9 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: () => import('@/layout/index.vue'),
-    redirect: '/buildings',
+    redirect: '/dashboard',
     children: [
+      { path: 'dashboard', name: 'dashboard', meta: { title: '\u8fd0\u8425\u603b\u89c8' }, component: () => import('@/views/dashboard/index.vue') },
       { path: 'buildings', name: 'buildings', meta: { title: '\u697c\u680b\u7ba1\u7406' }, component: () => import('@/views/resource/building.vue') },
       { path: 'floors', name: 'floors', meta: { title: '\u697c\u5c42\u7ba1\u7406' }, component: () => import('@/views/resource/floor.vue') },
       { path: 'rooms', name: 'rooms', meta: { title: '\u623f\u95f4\u7ba1\u7406' }, component: () => import('@/views/resource/room.vue') },

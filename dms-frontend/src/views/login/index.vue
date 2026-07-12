@@ -139,4 +139,8 @@ async function onSubmit() {
   .desc { display: none; }
   .login-card { width: min(400px, 92vw); }
 }
+.login-container { position: relative; isolation: isolate; overflow: hidden; }
+.login-container::after { content: ""; position: absolute; z-index: 0; pointer-events: none; right: 4vw; bottom: -70px; width: min(48vw, 680px); height: 280px; opacity: .2; border: 1px solid #79a9e8; border-radius: 22px; background-image: linear-gradient(rgba(31,111,235,.35) 1px, transparent 1px), linear-gradient(90deg, rgba(31,111,235,.35) 1px, transparent 1px); background-size: 68px 56px; transform: perspective(600px) rotateX(58deg) rotateZ(-7deg); }
+.brand, .login-card { position: relative; z-index: 1; }
+@media (max-width: 860px) { .login-container::after { right: -120px; width: 620px; opacity: .14; } }
 </style>

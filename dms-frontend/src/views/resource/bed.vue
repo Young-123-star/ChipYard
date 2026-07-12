@@ -18,7 +18,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="success" :disabled="!roomId" @click="openCreate">新增床位</el-button>
+          <el-button type="primary" :disabled="!roomId" @click="openCreate">新增床位</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
       </el-form>
