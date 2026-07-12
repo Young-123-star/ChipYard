@@ -1,9 +1,9 @@
 <template>
-  <el-card shadow="never">
-    <div style="margin-bottom: 12px">
+  <DataView title="收费标准" :total="list.length">
+    <template #actions>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
       <el-button type="primary" @click="openCreate">新增收费标准</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-    </div>
+    </template>
 
     <el-table v-loading="loading" :data="list">
       <el-table-column label="房型" width="160">
@@ -21,7 +21,9 @@
       </el-table-column>
     </el-table>
 
-    <el-dialog v-model="visible" :title="form.id ? '编辑收费标准' : '新增收费标准'" width="460px">
+  </DataView>
+
+  <el-dialog v-model="visible" :title="form.id ? '编辑收费标准' : '新增收费标准'" width="460px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="房型" prop="roomType">
           <el-select v-model="form.roomType" placeholder="选择房型" style="width: 100%">
@@ -37,8 +39,7 @@
         <el-button @click="visible = false">取消</el-button>
         <el-button type="primary" :loading="saving" @click="onSubmit">保存</el-button>
       </template>
-    </el-dialog>
-  </el-card>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -48,6 +49,7 @@ import { listStandards, createStandard, updateStandard, deleteStandard } from '@
 import type { FeeStandard } from '@/api/types'
 import { ROOM_TYPE, labelOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import DataView from '@/components/layout/DataView.vue'
 
 const loading = ref(false)
 const exporting = ref(false)

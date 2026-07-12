@@ -264,4 +264,6 @@ onMounted(() => { loadBuildings(); reload() })
 /* 悬停提示 */
 .tip { font-size: 12.5px; line-height: 1.7; }
 .tip-title { font-weight: 700; margin-bottom: 2px; }
+@media (max-width: 1199px) { .title-block { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; } .tb-cell { border-bottom: 1px solid var(--dms-hairline); } .plan { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+@media (max-width: 767px) { .legend { flex-wrap: wrap; } .title-block { grid-template-columns: repeat(2, 1fr); } .tb-cell { padding: 10px 12px; } .plan { grid-template-columns: repeat(2, minmax(132px, 1fr)); overflow-x: auto; } .room { min-height: 112px; } }
 </style>

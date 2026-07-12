@@ -1,8 +1,8 @@
 <template>
   <el-card shadow="never">
     <el-tabs v-model="activeTab">
-      <el-tab-pane label="巡检计划" name="plans">
-        <el-form :inline="true" :model="planQuery">
+      <el-tab-pane :label="'巡检计划 ' + planTotal" name="plans">
+        <el-form :inline="true" :model="planQuery" @keyup.enter="reloadPlans">
           <el-form-item label="状态">
             <el-select v-model="planQuery.status" clearable placeholder="全部" style="width: 120px" @change="reloadPlans">
               <el-option label="启用" :value="1" /><el-option label="停用" :value="0" />
@@ -13,7 +13,7 @@
               <el-option v-for="item in CYCLES" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item><el-button type="primary" @click="reloadPlans">查询</el-button><el-button type="success" @click="openPlan()">新建计划</el-button></el-form-item>
+          <el-form-item><el-button @click="reloadPlans">查询</el-button><el-button type="primary" @click="openPlan()">新建计划</el-button></el-form-item>
         </el-form>
 
         <el-table v-loading="planLoading" :data="plans">
@@ -34,15 +34,15 @@
         <el-pagination v-if="planTotal > planQuery.size" class="pager" layout="total, prev, pager, next" :total="planTotal" :current-page="planQuery.page" :page-size="planQuery.size" @current-change="changePlanPage" />
       </el-tab-pane>
 
-      <el-tab-pane label="巡检任务" name="tasks">
-        <el-form :inline="true" :model="taskQuery">
+      <el-tab-pane :label="'巡检任务 ' + taskTotal" name="tasks">
+        <el-form :inline="true" :model="taskQuery" @keyup.enter="reloadTasks">
           <el-form-item label="状态">
             <el-select v-model="taskQuery.status" clearable placeholder="全部" style="width: 130px" @change="reloadTasks">
               <el-option v-for="item in TASK_STATUS" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
           <el-form-item label="计划日期"><el-date-picker v-model="taskQuery.plannedDate" type="date" value-format="YYYY-MM-DD" clearable @change="reloadTasks" /></el-form-item>
-          <el-form-item><el-button type="primary" @click="reloadTasks">查询</el-button></el-form-item>
+          <el-form-item><el-button @click="reloadTasks">查询</el-button></el-form-item>
         </el-form>
 
         <el-table v-loading="taskLoading" :data="tasks">
@@ -210,4 +210,7 @@ onMounted(async () => { const [buildingPage, items] = await Promise.all([pageBui
 <style scoped>
 .pager { margin-top: 12px; justify-content: flex-end; }
 .target-selects { display: grid; gap: 8px; width: 100%; }
+:deep(.el-tabs__header) { margin-bottom: 18px; }
+:deep(.el-tabs__item) { height: 44px; font-weight: 600; }
+@media (max-width: 767px) { :deep(.el-tabs__nav-wrap) { padding: 0 4px; } :deep(.el-dialog__body) { overflow-x: auto; } .target-selects { min-width: 0; } }
 </style>

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="import-page">
     <section class="intro">
       <div>
@@ -28,8 +28,8 @@
         </div>
 
         <div class="actions">
-          <el-button type="primary" :loading="state[item.type].validating" @click="validate(item.type)">上传校验</el-button>
-          <el-button type="success" :disabled="!state[item.type].result?.success" :loading="state[item.type].executing" @click="execute(item.type)">确认导入</el-button>
+          <el-button :loading="state[item.type].validating" @click="validate(item.type)">上传校验</el-button>
+          <el-button type="primary" :disabled="!state[item.type].result?.success" :loading="state[item.type].executing" @click="execute(item.type)">确认导入</el-button>
         </div>
 
         <div v-if="state[item.type].result" class="result">
@@ -142,4 +142,7 @@ function summaryOf(result?: ImportResult) {
 .filename { color: var(--dms-ink-2); font-size: 13px; }
 .result { margin-top: 12px; }
 .error-table { margin-top: 10px; }
+.step-box { border-radius: var(--dms-radius-card); box-shadow: var(--dms-shadow-card); }
+.file-btn { border-radius: var(--dms-radius-ctl); }
+@media (max-width: 767px) { .intro { align-items: flex-start; padding: 16px; } .step-box { padding: 16px; } .actions .el-button, .file-btn { width: 100%; justify-content: center; } .filename { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
 </style>
