@@ -50,7 +50,12 @@
           <template #dropdown><el-dropdown-menu><el-dropdown-item command="logout">&#36864;&#20986;&#30331;&#24405;</el-dropdown-item></el-dropdown-menu></template>
         </el-dropdown>
       </el-header>
-      <el-main><router-view /></el-main>
+      <el-main>
+        <router-view v-slot="{ Component }">
+          <component :is="Component" v-if="route.name === 'dashboard'" />
+          <AppPage v-else :title="String(route.meta.title || '')"><component :is="Component" /></AppPage>
+        </router-view>
+      </el-main>
     </el-container>
   </el-container>
 </template>
@@ -60,6 +65,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowDown, Bell, CircleCheck, DataBoard, DocumentAdd, Expand, Files, Fold, Grid, House, Money, Odometer, OfficeBuilding, PriceTag, Setting, SwitchButton, Tickets, Tools, TrendCharts, UploadFilled, User } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import AppPage from '@/components/layout/AppPage.vue'
 
 const route = useRoute()
 const router = useRouter()

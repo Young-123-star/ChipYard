@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query">
+    <el-form :inline="true" :model="query" @keyup.enter="reload">
       <el-form-item label="状态">
         <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px" @change="reload">
           <el-option v-for="s in CHECKOUT_STATUS" :key="s.value" :label="s.label" :value="s.value" />
@@ -12,8 +12,8 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button type="primary" @click="reload">查询</el-button>
-        <el-button type="success" @click="openCreate">手工新建</el-button>
+        <el-button @click="reload">查询</el-button>
+        <el-button type="primary" @click="openCreate">手工新建</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
     </el-form>

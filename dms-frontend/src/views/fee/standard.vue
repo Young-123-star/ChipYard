@@ -1,7 +1,7 @@
 <template>
   <el-card shadow="never">
     <div style="margin-bottom: 12px">
-      <el-button type="success" @click="openCreate">新增收费标准</el-button>
+      <el-button type="primary" @click="openCreate">新增收费标准</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
     </div>
 

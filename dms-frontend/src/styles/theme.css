@@ -185,3 +185,29 @@ a, button, [role="button"] { -webkit-tap-highlight-color: transparent; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Legacy CRUD pages follow the same DataView visual contract. */
+.app-page > .el-card,
+.app-page > div > .el-card { overflow: hidden; }
+.app-page .el-card__body > .el-form:first-child {
+  margin: -20px -20px 20px;
+  padding: 18px 20px 0;
+  border-bottom: 1px solid var(--dms-hairline);
+  background: #fbfcfe;
+}
+.app-page .el-card__body > .el-form:first-child .el-form-item { margin-bottom: 18px; }
+.app-page .el-card__body > .el-pagination:last-child { margin-top: 20px !important; }
+.app-page .el-table__fixed-right { box-shadow: -8px 0 16px rgba(16, 32, 70, .04); }
+.app-page .el-table__body-wrapper { scrollbar-width: thin; }
+
+@media (max-width: 767px) {
+  .app-page .el-card__body { padding: 16px; }
+  .app-page .el-card__body > .el-form:first-child {
+    margin: -16px -16px 16px;
+    padding: 16px 16px 0;
+  }
+  .app-page .el-form--inline .el-form-item { display: flex; margin-right: 0; }
+  .app-page .el-form--inline .el-form-item__content { flex: 1; min-width: 0; }
+  .app-page .el-form--inline .el-input,
+  .app-page .el-form--inline .el-select { width: 100% !important; }
+}
