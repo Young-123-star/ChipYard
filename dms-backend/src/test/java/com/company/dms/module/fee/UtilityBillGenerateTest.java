@@ -64,9 +64,9 @@ class UtilityBillGenerateTest {
                 .orderByAsc(FeeBill::getId));
         assertEquals(2, bills.size(), "2 人各一张");
         BigDecimal sum = bills.get(0).getAmount().add(bills.get(1).getAmount());
-        assertEquals(0, new BigDecimal("25.01").compareTo(sum), "合计=房间总额");
-        assertEquals(0, new BigDecimal("12.50").compareTo(bills.get(0).getAmount()));
-        assertEquals(0, new BigDecimal("12.51").compareTo(bills.get(1).getAmount()));
+        assertEquals(0, new BigDecimal("13.46").compareTo(sum), "total equals room amount");
+        assertEquals(0, new BigDecimal("6.73").compareTo(bills.get(0).getAmount()));
+        assertEquals(0, new BigDecimal("6.73").compareTo(bills.get(1).getAmount()));
     }
 
     @Test

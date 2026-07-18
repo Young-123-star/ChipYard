@@ -11,6 +11,9 @@ import java.math.BigDecimal;
 @TableName("dms_meter_reading")
 public class MeterReading extends BaseEntity {
     private Long id;
+    private Long buildingId;
+    private String accountCode;
+    private Integer targetType;
     private Long roomId;
     private String period;
     private Integer meterType;

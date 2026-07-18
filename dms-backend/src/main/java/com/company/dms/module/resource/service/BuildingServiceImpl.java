@@ -51,6 +51,9 @@ public class BuildingServiceImpl implements BuildingService {
             vo.setRealRoomCount(rooms.size());
             vo.setRealBedCount(rooms.stream().mapToInt(r -> r.getBedCount() == null ? 0 : r.getBedCount()).sum());
             vo.setOccupiedBeds(rooms.stream().mapToInt(r -> r.getOccupiedBeds() == null ? 0 : r.getOccupiedBeds()).sum());
+            int configured = (int) rooms.stream().filter(r -> r.getSettlementMode() != null && r.getUtilityAccountCode() != null).count();
+            vo.setUtilityConfiguredRooms(configured);
+            vo.setUtilityUnconfiguredRooms(rooms.size() - configured);
             return vo;
         }).collect(Collectors.toList()));
         return PageResult.of(voPage);

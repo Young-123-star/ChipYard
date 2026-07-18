@@ -29,4 +29,5 @@ public interface CheckinService {
     java.util.List<CheckinRecord> listActiveRecords();
     /** 按房间取在住(status=1)档案。 */
     java.util.List<CheckinRecord> listActiveRecordsByRoom(Long roomId);
+    java.util.List<CheckinRecord> listRecordsByRoomAt(Long roomId, LocalDate date);
 }

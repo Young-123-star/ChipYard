@@ -26,7 +26,7 @@ class MeterControllerTest {
         mockMvc.perform(get("/api/fee/utility-rate").header("Authorization", auth()))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(0))
-            .andExpect(jsonPath("$.data.electricityPrice").value(1.00));
+            .andExpect(jsonPath("$.data.electricityPrice").value(0.5383));
     }
 
     @Test

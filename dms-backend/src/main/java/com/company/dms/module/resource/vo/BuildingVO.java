@@ -14,4 +14,6 @@ public class BuildingVO extends Building {
     private Integer realBedCount;
     /** 实时统计：已入住床位 */
     private Integer occupiedBeds;
+    private Integer utilityConfiguredRooms;
+    private Integer utilityUnconfiguredRooms;
 }

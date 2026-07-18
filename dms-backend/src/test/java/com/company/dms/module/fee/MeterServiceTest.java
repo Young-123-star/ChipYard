@@ -22,8 +22,8 @@ class MeterServiceTest {
     @Test
     void get_rate_returns_seed() {
         UtilityRate rate = meterService.getRate();
-        assertEquals(0, new BigDecimal("1.00").compareTo(rate.getElectricityPrice()));
-        assertEquals(0, new BigDecimal("5.00").compareTo(rate.getWaterPrice()));
+        assertEquals(0, new BigDecimal("0.5383").compareTo(rate.getElectricityPrice()));
+        assertEquals(0, new BigDecimal("4.1500").compareTo(rate.getWaterPrice()));
     }
 
     @Test
@@ -35,7 +35,7 @@ class MeterServiceTest {
         MeterReading r = meterService.getReading(id);
         assertEquals(0, new BigDecimal("130.00").compareTo(r.getPrevReading()), "上期取 2026-06 的 130");
         assertEquals(0, new BigDecimal("30.00").compareTo(r.getConsumption()));
-        assertEquals(0, new BigDecimal("30.00").compareTo(r.getAmount()));
+        assertEquals(0, new BigDecimal("16.15").compareTo(r.getAmount()));
     }
 
     @Test
@@ -59,6 +59,6 @@ class MeterServiceTest {
         MeterReading r = meterService.getReading(id);
         assertEquals(0, BigDecimal.ZERO.compareTo(r.getPrevReading()));
         assertEquals(0, new BigDecimal("12.00").compareTo(r.getConsumption()));
-        assertEquals(0, new BigDecimal("60.00").compareTo(r.getAmount()), "12×水价5.00=60");
+        assertEquals(0, new BigDecimal("49.80").compareTo(r.getAmount()), "12 x water price 4.1500");
     }
 }

@@ -18,17 +18,20 @@ public class ReportServiceImpl implements ReportService {
 
     private final FeeBillMapper billMapper;
     private final com.company.dms.module.fee.mapper.MeterReadingMapper readingMapper;
+    private final com.company.dms.module.fee.mapper.UtilitySettlementMapper settlementMapper;
     private final com.company.dms.module.resource.service.RoomService roomService;
     private final com.company.dms.module.resource.service.BuildingService buildingService;
     private final com.company.dms.module.resident.service.ResidentService residentService;
 
     public ReportServiceImpl(FeeBillMapper billMapper,
                              com.company.dms.module.fee.mapper.MeterReadingMapper readingMapper,
+                             com.company.dms.module.fee.mapper.UtilitySettlementMapper settlementMapper,
                              com.company.dms.module.resource.service.RoomService roomService,
                              com.company.dms.module.resource.service.BuildingService buildingService,
                              com.company.dms.module.resident.service.ResidentService residentService) {
         this.billMapper = billMapper;
         this.readingMapper = readingMapper;
+        this.settlementMapper = settlementMapper;
         this.roomService = roomService;
         this.buildingService = buildingService;
         this.residentService = residentService;
@@ -138,6 +141,24 @@ public class ReportServiceImpl implements ReportService {
 
     @Override
     public List<com.company.dms.module.fee.vo.UsageTrendVO> getUsageTrend() {
+        List<com.company.dms.module.fee.entity.UtilitySettlement> settlements =
+                settlementMapper.selectList(Wrappers.<com.company.dms.module.fee.entity.UtilitySettlement>lambdaQuery()
+                        .eq(com.company.dms.module.fee.entity.UtilitySettlement::getStatus, 1));
+        if (!settlements.isEmpty()) {
+            Map<String, com.company.dms.module.fee.vo.UsageTrendVO> settled = new TreeMap<>();
+            for (com.company.dms.module.fee.entity.UtilitySettlement settlement : settlements) {
+                com.company.dms.module.fee.vo.UsageTrendVO value = settled.computeIfAbsent(settlement.getPeriod(), p -> {
+                    com.company.dms.module.fee.vo.UsageTrendVO trend = new com.company.dms.module.fee.vo.UsageTrendVO();
+                    trend.setPeriod(p);
+                    trend.setElectricity(BigDecimal.ZERO);
+                    trend.setWater(BigDecimal.ZERO);
+                    return trend;
+                });
+                value.setElectricity(value.getElectricity().add(settlement.getElectricityUsage()));
+                value.setWater(value.getWater().add(settlement.getWaterUsage()));
+            }
+            return new ArrayList<>(settled.values());
+        }
         List<com.company.dms.module.fee.entity.MeterReading> readings =
                 readingMapper.selectList(Wrappers.<com.company.dms.module.fee.entity.MeterReading>lambdaQuery());
         Map<String, com.company.dms.module.fee.vo.UsageTrendVO> map = new TreeMap<>(); // period 升序

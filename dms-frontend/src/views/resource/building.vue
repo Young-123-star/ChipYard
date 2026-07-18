@@ -44,6 +44,7 @@
             <div class="bld-stats">
               <div><span>楼层</span><b>{{ b.floorCount }}</b></div>
               <div><span>房间</span><b>{{ b.realRoomCount ?? 0 }}</b></div>
+              <div><span>水电配置</span><b :class="{ warning: (b.utilityUnconfiguredRooms ?? 0) > 0 }">{{ b.utilityConfiguredRooms ?? 0 }}/{{ b.realRoomCount ?? 0 }}</b></div>
               <div><span>床位</span><b>{{ b.realBedCount ?? 0 }}</b></div>
               <div><span>空闲床位</span><b class="free">{{ (b.realBedCount ?? 0) - (b.occupiedBeds ?? 0) }}</b></div>
               <div><span>电梯</span><b>{{ b.hasElevator === 1 ? '有' : '无' }}</b></div>
@@ -228,4 +229,5 @@ onMounted(reload)
   display: flex; justify-content: flex-end; gap: 4px;
   border-top: 1px solid var(--dms-hairline); padding-top: 10px; margin-top: 8px;
 }
+.bld-stats b.warning { color: #e6a23c; }
 </style>
