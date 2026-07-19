@@ -51,7 +51,7 @@ INSERT INTO dms_fee_bill (bill_no, checkin_record_id, resident_id, room_id, peri
 VALUES ('BILL-1-202606', 1, 1, 2, '2026-06', 800.00, 1, NOW(), NOW());
 
 INSERT INTO dms_utility_rate (id, electricity_price, water_price, created_at, updated_at)
-VALUES (1, 1.00, 5.00, NOW(), NOW());
+VALUES (1, 0.5383, 4.1500, NOW(), NOW());
 
 INSERT INTO dms_meter_reading (room_id, period, meter_type, prev_reading, current_reading, consumption, unit_price, amount, created_at, updated_at) VALUES
     (2, '2026-06', 1, 100.00, 130.00, 30.00, 1.00, 30.00, NOW(), NOW()),

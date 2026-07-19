@@ -62,6 +62,10 @@ CREATE TABLE dms_room (
     facilities    VARCHAR(1000),
     gender_limit  TINYINT DEFAULT 0,
     status        TINYINT DEFAULT 1,
+    settlement_mode TINYINT,
+    utility_account_code VARCHAR(50),
+    electricity_rule TINYINT DEFAULT 0,
+    water_rule TINYINT DEFAULT 0,
     remark        VARCHAR(500),
     created_at    DATETIME,
     updated_at    DATETIME,
@@ -178,6 +182,7 @@ CREATE TABLE dms_fee_bill (
     pay_method        TINYINT,
     bill_type         TINYINT       DEFAULT 1,
     remark            VARCHAR(200),
+    utility_result_id BIGINT,
     created_at        DATETIME,
     updated_at        DATETIME,
     deleted_at        DATETIME
@@ -186,13 +191,16 @@ CREATE TABLE dms_fee_bill (
 DROP TABLE IF EXISTS dms_meter_reading;
 CREATE TABLE dms_meter_reading (
     id              BIGINT PRIMARY KEY AUTO_INCREMENT,
-    room_id         BIGINT        NOT NULL,
+    building_id BIGINT,
+    account_code VARCHAR(50),
+    target_type TINYINT DEFAULT 2,
+    room_id         BIGINT,
     period          VARCHAR(7)    NOT NULL,
     meter_type      TINYINT       NOT NULL,
     prev_reading    DECIMAL(12,2) DEFAULT 0,
     current_reading DECIMAL(12,2) NOT NULL,
     consumption     DECIMAL(12,2) DEFAULT 0,
-    unit_price      DECIMAL(10,2) DEFAULT 0,
+    unit_price      DECIMAL(10,4) DEFAULT 0,
     amount          DECIMAL(10,2) DEFAULT 0,
     created_at      DATETIME,
     updated_at      DATETIME,
@@ -202,13 +210,55 @@ CREATE TABLE dms_meter_reading (
 DROP TABLE IF EXISTS dms_utility_rate;
 CREATE TABLE dms_utility_rate (
     id                BIGINT PRIMARY KEY AUTO_INCREMENT,
-    electricity_price DECIMAL(10,2) NOT NULL,
-    water_price       DECIMAL(10,2) NOT NULL,
+    electricity_price DECIMAL(10,4) NOT NULL,
+    water_price       DECIMAL(10,4) NOT NULL,
     created_at        DATETIME,
     updated_at        DATETIME,
     deleted_at        DATETIME
 );
 
+DROP TABLE IF EXISTS dms_utility_room_result;
+DROP TABLE IF EXISTS dms_utility_settlement;
+CREATE TABLE dms_utility_settlement (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    building_id BIGINT NOT NULL,
+    account_code VARCHAR(50) NOT NULL,
+    period VARCHAR(7) NOT NULL,
+    cycle_start DATE NOT NULL,
+    cycle_end DATE NOT NULL,
+    electricity_price DECIMAL(10,4) NOT NULL,
+    water_price DECIMAL(10,4) NOT NULL,
+    electricity_usage DECIMAL(14,4) DEFAULT 0,
+    water_usage DECIMAL(14,4) DEFAULT 0,
+    total_cost DECIMAL(12,2) DEFAULT 0,
+    employee_amount DECIMAL(12,2) DEFAULT 0,
+    company_amount DECIMAL(12,2) DEFAULT 0,
+    status TINYINT DEFAULT 1,
+    created_at DATETIME,
+    updated_at DATETIME,
+    deleted_at DATETIME,
+    active_unique_key TINYINT GENERATED ALWAYS AS (CASE WHEN status = 1 AND deleted_at IS NULL THEN 1 ELSE NULL END)
+);
+CREATE UNIQUE INDEX uk_utility_settlement_active ON dms_utility_settlement (building_id, account_code, period, active_unique_key);
+
+CREATE TABLE dms_utility_room_result (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    settlement_id BIGINT NOT NULL,
+    room_id BIGINT NOT NULL,
+    utility_type TINYINT NOT NULL,
+    actual_usage DECIMAL(14,4) DEFAULT 0,
+    allowance_usage DECIMAL(14,4) DEFAULT 0,
+    excess_usage DECIMAL(14,4) DEFAULT 0,
+    total_cost DECIMAL(12,2) DEFAULT 0,
+    employee_amount DECIMAL(12,2) DEFAULT 0,
+    company_amount DECIMAL(12,2) DEFAULT 0,
+    occupant_count INT DEFAULT 0,
+    calculation_note VARCHAR(500),
+    created_at DATETIME,
+    updated_at DATETIME,
+    deleted_at DATETIME
+);
+CREATE INDEX idx_utility_result_settlement ON dms_utility_room_result (settlement_id);
 DROP TABLE IF EXISTS dms_repair_order;
 CREATE TABLE dms_repair_order (
     id           BIGINT PRIMARY KEY AUTO_INCREMENT,
@@ -296,3 +346,4 @@ CREATE TABLE sys_dict_item (
 CREATE UNIQUE INDEX uk_dms_building_code_active ON dms_building (building_code, active_unique_key);
 CREATE UNIQUE INDEX uk_dms_room_building_number_active ON dms_room (building_id, room_number, active_unique_key);
 CREATE UNIQUE INDEX uk_dms_bed_room_number_active ON dms_bed (room_id, bed_number, active_unique_key);
+CREATE UNIQUE INDEX uk_meter_target_period ON dms_meter_reading (building_id, account_code, target_type, room_id, period, meter_type);

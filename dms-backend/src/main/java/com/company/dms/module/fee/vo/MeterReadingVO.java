@@ -6,6 +6,9 @@ import java.math.BigDecimal;
 @Data
 public class MeterReadingVO {
     private Long id;
+    private Long buildingId;
+    private String accountCode;
+    private Integer targetType;
     private Long roomId;
     private String roomNumber;
     private String period;

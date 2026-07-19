@@ -15,6 +15,7 @@ import com.company.dms.module.fee.entity.UtilityRate;
 import com.company.dms.module.fee.service.FeeBillService;
 import com.company.dms.module.fee.service.FeeStandardService;
 import com.company.dms.module.fee.service.MeterService;
+import com.company.dms.module.fee.service.UtilityBillingService;
 import com.company.dms.module.fee.vo.ArrearsVO;
 import com.company.dms.module.fee.vo.FeeBillVO;
 import com.company.dms.module.fee.vo.GenerateResultVO;
@@ -25,6 +26,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.List;
 
 @Tag(name = "费用管理")
@@ -35,11 +37,14 @@ public class FeeController {
     private final FeeStandardService standardService;
     private final FeeBillService billService;
     private final MeterService meterService;
+    private final UtilityBillingService utilityBillingService;
 
-    public FeeController(FeeStandardService standardService, FeeBillService billService, MeterService meterService) {
+    public FeeController(FeeStandardService standardService, FeeBillService billService, MeterService meterService,
+                         UtilityBillingService utilityBillingService) {
         this.standardService = standardService;
         this.billService = billService;
         this.meterService = meterService;
+        this.utilityBillingService = utilityBillingService;
     }
 
     // ---- 收费标准 ----
@@ -134,5 +139,45 @@ public class FeeController {
     @PostMapping("/utility-bills/generate")
     public R<GenerateResultVO> generateUtility(@Valid @RequestBody GenerateBillsDTO dto) {
         return R.ok(meterService.generateUtilityBills(dto.getPeriod()));
+    }
+
+    @GetMapping("/utility/accounts")
+    public R<List<Map<String, Object>>> utilityAccounts(@RequestParam(required = false) Long buildingId) {
+        return R.ok(utilityBillingService.listAccounts(buildingId));
+    }
+
+    @GetMapping("/utility/readings")
+    public R<List<com.company.dms.module.fee.entity.MeterReading>> utilityReadings(
+            @RequestParam(required = false) String period,
+            @RequestParam(required = false) Long buildingId,
+            @RequestParam(required = false) String accountCode) {
+        return R.ok(utilityBillingService.listReadings(period, buildingId, accountCode));
+    }
+
+    @PostMapping("/utility/readings")
+    public R<Long> saveUtilityReading(@Valid @RequestBody MeterReadingDTO dto) {
+        return R.ok(utilityBillingService.saveReading(dto));
+    }
+
+    @PostMapping("/utility/settlements/preview")
+    public R<Map<String, Object>> previewUtilitySettlement(@Valid @RequestBody GenerateBillsDTO dto) {
+        return R.ok(utilityBillingService.preview(dto.getPeriod()));
+    }
+
+    @PostMapping("/utility/settlements/generate")
+    public R<Map<String, Object>> generateUtilitySettlement(@Valid @RequestBody GenerateBillsDTO dto) {
+        return R.ok(utilityBillingService.generate(dto.getPeriod()));
+    }
+
+    @GetMapping("/utility/settlements")
+    public R<List<com.company.dms.module.fee.entity.UtilitySettlement>> utilitySettlements(
+            @RequestParam(required = false) String period) {
+        return R.ok(utilityBillingService.listSettlements(period));
+    }
+
+    @PostMapping("/utility/settlements/{id}/void")
+    public R<Void> voidUtilitySettlement(@PathVariable Long id) {
+        utilityBillingService.voidSettlement(id);
+        return R.ok();
     }
 }

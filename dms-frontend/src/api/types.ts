@@ -21,6 +21,8 @@ export interface Building {
   totalRooms?: number
   totalBeds?: number
   status: number
+  utilityConfiguredRooms?: number
+  utilityUnconfiguredRooms?: number
   remark?: string
   /** 后端实时统计 */
   realRoomCount?: number
@@ -46,6 +48,10 @@ export interface Room {
   floorId: number
   roomNumber: string
   roomType: number
+  settlementMode?: number
+  utilityAccountCode?: string
+  electricityRule?: number
+  waterRule?: number
   area?: number
   orientation?: string
   bedCount: number
@@ -178,8 +184,54 @@ export interface UtilityRate {
   waterPrice: number
 }
 
+
+export interface UtilityAccount {
+  buildingId: number
+  accountCode: string
+  settlementMode: number
+  electricityRule: number
+  waterRule: number
+  roomIds: number[]
+  roomNumbers: string[]
+  configured: boolean
+  errors: string[]
+}
+
+export interface UtilitySettlement {
+  id: number
+  buildingId: number
+  accountCode: string
+  period: string
+  cycleStart: string
+  cycleEnd: string
+  electricityUsage: number
+  waterUsage: number
+  totalCost: number
+  employeeAmount: number
+  companyAmount: number
+  status: number
+}
+
+export interface UtilityPreview {
+  valid: boolean
+  errors: string[]
+  accounts: Array<{
+    buildingId: number
+    accountCode: string
+    electricityUsage: number
+    waterUsage: number
+    totalCost: number
+    employeeAmount: number
+    companyAmount: number
+  }>
+  cycleStart: string
+  cycleEnd: string
+}
 export interface MeterReading {
   id: number
+  buildingId?: number
+  accountCode?: string
+  targetType?: number
   roomId: number
   roomNumber?: string
   period: string

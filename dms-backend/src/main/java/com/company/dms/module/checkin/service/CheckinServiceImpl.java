@@ -223,4 +223,14 @@ public class CheckinServiceImpl implements CheckinService {
                 .eq(CheckinRecord::getStatus, 1)
                 .eq(CheckinRecord::getRoomId, roomId));
     }
+
+    @Override
+    public java.util.List<CheckinRecord> listRecordsByRoomAt(Long roomId, LocalDate date) {
+        return recordMapper.selectList(Wrappers.<CheckinRecord>lambdaQuery()
+                .eq(CheckinRecord::getRoomId, roomId)
+                .le(CheckinRecord::getCheckinDate, date)
+                .and(q -> q.isNull(CheckinRecord::getCheckoutDate)
+                        .or().gt(CheckinRecord::getCheckoutDate, date))
+                .orderByAsc(CheckinRecord::getId));
+    }
 }

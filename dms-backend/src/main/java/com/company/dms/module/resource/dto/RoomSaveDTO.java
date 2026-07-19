@@ -22,5 +22,9 @@ public class RoomSaveDTO {
     private String facilities;
     private Integer genderLimit = 0;
     private Integer status = 1;
+    private Integer settlementMode;
+    private String utilityAccountCode;
+    private Integer electricityRule = 0;
+    private Integer waterRule = 0;
     private String remark;
 }

@@ -64,6 +64,12 @@
         <el-table-column label="床位" width="100">
           <template #default="{ row }">{{ row.occupiedBeds }}/{{ row.bedCount }}</template>
         </el-table-column>
+        <el-table-column label="水电账户" min-width="150">
+          <template #default="{ row }">
+            <span v-if="row.settlementMode">{{ row.settlementMode === 1 ? '户级' : '房间' }} · {{ row.utilityAccountCode }}</span>
+            <el-tag v-else type="danger" size="small">未配置</el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="配套设施" min-width="180">
           <template #default="{ row }">
             <template v-if="parseFacilities(row.facilities).length">
@@ -129,6 +135,27 @@
             <el-option v-for="s in ROOM_STATUS" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
+        <el-divider content-position="left">水电结算</el-divider>
+        <el-form-item label="结算方式">
+          <el-select v-model="form.settlementMode" clearable placeholder="未配置" style="width: 100%">
+            <el-option v-for="item in SETTLEMENT_MODE" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
+        <template v-if="form.settlementMode">
+          <el-form-item label="账户编码">
+            <el-input v-model="form.utilityAccountCode" :placeholder="form.settlementMode === 2 ? '留空则使用房间号' : '同一户填写相同编码'" />
+          </el-form-item>
+          <el-form-item label="用电规则">
+            <el-select v-model="form.electricityRule" style="width: 100%">
+              <el-option v-for="item in ELECTRIC_RULE" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="用水规则">
+            <el-select v-model="form.waterRule" style="width: 100%">
+              <el-option v-for="item in WATER_RULE" :key="item.value" :label="item.label" :value="item.value" />
+            </el-select>
+          </el-form-item>
+        </template>
         <el-form-item label="配套设施">
           <div class="facility-editor">
             <div v-for="(row, index) in facilityRows" :key="index" class="facility-row">
@@ -188,6 +215,15 @@ const form = reactive<Partial<Room>>({})
 const facilityOptions = ref<DictOption[]>(ROOM_FACILITY)
 type FacilityRow = { name: string; count: number }
 const facilityRows = ref<FacilityRow[]>([])
+const SETTLEMENT_MODE = [{ value: 1, label: '户级账户' }, { value: 2, label: '房间账户' }]
+const ELECTRIC_RULE = [
+  { value: 0, label: '不计电费' }, { value: 1, label: '户级250度' }, { value: 2, label: '房间250度' },
+  { value: 3, label: '夫妻实际费用平摊' }, { value: 4, label: '公司承担' }
+]
+const WATER_RULE = [
+  { value: 0, label: '不计水费' }, { value: 1, label: '户级50吨' }, { value: 2, label: '房间17吨' },
+  { value: 3, label: '夫妻实际费用平摊' }, { value: 4, label: '公司承担' }
+]
 const rules = {
   buildingId: [{ required: true, message: '请选择楼栋', trigger: 'change' }],
   floorId: [{ required: true, message: '请选择楼层', trigger: 'change' }],
@@ -308,6 +344,7 @@ async function openCreate() {
   formFloors.value = []
   dialogVisible.value = true
 }
+  Object.assign(form, { settlementMode: undefined, utilityAccountCode: '', electricityRule: 0, waterRule: 0 })
 
 async function openEdit(row: Room) {
   await loadFacilityOptions()

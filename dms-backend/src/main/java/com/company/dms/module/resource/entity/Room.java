@@ -22,5 +22,9 @@ public class Room extends BaseEntity {
     private String facilities;
     private Integer genderLimit;
     private Integer status;
+    private Integer settlementMode;
+    private String utilityAccountCode;
+    private Integer electricityRule;
+    private Integer waterRule;
     private String remark;
 }

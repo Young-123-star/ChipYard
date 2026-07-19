@@ -6,12 +6,16 @@ import java.math.BigDecimal;
 
 @Data
 public class MeterReadingDTO {
+    private Long buildingId;
+    private String accountCode;
+    private Integer targetType;
     @NotNull(message = "房间不能为空")
     private Long roomId;
     @NotNull(message = "账期不能为空")
     private String period;       // YYYY-MM
     @NotNull(message = "表类型不能为空")
     private Integer meterType;   // 1电 2水
+    private BigDecimal prevReading;
     @NotNull(message = "本期读数不能为空")
     private BigDecimal currentReading;
 }

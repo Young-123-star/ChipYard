@@ -123,6 +123,11 @@ public class ImportService {
             if (new HashSet<>(beds).size() != beds.size()) {
                 result.addError(rowNo, "bedNumbers", col(r, 8), "duplicate bed number in row");
             }
+            if (!blank(col(r, 14))) {
+                int mode = intValue(col(r, 14), 0);
+                if (mode != 1 && mode != 2) result.addError(rowNo, "settlementMode", col(r, 14), "must be 1 or 2");
+                if (mode == 1 && blank(col(r, 15))) result.addError(rowNo, "utilityAccountCode", col(r, 15), "required for household mode");
+            }
         }
     }
 
@@ -219,6 +224,12 @@ public class ImportService {
                 dto.setOrientation(col(r, 11));
                 dto.setFacilities(col(r, 12));
                 dto.setStatus(intValue(col(r, 13), 1));
+                if (!blank(col(r, 14))) {
+                    dto.setSettlementMode(intValue(col(r, 14), 0));
+                    dto.setUtilityAccountCode(col(r, 15));
+                    dto.setElectricityRule(intValue(col(r, 16), 0));
+                    dto.setWaterRule(intValue(col(r, 17), 0));
+                }
                 room = roomService.getById(roomService.create(dto));
             }
             for (String bedNumber : bedNumbers(col(r, 8), intValue(col(r, 7), 1))) {
@@ -369,7 +380,7 @@ public class ImportService {
     }
 
     private String[] headersResource() {
-        return new String[]{"\u697c\u680b\u7f16\u7801", "\u697c\u680b\u540d\u79f0", "\u5730\u5740", "\u697c\u5c42\u53f7", "\u697c\u5c42\u540d\u79f0", "\u623f\u95f4\u53f7", "\u623f\u578b", "\u5e8a\u4f4d\u6570", "\u5e8a\u4f4d\u7f16\u53f7", "\u6027\u522b\u9650\u5236", "\u9762\u79ef", "\u671d\u5411", "\u8bbe\u65bd", "\u72b6\u6001"};
+        return new String[]{"\u697c\u680b\u7f16\u7801", "\u697c\u680b\u540d\u79f0", "\u5730\u5740", "\u697c\u5c42\u53f7", "\u697c\u5c42\u540d\u79f0", "\u623f\u95f4\u53f7", "\u623f\u578b", "\u5e8a\u4f4d\u6570", "\u5e8a\u4f4d\u7f16\u53f7", "\u6027\u522b\u9650\u5236", "\u9762\u79ef", "\u671d\u5411", "\u8bbe\u65bd", "\u72b6\u6001", "\u7ed3\u7b97\u65b9\u5f0f", "\u6c34\u7535\u8d26\u6237\u7f16\u7801", "\u7528\u7535\u89c4\u5219", "\u7528\u6c34\u89c4\u5219"};
     }
 
     private String[] headersResident() {
@@ -381,7 +392,7 @@ public class ImportService {
     }
 
     private List<String[]> sampleResource() {
-        return Collections.singletonList(new String[]{"T", "Test Building", "Park", "1", "F1", "101", "2", "2", "A,B", "0", "20", "S", "", "1"});
+        return Collections.singletonList(new String[]{"T", "Test Building", "Park", "1", "F1", "101", "2", "2", "A,B", "0", "20", "S", "", "1", "2", "101", "2", "2"});
     }
 
     private List<String[]> sampleResident() {

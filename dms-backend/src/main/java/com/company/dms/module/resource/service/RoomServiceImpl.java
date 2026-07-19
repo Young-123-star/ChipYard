@@ -119,6 +119,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public Long create(RoomSaveDTO dto) {
+        normalizeUtilityConfig(dto);
         Long count = roomMapper.selectCount(Wrappers.<Room>lambdaQuery()
                 .eq(Room::getBuildingId, dto.getBuildingId())
                 .eq(Room::getRoomNumber, dto.getRoomNumber()));
@@ -134,6 +135,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void update(Long id, RoomSaveDTO dto) {
         getById(id);
+        normalizeUtilityConfig(dto);
         Room r = new Room();
         BeanUtils.copyProperties(dto, r);
         r.setId(id);
@@ -180,6 +182,23 @@ public class RoomServiceImpl implements RoomService {
         roomMapper.updateById(room);
     }
 
+    private void normalizeUtilityConfig(RoomSaveDTO dto) {
+        Integer mode = dto.getSettlementMode();
+        if (mode == null) {
+            dto.setUtilityAccountCode(null);
+            dto.setElectricityRule(0);
+            dto.setWaterRule(0);
+            return;
+        }
+        if (mode != 1 && mode != 2) throw new BizException("invalid settlement mode");
+        if (mode == 2 && !StringUtils.hasText(dto.getUtilityAccountCode())) {
+            dto.setUtilityAccountCode(dto.getRoomNumber());
+        }
+        if (!StringUtils.hasText(dto.getUtilityAccountCode())) throw new BizException("utility account code required");
+        dto.setUtilityAccountCode(dto.getUtilityAccountCode().trim());
+        if (dto.getElectricityRule() == null) dto.setElectricityRule(0);
+        if (dto.getWaterRule() == null) dto.setWaterRule(0);
+    }
     private String normalizeFacilities(String facilities) {
         if (!StringUtils.hasText(facilities)) return facilities;
         try {

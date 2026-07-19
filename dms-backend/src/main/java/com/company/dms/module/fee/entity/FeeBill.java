@@ -23,4 +23,5 @@ public class FeeBill extends BaseEntity {
     private Integer payMethod;
     private Integer billType;
     private String remark;
+    private Long utilityResultId;
 }

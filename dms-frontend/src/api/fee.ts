@@ -1,5 +1,5 @@
 import request from '@/utils/request'
-import type { FeeStandard, FeeBill, UtilityRate, MeterReading, PageResult } from './types'
+import type { FeeStandard, FeeBill, UtilityRate, MeterReading, PageResult, UtilityAccount, UtilitySettlement, UtilityPreview } from './types'
 
 export function listStandards(): Promise<FeeStandard[]> {
   return request.get('/fee/standards')
@@ -72,4 +72,41 @@ export function saveMeterReading(data: { roomId: number; period: string; meterTy
 
 export function generateUtilityBills(data: { period: string }): Promise<{ generated: number; skipped: number }> {
   return request.post('/fee/utility-bills/generate', data)
+}
+
+export function listUtilityAccounts(buildingId?: number): Promise<UtilityAccount[]> {
+  return request.get('/fee/utility/accounts', { params: { buildingId } })
+}
+
+export function listUtilityReadings(params: { period?: string; buildingId?: number; accountCode?: string }): Promise<MeterReading[]> {
+  return request.get('/fee/utility/readings', { params })
+}
+
+export function saveUtilityReading(data: {
+  buildingId: number
+  accountCode: string
+  targetType: number
+  roomId: number
+  period: string
+  meterType: number
+  prevReading?: number
+  currentReading: number
+}): Promise<number> {
+  return request.post('/fee/utility/readings', data)
+}
+
+export function previewUtilitySettlement(period: string): Promise<UtilityPreview> {
+  return request.post('/fee/utility/settlements/preview', { period })
+}
+
+export function generateUtilitySettlement(period: string): Promise<{ settlements: number; bills: number }> {
+  return request.post('/fee/utility/settlements/generate', { period })
+}
+
+export function listUtilitySettlements(period?: string): Promise<UtilitySettlement[]> {
+  return request.get('/fee/utility/settlements', { params: { period } })
+}
+
+export function voidUtilitySettlement(id: number): Promise<void> {
+  return request.post(`/fee/utility/settlements/${id}/void`)
 }
