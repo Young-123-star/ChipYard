@@ -339,12 +339,16 @@ async function reload() {
 
 async function openCreate() {
   await loadFacilityOptions()
-  Object.assign(form, { id: undefined, buildingId: undefined, floorId: undefined, roomNumber: '', roomType: 2, bedCount: 1, area: undefined, orientation: '', genderLimit: 0, status: 1, facilities: '' })
+  Object.assign(form, {
+    id: undefined, buildingId: undefined, floorId: undefined, roomNumber: '', roomType: 2, bedCount: 1,
+    area: undefined, orientation: '', genderLimit: 0, status: 1, facilities: '',
+    settlementMode: undefined, utilityAccountCode: '', electricityRule: 0, waterRule: 0
+  })
   loadFacilities('')
   formFloors.value = []
   dialogVisible.value = true
 }
-  Object.assign(form, { settlementMode: undefined, utilityAccountCode: '', electricityRule: 0, waterRule: 0 })
+
 
 async function openEdit(row: Room) {
   await loadFacilityOptions()

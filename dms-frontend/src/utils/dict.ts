@@ -102,7 +102,8 @@ export const PAY_METHOD = [
 
 export const BILL_TYPE = [
   { value: 1, label: '住宿费', type: 'primary' },
-  { value: 2, label: '水电费', type: 'success' }
+  { value: 2, label: '电费', type: 'warning' },
+  { value: 3, label: '水费', type: 'primary' }
 ]
 
 export const METER_TYPE = [
