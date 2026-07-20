@@ -1,10 +1,87 @@
-# 水电计算模块手工验收指南
+# 水电计算模块应用与测试操作说明
 
 > 仅限独立测试数据库。两个数据脚本都会清空宿舍业务数据，严禁在生产或共享数据库执行。
 
-## 1. 环境与数据
+## 1. 本次修改及作用
 
-1. 切换到 `codex/utility-billing`，启动后端和前端。
+| 修改项 | 作用 |
+|---|---|
+| 房间水电配置 | 房间可设置房间级/户级结算、账户编码及用电/用水规则；房间级账户编码留空时自动使用房间号。 |
+| 楼栋配置进度 | 楼栋页面显示已完成水电配置的房间数，未配置完整时禁止整月结算。 |
+| 结算账户归组 | 户级房间按“楼栋 + 账户编码”归组，避免相同户号跨楼栋合并；规则不一致时显示需修正。 |
+| 抄表管理 | 支持户总电表、房间电表、冷水表和热水表；校验缺表、倒表和负公共用电，结算后锁定读数。 |
+| 月度结算 | 支持预览、整月原子生成、防重复生成、作废和重新结算，不允许部分账户成功。 |
+| 费用分摊 | 按楼栋和房型执行户级公共电分摊、房间补贴、夫妻房、主管房、标准间和空房规则，并保证金额及尾差守恒。 |
+| 人数口径 | 账期为上月 25 日至本月 24 日；24 日入住计入，25 日入住和 24 日退宿不计入。 |
+| 账单与报表 | 分别生成电费和水费个人账单，联动缴费、挂账、退宿欠费和报表；水费类型显示业务名称。 |
+| 数据库升级 | V7 增加结算、房间结果和水电配置结构；V8 将账单类型明确拆分为电费和水费；V9 修正旧容器生成的历史缴费时间。 |
+| 验收资产 | 增加黄金矩阵自动化测试、冒烟/完整矩阵 SQL、原始计算 Excel 和本说明文档。 |
+
+同一批合并内容还修复了登录过期处理：旧请求迟到的 401 不再错误注销新登录会话。
+
+## 2. 合并后获取 main 最新代码
+
+GitHub Desktop：
+
+1. Current branch 切换到 main。
+2. 点击 Fetch origin。
+3. 出现 Pull origin 后点击拉取。
+4. 在 History 确认已包含水电模块合并记录。
+
+命令行方式：
+
+```powershell
+git switch main
+git pull --ff-only origin main
+```
+
+## 3. 启动并应用修改
+
+### 3.1 本地 H2 测试环境
+
+后端终端：
+
+```powershell
+cd dms-backend
+mvn spring-boot:run
+```
+
+前端终端：
+
+```powershell
+cd dms-frontend
+npm install
+npm run dev
+```
+
+访问地址：
+
+- 系统页面：http://localhost:5173
+- 后端接口：http://localhost:8080
+- H2 Console：http://localhost:8080/h2-console
+
+本地环境启动时会通过 schema.sql 和 data.sql 自动建表，无需手工执行 V7/V8/V9。H2 是内存数据库，重启后端会重建数据。
+
+### 3.2 Docker/MySQL 测试环境
+
+```bash
+git pull --ff-only origin main
+docker compose up -d --build
+docker compose ps
+docker compose logs --tail=100 backend
+```
+
+后端启动时 Flyway 会自动执行 V7、V8、V9。检查迁移结果：
+
+```bash
+docker compose exec mysql mysql -u root -p dms -e "select version, description, success from flyway_schema_history order by installed_rank;"
+```
+
+确认 V7、V8、V9 的 success 均为 1。不要执行 docker compose down -v，否则会删除 MySQL 数据卷。完整部署说明见 [DEPLOY.md](../DEPLOY.md)。
+
+## 4. 测试环境与数据
+
+1. 确认当前代码来自 `main`，启动后端和前端。
 2. 本地登录账号：`admin / admin123`。
 3. 打开 `http://localhost:8080/h2-console`：
    - JDBC URL：`jdbc:h2:mem:dms`
@@ -12,12 +89,20 @@
    - Password：留空
 4. 冒烟测试执行 [utility-billing-smoke.sql](./utility-billing-smoke.sql)。
 5. 完整矩阵执行 [utility-billing-matrix.sql](./utility-billing-matrix.sql)。
-6. 固定账期：`2026-08`；周期应显示 `2026-07-25 至 2026-08-24`。
-7. 固定电价：`0.5383`；水价：`4.1500`。
+6. Docker/MySQL 环境从项目根目录导入时，必须显式指定 UTF-8：
+
+   ```bash
+   docker compose exec -T mysql sh -c \
+   'MYSQL_PWD="$MYSQL_ROOT_PASSWORD" mysql --default-character-set=utf8mb4 -u root "$MYSQL_DATABASE"' \
+   < docs/testing/utility-billing-smoke.sql
+   ```
+
+7. 固定账期：`2026-08`；周期应显示 `2026-07-25 至 2026-08-24`。
+8. 固定电价：`0.5383`；水价：`4.1500`。
 
 恢复基线：重启后端会重建本地内存数据库；也可以重新执行相应 SQL。每个异常用例执行前必须恢复基线。
 
-## 2. 30 分钟冒烟测试
+## 5. 30 分钟冒烟测试
 
 执行 `utility-billing-smoke.sql` 后：
 
@@ -48,7 +133,7 @@
    - 修改读数后可重新生成。
 8. 编辑该房间后点击“新建房间”，新建表单的水电配置必须为空，不能继承 `T36-01`。
 
-## 3. 完整黄金矩阵
+## 6. 完整黄金矩阵
 
 执行 `utility-billing-matrix.sql`，进入“月度结算”，选择 `2026-08` 并预览。
 
@@ -86,7 +171,7 @@ SELECT * FROM dms_utility_room_result ORDER BY settlement_id, utility_type, room
 SELECT * FROM dms_fee_bill WHERE period = '2026-08' ORDER BY room_id, bill_type, id;
 ```
 
-## 4. 异常与联动
+## 7. 异常与联动
 
 每个用例先恢复矩阵基线，只改变一项：
 
@@ -107,7 +192,7 @@ SELECT * FROM dms_fee_bill WHERE period = '2026-08' ORDER BY room_id, bill_type,
 | E13 | 修改单价后查看历史结算 | 历史金额不变，新账期使用新价格 |
 | E14 | 检查楼栋、导入、账单、退宿欠费和报表 | 配置数、归组、金额及历史数据正常 |
 
-## 5. 记录与判定
+## 8. 记录与判定
 
 | 用例编号 | 输入/操作 | 预期结果 | 实际结果 | 结算ID/账单ID | 截图 | 结论 |
 |---|---|---|---|---|---|---|

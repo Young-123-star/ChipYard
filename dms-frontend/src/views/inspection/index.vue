@@ -26,7 +26,7 @@
           <el-table-column label="操作" width="240" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="openPlan(row)">编辑</el-button>
-              <el-button v-if="row.status === 1" link type="success" @click="openGenerate(row)">派发</el-button>
+              <el-button v-if="row.status === 1" link type="success" @click="openGenerate(row)">按日期派发</el-button>
               <el-button link :type="row.status === 1 ? 'danger' : 'success'" @click="togglePlan(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
             </template>
           </el-table-column>
@@ -86,9 +86,10 @@
     <template #footer><el-button @click="planVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="savePlan">保存</el-button></template>
   </el-dialog>
 
-  <el-dialog v-model="generateVisible" title="派发巡检任务" width="440px">
+  <el-dialog v-model="generateVisible" title="按日期派发巡检任务" width="440px">
+    <el-alert title="周期计划可按不同日期重复派发；同一计划日期只能派发一次" type="info" show-icon :closable="false" style="margin-bottom: 16px" />
     <el-form label-width="85px"><el-form-item label="计划日期"><el-date-picker v-model="generateForm.plannedDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item><el-form-item label="巡检人"><el-input v-model="generateForm.inspector" placeholder="留空使用计划默认值" /></el-form-item></el-form>
-    <template #footer><el-button @click="generateVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="generateTask">派发</el-button></template>
+    <template #footer><el-button @click="generateVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="generateTask">按日期派发</el-button></template>
   </el-dialog>
 
   <el-dialog v-model="executeVisible" title="执行巡检" width="650px">

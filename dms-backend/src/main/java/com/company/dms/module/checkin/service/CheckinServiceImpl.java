@@ -127,6 +127,7 @@ public class CheckinServiceImpl implements CheckinService {
                 Page.of(query.getPage(), query.getSize()),
                 Wrappers.<CheckinRecord>lambdaQuery()
                         .eq(query.getBuildingId() != null, CheckinRecord::getBuildingId, query.getBuildingId())
+                        .eq(query.getRoomId() != null, CheckinRecord::getRoomId, query.getRoomId())
                         .eq(query.getStatus() != null, CheckinRecord::getStatus, query.getStatus())
                         .orderByDesc(CheckinRecord::getId));
         List<Long> residentIds = p.getRecords().stream().map(CheckinRecord::getResidentId).distinct().collect(Collectors.toList());

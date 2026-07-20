@@ -2,8 +2,18 @@
   <el-card shadow="never">
     <el-form :inline="true" :model="query" @keyup.enter="reload">
       <el-form-item label="楼栋">
-        <el-select v-model="query.buildingId" placeholder="全部" clearable style="width: 180px" @change="reload">
+        <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 160px" @change="onBuildingChange">
           <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="楼层">
+        <el-select v-model="query.floorId" placeholder="全部" clearable filterable :disabled="!query.buildingId" style="width: 120px" @change="onFloorChange">
+          <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="房间">
+        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="reload">
+          <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
         </el-select>
       </el-form-item>
       <el-form-item><el-button @click="reload">查询</el-button>
@@ -36,16 +46,16 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { pageRecords } from '@/api/checkin'
-import { pageBuildings } from '@/api/building'
-import type { CheckinRecord, Building } from '@/api/types'
+import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
+import type { CheckinRecord } from '@/api/types'
 import { exportLedger } from '@/api/export'
 
 const loading = ref(false)
 const exporting = ref(false)
 const list = ref<CheckinRecord[]>([])
 const total = ref(0)
-const buildings = ref<Building[]>([])
-const query = reactive({ buildingId: undefined as number | undefined, page: 1, size: 10 })
+const { buildings, floors, rooms, loadBuildings, loadFloors, loadRooms } = useRoomLocationOptions()
+const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomId: undefined as number | undefined, page: 1, size: 10 })
 
 function buildingName(id?: number) {
   return buildings.value.find((b) => b.id === id)?.buildingName || '-'
@@ -61,9 +71,13 @@ async function reload() {
   }
 }
 function onPageChange(p: number) { query.page = p; reload() }
-async function loadBuildings() {
-  const res = await pageBuildings({ page: 1, size: 100 })
-  buildings.value = res.records
+async function onBuildingChange() {
+  query.floorId = undefined; query.roomId = undefined
+  await loadFloors(query.buildingId); reload()
+}
+async function onFloorChange() {
+  query.roomId = undefined
+  await loadRooms(query.buildingId, query.floorId); reload()
 }
 async function onExport() {
   exporting.value = true

@@ -52,6 +52,7 @@ public class FeeBillServiceImpl implements FeeBillService {
                         .eq(query.getStatus() != null, FeeBill::getStatus, query.getStatus())
                         .eq(query.getBillType() != null, FeeBill::getBillType, query.getBillType())
                         .eq(query.getResidentId() != null, FeeBill::getResidentId, query.getResidentId())
+                        .eq(query.getRoomId() != null, FeeBill::getRoomId, query.getRoomId())
                         .orderByDesc(FeeBill::getId));
         Page<FeeBillVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
         voPage.setRecords(p.getRecords().stream().map(this::toVO).collect(Collectors.toList()));

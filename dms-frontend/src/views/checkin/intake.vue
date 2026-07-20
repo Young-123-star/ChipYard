@@ -83,8 +83,13 @@
             <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="楼层">
+          <el-select v-model="sel.floorId" placeholder="选择楼层" style="width: 100%" @change="onFloorChange" :disabled="!sel.buildingId">
+            <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="房间">
-          <el-select v-model="sel.roomId" placeholder="选择房间" style="width: 100%" @change="onRoomChange" :disabled="!sel.buildingId">
+          <el-select v-model="sel.roomId" placeholder="选择房间" style="width: 100%" @change="onRoomChange" :disabled="!sel.floorId">
             <el-option v-for="r in rooms" :key="r.id" :label="`${r.roomNumber}（${labelOf(ROOM_TYPE, r.roomType)}，限${labelOf(GENDER_LIMIT, r.genderLimit)}）`" :value="r.id" />
           </el-select>
         </el-form-item>
@@ -110,8 +115,9 @@ import { pageIntakes, createIntake, assignIntake, cancelIntake } from '@/api/che
 import { pageResidents } from '@/api/resident'
 import { pageBuildings } from '@/api/building'
 import { pageRooms } from '@/api/room'
+import { listFloors } from '@/api/floor'
 import { listBeds } from '@/api/bed'
-import type { CheckinIntake, Resident, Building, Room, Bed } from '@/api/types'
+import type { CheckinIntake, Resident, Building, Floor, Room, Bed } from '@/api/types'
 import { INTAKE_STATUS, INTAKE_SOURCE, GENDER_LIMIT, ROOM_TYPE, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
 
@@ -124,6 +130,7 @@ const query = reactive({ status: undefined as number | undefined, source: undefi
 
 const residents = ref<Resident[]>([])
 const buildings = ref<Building[]>([])
+const floors = ref<Floor[]>([])
 const rooms = ref<Room[]>([])
 const freeBeds = ref<Bed[]>([])
 
@@ -134,7 +141,7 @@ const createRules = { residentId: [{ required: true, message: '请选择居住�
 
 const assignVisible = ref(false)
 const current = ref<CheckinIntake>()
-const sel = reactive<{ buildingId?: number; roomId?: number; bedId?: number }>({})
+const sel = reactive<{ buildingId?: number; floorId?: number; roomId?: number; bedId?: number }>({})
 
 async function reload() {
   loading.value = true
@@ -171,7 +178,8 @@ async function onCreate() {
 
 async function openAssign(row: CheckinIntake) {
   current.value = row
-  Object.assign(sel, { buildingId: undefined, roomId: undefined, bedId: undefined })
+  Object.assign(sel, { buildingId: undefined, floorId: undefined, roomId: undefined, bedId: undefined })
+  floors.value = []
   rooms.value = []
   freeBeds.value = []
   if (!buildings.value.length) {
@@ -181,11 +189,14 @@ async function openAssign(row: CheckinIntake) {
   assignVisible.value = true
 }
 async function onBuildingChange() {
-  sel.roomId = undefined
-  sel.bedId = undefined
-  freeBeds.value = []
-  if (!sel.buildingId) { rooms.value = []; return }
-  const res = await pageRooms({ buildingId: sel.buildingId, page: 1, size: 200 })
+  sel.floorId = undefined; sel.roomId = undefined; sel.bedId = undefined
+  rooms.value = []; freeBeds.value = []
+  floors.value = sel.buildingId ? await listFloors(sel.buildingId) : []
+}
+async function onFloorChange() {
+  sel.roomId = undefined; sel.bedId = undefined; freeBeds.value = []
+  if (!sel.buildingId || !sel.floorId) { rooms.value = []; return }
+  const res = await pageRooms({ buildingId: sel.buildingId, floorId: sel.floorId, page: 1, size: 200 })
   rooms.value = res.records
 }
 async function onRoomChange() {

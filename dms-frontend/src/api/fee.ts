@@ -22,6 +22,7 @@ export interface BillQuery {
   status?: number
   billType?: number
   residentId?: number
+  roomId?: number
   page?: number
   size?: number
 }
