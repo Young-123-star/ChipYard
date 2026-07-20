@@ -26,6 +26,7 @@ export function cancelIntake(id: number): Promise<void> {
 
 export interface RecordQuery {
   buildingId?: number
+  roomId?: number
   status?: number
   page?: number
   size?: number

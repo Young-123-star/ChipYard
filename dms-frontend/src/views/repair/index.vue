@@ -1,6 +1,21 @@
 <template>
   <el-card shadow='never'>
     <el-form :inline='true' :model='query' @keyup.enter='reload'>
+      <el-form-item label='楼栋'>
+        <el-select v-model='query.buildingId' placeholder='全部' clearable filterable style='width: 150px' @change='onQueryBuildingChange'>
+          <el-option v-for='item in queryBuildings' :key='item.id' :label='item.buildingName' :value='item.id' />
+        </el-select>
+      </el-form-item>
+      <el-form-item label='楼层'>
+        <el-select v-model='query.floorId' placeholder='全部' clearable filterable :disabled='!query.buildingId' style='width: 120px' @change='onQueryFloorChange'>
+          <el-option v-for='item in queryFloors' :key='item.id' :label='item.floorName || `${item.floorNumber}层`' :value='item.id' />
+        </el-select>
+      </el-form-item>
+      <el-form-item label='房间'>
+        <el-select v-model='query.roomId' placeholder='全部' clearable filterable :disabled='!query.floorId' style='width: 130px' @change='reload'>
+          <el-option v-for='item in queryRooms' :key='item.id' :label='item.roomNumber' :value='item.id' />
+        </el-select>
+      </el-form-item>
       <el-form-item label='状态'>
         <el-select v-model='query.status' placeholder='全部' clearable style='width: 130px' @change='reload'>
           <el-option v-for='s in REPAIR_STATUS' :key='s.value' :label='s.label' :value='s.value' />
@@ -48,7 +63,21 @@
 
     <el-dialog v-model='createVisible' title='新建维修工单' width='520px'>
       <el-form ref='createRef' :model='createForm' :rules='createRules' label-width='90px'>
-        <el-form-item label='房间' prop='roomCode'><el-input v-model='createForm.roomCode' placeholder='房间号或ID' style='width: 100%' /></el-form-item>
+        <el-form-item label='楼栋'>
+          <el-select v-model='createLocation.buildingId' filterable style='width: 100%' @change='onCreateBuildingChange'>
+            <el-option v-for='item in formBuildings' :key='item.id' :label='item.buildingName' :value='item.id' />
+          </el-select>
+        </el-form-item>
+        <el-form-item label='楼层'>
+          <el-select v-model='createLocation.floorId' filterable :disabled='!createLocation.buildingId' style='width: 100%' @change='onCreateFloorChange'>
+            <el-option v-for='item in formFloors' :key='item.id' :label='item.floorName || `${item.floorNumber}层`' :value='item.id' />
+          </el-select>
+        </el-form-item>
+        <el-form-item label='房间' prop='roomId'>
+          <el-select v-model='createForm.roomId' filterable :disabled='!createLocation.floorId' style='width: 100%'>
+            <el-option v-for='item in formRooms' :key='item.id' :label='item.roomNumber' :value='item.id' />
+          </el-select>
+        </el-form-item>
         <el-form-item label='报修人'><el-input v-model='createForm.residentCode' placeholder='工号或ID' style='width: 100%' /></el-form-item>
         <el-form-item label='故障简述' prop='title'><el-input v-model='createForm.title' /></el-form-item>
         <el-form-item label='紧急程度'><el-select v-model='createForm.priority' style='width: 100%'><el-option v-for='p in REPAIR_PRIORITY' :key='p.value' :label='p.label' :value='p.value' /></el-select></el-form-item>
@@ -79,18 +108,22 @@ import { pageRepairOrders, createRepairOrder, acceptRepairOrder, completeRepairO
 import type { RepairOrder } from '@/api/types'
 import { REPAIR_STATUS, REPAIR_PRIORITY, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 
 const loading = ref(false)
 const exporting = ref(false)
 const saving = ref(false)
 const list = ref<RepairOrder[]>([])
 const total = ref(0)
-const query = reactive({ status: undefined as number | undefined, priority: undefined as number | undefined, page: 1, size: 10 })
+const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomId: undefined as number | undefined, status: undefined as number | undefined, priority: undefined as number | undefined, page: 1, size: 10 })
 
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
-const createForm = reactive<{ roomCode?: string; residentCode?: string; title?: string; description?: string; priority?: number }>({ priority: 1 })
-const createRules = { roomCode: [{ required: true, message: '请输入房间号或ID', trigger: 'blur' }], title: [{ required: true, message: '请输入故障简述', trigger: 'blur' }] }
+const { buildings: queryBuildings, floors: queryFloors, rooms: queryRooms, loadBuildings: loadQueryBuildings, loadFloors: loadQueryFloors, loadRooms: loadQueryRooms } = useRoomLocationOptions()
+const { buildings: formBuildings, floors: formFloors, rooms: formRooms, loadBuildings: loadFormBuildings, loadFloors: loadFormFloors, loadRooms: loadFormRooms } = useRoomLocationOptions()
+const createLocation = reactive<{ buildingId?: number; floorId?: number }>({})
+const createForm = reactive<{ roomId?: number; residentCode?: string; title?: string; description?: string; priority?: number }>({ priority: 1 })
+const createRules = { roomId: [{ required: true, message: '请选择房间', trigger: 'change' }], title: [{ required: true, message: '请输入故障简述', trigger: 'blur' }] }
 
 const current = ref<RepairOrder>()
 const acceptVisible = ref(false)
@@ -109,7 +142,28 @@ async function reload() {
   }
 }
 function onPageChange(page: number) { query.page = page; reload() }
-function openCreate() { Object.assign(createForm, { roomCode: '', residentCode: '', title: '', description: '', priority: 1 }); createVisible.value = true }
+async function onQueryBuildingChange() {
+  query.floorId = undefined; query.roomId = undefined
+  await loadQueryFloors(query.buildingId); reload()
+}
+async function onQueryFloorChange() {
+  query.roomId = undefined
+  await loadQueryRooms(query.buildingId, query.floorId); reload()
+}
+function openCreate() {
+  Object.assign(createLocation, { buildingId: undefined, floorId: undefined })
+  formFloors.value = []; formRooms.value = []
+  Object.assign(createForm, { roomId: undefined, residentCode: '', title: '', description: '', priority: 1 })
+  createVisible.value = true
+}
+async function onCreateBuildingChange() {
+  createLocation.floorId = undefined; createForm.roomId = undefined
+  await loadFormFloors(createLocation.buildingId)
+}
+async function onCreateFloorChange() {
+  createForm.roomId = undefined
+  await loadFormRooms(createLocation.buildingId, createLocation.floorId)
+}
 async function onCreate() {
   await createRef.value?.validate()
   saving.value = true
@@ -143,5 +197,5 @@ async function onExport() {
   }
 }
 
-onMounted(reload)
+onMounted(() => { loadQueryBuildings(); loadFormBuildings(); reload() })
 </script>

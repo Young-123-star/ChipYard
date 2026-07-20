@@ -13,7 +13,7 @@
       <el-tab-pane label="结算账户" name="accounts">
         <el-alert v-if="accounts.some(x => !x.configured)" title="存在配置不完整的账户，请在房间管理中统一账户编码和计算规则" type="warning" show-icon :closable="false" class="notice" />
         <el-table :data="accounts" border>
-          <el-table-column prop="buildingId" label="楼栋ID" width="90" />
+          <el-table-column label="楼栋" min-width="120"><template #default="{ row }">{{ buildingName(row.buildingId) }}</template></el-table-column>
           <el-table-column prop="accountCode" label="账户编码" min-width="130" />
           <el-table-column label="方式" width="90"><template #default="{ row }">{{ row.settlementMode === 1 ? '户级' : '房间' }}</template></el-table-column>
           <el-table-column label="包含房间" min-width="180"><template #default="{ row }">{{ row.roomNumbers.join('、') }}</template></el-table-column>
@@ -41,8 +41,12 @@
 
       <el-tab-pane label="月度结算" name="settlements">
         <el-form :inline="true">
-          <el-form-item label="账期"><el-date-picker v-model="period" type="month" value-format="YYYY-MM" style="width: 140px" /></el-form-item>
-          <el-form-item><el-button @click="onPreview">结算预览</el-button><el-button type="primary" @click="onGenerate">确认生成</el-button></el-form-item>
+          <el-form-item label="账期"><el-date-picker v-model="period" type="month" value-format="YYYY-MM" style="width: 140px" @change="onSettlementPeriodChange" /></el-form-item>
+          <el-form-item>
+            <el-button @click="onPreview">结算预览</el-button>
+            <el-button v-if="!periodGenerated" type="primary" :disabled="!preview?.valid" :loading="generating" @click="onGenerate">确认生成</el-button>
+            <el-tag v-else type="success">该账期已生成</el-tag>
+          </el-form-item>
         </el-form>
         <template v-if="preview">
           <el-alert v-if="!preview.valid" :title="'预览未通过：' + preview.errors.join('；')" type="error" show-icon :closable="false" class="notice" />
@@ -69,11 +73,21 @@
       </el-tab-pane>
     </el-tabs>
 
-    <el-dialog v-model="readingVisible" title="录入抄表" width="500px">
+    <el-dialog v-model="readingVisible" title="录入抄表" width="560px" :close-on-click-modal="false" :close-on-press-escape="false" :before-close="confirmCloseReading">
       <el-form ref="readingRef" :model="form" :rules="rules" label-width="90px">
+        <el-form-item label="楼栋" prop="buildingId">
+          <el-select v-model="form.buildingId" filterable style="width: 100%" @change="onBuildingChange">
+            <el-option v-for="item in buildings" :key="item.id" :label="item.buildingName" :value="item.id" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="楼层" prop="floorId">
+          <el-select v-model="form.floorId" filterable style="width: 100%" @change="onFloorChange">
+            <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="结算账户" prop="accountKey">
           <el-select v-model="form.accountKey" style="width: 100%" @change="onAccountChange">
-            <el-option v-for="item in accounts" :key="keyOf(item)" :label="`${item.accountCode}（${item.roomNumbers.join('、')}）`" :value="keyOf(item)" />
+            <el-option v-for="item in filteredAccounts" :key="keyOf(item)" :label="`${item.accountCode}（${item.roomNumbers.join('、')}）`" :value="keyOf(item)" />
           </el-select>
         </el-form-item>
         <el-form-item label="表位" prop="targetType">
@@ -83,7 +97,7 @@
         </el-form-item>
         <el-form-item label="房间" prop="roomId">
           <el-select v-model="form.roomId" :disabled="form.targetType === 1" style="width: 100%">
-            <el-option v-for="id in selected?.roomIds || []" :key="id" :label="roomNumber(id)" :value="id" />
+            <el-option v-for="id in filteredRoomIds" :key="id" :label="roomNumber(id)" :value="id" />
           </el-select>
         </el-form-item>
         <el-form-item label="表类型" prop="meterType">
@@ -93,7 +107,7 @@
         <el-form-item label="上期读数"><el-input-number v-model="form.prevReading" :min="0" :precision="2" style="width: 100%" /><div class="hint">首次录入该表时必填，之后自动取上期</div></el-form-item>
         <el-form-item label="本期读数" prop="currentReading"><el-input-number v-model="form.currentReading" :min="0" :precision="2" style="width: 100%" /></el-form-item>
       </el-form>
-      <template #footer><el-button @click="readingVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="onSaveReading">保存</el-button></template>
+      <template #footer><el-button @click="cancelReading">取消</el-button><el-button type="primary" :loading="saving" @click="onSaveReading">保存</el-button></template>
     </el-dialog>
   </el-card>
 </template>
@@ -104,12 +118,14 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { generateUtilitySettlement, getUtilityRate, listUtilityAccounts, listUtilityReadings, listUtilitySettlements, previewUtilitySettlement, saveUtilityReading, updateUtilityRate, voidUtilitySettlement } from '@/api/fee'
 import { pageRooms } from '@/api/room'
+import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 import type { MeterReading, Room, UtilityAccount, UtilityPreview, UtilitySettlement } from '@/api/types'
 
 const router = useRouter()
 const tab = ref('accounts')
 const period = ref(new Date().toISOString().slice(0, 7))
 const saving = ref(false)
+const generating = ref(false)
 const accounts = ref<UtilityAccount[]>([])
 const readings = ref<MeterReading[]>([])
 const settlements = ref<UtilitySettlement[]>([])
@@ -118,8 +134,11 @@ const preview = ref<UtilityPreview>()
 const rate = reactive({ electricityPrice: 0, waterPrice: 0 })
 const readingVisible = ref(false)
 const readingRef = ref<FormInstance>()
-const form = reactive<{ accountKey?: string; buildingId?: number; accountCode?: string; targetType?: number; roomId?: number; meterType?: number; period?: string; prevReading?: number; currentReading?: number }>({})
+const { buildings, floors, rooms: locationRooms, loadBuildings, loadFloors, loadRooms } = useRoomLocationOptions()
+const form = reactive<{ accountKey?: string; buildingId?: number; floorId?: number; accountCode?: string; targetType?: number; roomId?: number; meterType?: number; period?: string; prevReading?: number; currentReading?: number }>({})
 const rules = {
+  buildingId: [{ required: true, message: '请选择楼栋', trigger: 'change' }],
+  floorId: [{ required: true, message: '请选择楼层', trigger: 'change' }],
   accountKey: [{ required: true, message: '请选择结算账户', trigger: 'change' }],
   targetType: [{ required: true, message: '请选择表位', trigger: 'change' }],
   roomId: [{ required: true, message: '请选择房间', trigger: 'change' }],
@@ -128,9 +147,14 @@ const rules = {
   currentReading: [{ required: true, message: '请输入本期读数', trigger: 'blur' }]
 }
 const selected = computed(() => accounts.value.find(item => keyOf(item) === form.accountKey))
+const filteredAccounts = computed(() => accounts.value.filter(item => item.configured && item.buildingId === form.buildingId && item.roomIds.some(id => locationRooms.value.some(room => room.id === id))))
+const filteredRoomIds = computed(() => (selected.value?.roomIds || []).filter(id => locationRooms.value.some(room => room.id === id)))
+const periodGenerated = computed(() => settlements.value.some(item => item.period === period.value && item.status === 1))
+const readingDirty = computed(() => form.prevReading !== undefined || form.currentReading !== undefined)
 
 function keyOf(item: UtilityAccount) { return `${item.buildingId}|${item.accountCode}` }
 function roomNumber(id: number) { return rooms.value.find(item => item.id === id)?.roomNumber || id }
+function buildingName(id: number) { return buildings.value.find(item => item.id === id)?.buildingName || id }
 function meterLabel(type: number) { return ({ 1: '电表', 2: '冷水表', 3: '热水表' } as Record<number, string>)[type] || type }
 function electricRuleLabel(rule: number) { return ({ 0: '不计', 1: '户级250度', 2: '房间250度', 3: '夫妻平摊', 4: '公司承担' } as Record<number, string>)[rule] }
 function waterRuleLabel(rule: number) { return ({ 0: '不计', 1: '户级50吨', 2: '房间17吨', 3: '夫妻平摊', 4: '公司承担' } as Record<number, string>)[rule] }
@@ -140,32 +164,60 @@ async function loadBase() {
   const [a, r, p] = await Promise.all([listUtilityAccounts(), pageRooms({ page: 1, size: 1000 }), getUtilityRate()])
   accounts.value = a; rooms.value = r.records
   rate.electricityPrice = Number(p.electricityPrice); rate.waterPrice = Number(p.waterPrice)
+  await loadBuildings()
 }
 async function loadReadings() { readings.value = await listUtilityReadings({ period: period.value }) }
 async function loadSettlements() { settlements.value = await listUtilitySettlements(period.value) }
 async function saveRate() { await updateUtilityRate(rate); ElMessage.success('单价已保存') }
 function openReading() {
-  Object.assign(form, { accountKey: undefined, buildingId: undefined, accountCode: undefined, targetType: 2, roomId: undefined, meterType: 1, period: period.value, prevReading: undefined, currentReading: undefined })
+  floors.value = []; locationRooms.value = []
+  Object.assign(form, { accountKey: undefined, buildingId: undefined, floorId: undefined, accountCode: undefined, targetType: 2, roomId: undefined, meterType: 1, period: period.value, prevReading: undefined, currentReading: undefined })
   readingVisible.value = true
 }
+async function onBuildingChange() {
+  form.floorId = undefined; form.accountKey = undefined; form.accountCode = undefined; form.roomId = undefined
+  await loadFloors(form.buildingId)
+}
+async function onFloorChange() {
+  form.accountKey = undefined; form.accountCode = undefined; form.roomId = undefined
+  await loadRooms(form.buildingId, form.floorId)
+}
 function onAccountChange() {
-  form.buildingId = selected.value?.buildingId; form.accountCode = selected.value?.accountCode
+  form.accountCode = selected.value?.accountCode
   if (selected.value?.settlementMode !== 1 && form.targetType === 1) form.targetType = 2
   onTargetChange()
 }
-function onTargetChange() { form.roomId = selected.value?.roomIds[0] }
+function onTargetChange() { form.roomId = filteredRoomIds.value[0] }
+async function confirmCloseReading(done: () => void) {
+  if (saving.value || !readingDirty.value) return done()
+  try {
+    await ElMessageBox.confirm('尚未保存的抄表读数将丢失，确认关闭？', '提示', { type: 'warning' })
+    done()
+  } catch { /* 保留当前录入内容 */ }
+}
+async function cancelReading() {
+  if (!readingDirty.value) { readingVisible.value = false; return }
+  try {
+    await ElMessageBox.confirm('尚未保存的抄表读数将丢失，确认取消？', '提示', { type: 'warning' })
+    readingVisible.value = false
+  } catch { /* 保留当前录入内容 */ }
+}
 async function onSaveReading() {
   await readingRef.value?.validate(); saving.value = true
   try {
     await saveUtilityReading(form as any); ElMessage.success('抄表已保存'); readingVisible.value = false; await loadReadings()
   } finally { saving.value = false }
 }
-async function onPreview() { if (period.value) preview.value = await previewUtilitySettlement(period.value) }
+async function onSettlementPeriodChange() { preview.value = undefined; await Promise.all([loadReadings(), loadSettlements()]) }
+async function onPreview() { if (period.value && !periodGenerated.value) preview.value = await previewUtilitySettlement(period.value) }
 async function onGenerate() {
-  if (!period.value) return
-  const result = await generateUtilitySettlement(period.value)
-  ElMessage.success(`生成 ${result.settlements} 个结算、${result.bills} 张个人账单`)
-  preview.value = undefined; await Promise.all([loadReadings(), loadSettlements()])
+  if (!period.value || periodGenerated.value || !preview.value?.valid) return
+  generating.value = true
+  try {
+    const result = await generateUtilitySettlement(period.value)
+    ElMessage.success(`生成 ${result.settlements} 个结算、${result.bills} 张个人账单`)
+    preview.value = undefined; await Promise.all([loadReadings(), loadSettlements()])
+  } finally { generating.value = false }
 }
 async function onVoid(id: number) {
   await ElMessageBox.confirm('确认作废该结算及其未缴个人账单？', '提示', { type: 'warning' })

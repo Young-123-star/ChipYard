@@ -1,6 +1,21 @@
 <template>
   <el-card shadow="never">
     <el-form :inline="true" :model="query" @keyup.enter="reload">
+      <el-form-item label="楼栋">
+        <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 150px" @change="onBuildingFilterChange">
+          <el-option v-for="item in buildings" :key="item.id" :label="item.buildingName" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="楼层">
+        <el-select v-model="query.floorId" placeholder="全部" clearable filterable :disabled="!query.buildingId" style="width: 120px" @change="onFloorFilterChange">
+          <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="房间">
+        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="reload">
+          <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
+        </el-select>
+      </el-form-item>
       <el-form-item label="账期">
         <el-date-picker v-model="query.period" type="month" value-format="YYYY-MM" placeholder="全部" clearable
           style="width: 140px" @change="reload" />
@@ -47,7 +62,7 @@
           <el-tag :type="tagTypeOf(BILL_STATUS, row.status) as any" size="small" round>{{ labelOf(BILL_STATUS, row.status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="paidAt" label="缴费时间" width="170" />
+      <el-table-column label="缴费时间" width="180"><template #default="{ row }">{{ formatDateTime(row.paidAt) }}</template></el-table-column>
       <el-table-column label="操作" width="160">
         <template #default="{ row }">
           <el-button v-if="row.status === 1 || row.status === 4" link type="primary" @click="openPay(row)">缴费</el-button>
@@ -103,17 +118,19 @@ import { pageBills, generateBills, payBill, voidBill } from '@/api/fee'
 import type { FeeBill } from '@/api/types'
 import { BILL_STATUS, BILL_TYPE, PAY_METHOD, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 
 const loading = ref(false)
 const exporting = ref(false)
 const saving = ref(false)
 const list = ref<FeeBill[]>([])
 const total = ref(0)
-const query = reactive({ period: undefined as string | undefined, status: undefined as number | undefined, billType: undefined as number | undefined, page: 1, size: 10 })
+const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomId: undefined as number | undefined, period: undefined as string | undefined, status: undefined as number | undefined, billType: undefined as number | undefined, page: 1, size: 10 })
 
 const paidCount = computed(() => list.value.filter((b) => b.status === 2).length)
 const unpaidCount = computed(() => list.value.filter((b) => b.status === 1).length)
 const amountSum = computed(() => list.value.reduce((s, b) => s + Number(b.amount), 0))
+const { buildings, floors, rooms, loadBuildings, loadFloors, loadRooms } = useRoomLocationOptions()
 
 const genVisible = ref(false)
 const genPeriod = ref<string>()
@@ -133,6 +150,14 @@ async function reload() {
   }
 }
 function onPageChange(p: number) { query.page = p; reload() }
+async function onBuildingFilterChange() {
+  query.floorId = undefined; query.roomId = undefined
+  await loadFloors(query.buildingId); reload()
+}
+async function onFloorFilterChange() {
+  query.roomId = undefined
+  await loadRooms(query.buildingId, query.floorId); reload()
+}
 
 function openGenerate() {
   genPeriod.value = undefined
@@ -184,5 +209,7 @@ async function onExport() {
   }
 }
 
-onMounted(reload)
+function formatDateTime(value?: string) { return value ? value.replace('T', ' ').slice(0, 19) : '-' }
+
+onMounted(() => { loadBuildings(); reload() })
 </script>
