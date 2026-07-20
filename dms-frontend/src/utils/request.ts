@@ -29,9 +29,12 @@ service.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       const userStore = useUserStore()
-      userStore.logout()
-      router.push('/login')
-      ElMessage.error('\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55')
+      const authorization = error.config?.headers?.get?.('Authorization')
+      if (authorization === `Bearer ${userStore.token}`) {
+        userStore.logout()
+        router.push('/login')
+        ElMessage.error('\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55')
+      }
     } else {
       ElMessage.error(error.message || '\u7f51\u7edc\u9519\u8bef')
     }
