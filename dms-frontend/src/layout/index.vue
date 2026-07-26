@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout">
     <el-aside :width="collapsed ? '72px' : '232px'" class="aside" :class="{ collapsed }">
-      <router-link class="logo" to="/dashboard" aria-label="??????">
+      <router-link class="logo" to="/dashboard" aria-label="&#23487;&#33293;&#31649;&#29702;&#31995;&#32479;">
         <span class="logo-mark">CM</span><span v-if="!collapsed" class="logo-word">ChipMore <em>Dorm</em></span>
       </router-link>
       <el-menu :default-active="route.path" :collapse="collapsed" :collapse-transition="false" router class="menu">
@@ -40,7 +40,7 @@
     <el-container class="content-shell">
       <el-header class="header">
         <div class="header-context">
-          <el-button text circle :aria-label="collapsed ? '????' : '????'" @click="collapsed = !collapsed">
+          <el-button text circle :aria-label="collapsed ? '&#23637;&#24320;&#33756;&#21333;' : '&#25910;&#36215;&#33756;&#21333;'" @click="collapsed = !collapsed">
             <el-icon size="18"><Expand v-if="collapsed" /><Fold v-else /></el-icon>
           </el-button>
           <span>&#23487;&#33293;&#36816;&#33829;&#25511;&#21046;&#21488;</span>

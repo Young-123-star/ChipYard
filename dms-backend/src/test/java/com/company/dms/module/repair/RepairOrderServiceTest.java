@@ -42,12 +42,14 @@ class RepairOrderServiceTest {
         assertEquals(1, order.getStatus());
         assertEquals(4L, order.getRoomId());
         assertEquals(1L, order.getResidentId());
-        assertEquals(3, roomService.getById(4L).getStatus());
+        // 新行为：创建工单（待受理）不占用房间，受理时才置维修中
+        assertEquals(1, roomService.getById(4L).getStatus());
     }
 
     @Test
     void create_accepts_room_number_and_employee_no() {
         RepairCreateDTO dto = new RepairCreateDTO();
+        dto.setBuildingId(1L);
         dto.setRoomCode("A102");
         dto.setResidentCode("E1001");
         dto.setTitle("door");
@@ -70,6 +72,7 @@ class RepairOrderServiceTest {
         Long residentId = residentService.create(resident);
 
         RepairCreateDTO dto = new RepairCreateDTO();
+        dto.setBuildingId(1L);
         dto.setRoomCode("A102");
         dto.setResidentCode("06880");
         dto.setTitle("door");
@@ -128,12 +131,13 @@ class RepairOrderServiceTest {
     }
 
     @Test
-    void cancel_pending_keeps_room_repairing_until_last_open_order_is_closed() {
+    void cancel_pending_does_not_change_room_status() {
         Long first = createPending();
         Long second = createPending();
 
+        // 新行为：待受理工单不占用房间，取消不影响房间状态（保持空闲）
         repairService.cancel(first);
-        assertEquals(3, roomService.getById(4L).getStatus());
+        assertEquals(1, roomService.getById(4L).getStatus());
 
         repairService.cancel(second);
         assertEquals(1, roomService.getById(4L).getStatus());

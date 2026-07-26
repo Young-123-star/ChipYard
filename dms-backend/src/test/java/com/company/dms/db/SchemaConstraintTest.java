@@ -141,4 +141,114 @@ class SchemaConstraintTest {
                 "IT-2", 100L, "Plan", 1, 1L, "Building", "Admin", "2026-08-01", "[]"
         ));
     }
+
+    @Test
+    void soft_deleted_floor_number_can_be_reused_within_building() {
+        jdbcTemplate.update(
+                "INSERT INTO dms_floor (id, building_id, floor_number, deleted_at) VALUES (?, ?, ?, NOW())",
+                10L,
+                1L,
+                3
+        );
+        assertDoesNotThrow(() -> jdbcTemplate.update(
+                "INSERT INTO dms_floor (building_id, floor_number) VALUES (?, ?)",
+                1L,
+                3
+        ));
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update(
+                "INSERT INTO dms_floor (building_id, floor_number) VALUES (?, ?)",
+                1L,
+                3
+        ));
+    }
+
+    @Test
+    void soft_deleted_resident_employee_no_can_be_reused() {
+        jdbcTemplate.update(
+                "INSERT INTO dms_resident (id, employee_no, real_name, deleted_at) VALUES (?, ?, ?, NOW())",
+                10L,
+                "E9001",
+                "已删除员工"
+        );
+        assertDoesNotThrow(() -> jdbcTemplate.update(
+                "INSERT INTO dms_resident (employee_no, real_name) VALUES (?, ?)",
+                "E9001",
+                "新入职员工"
+        ));
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update(
+                "INSERT INTO dms_resident (employee_no, real_name) VALUES (?, ?)",
+                "E9001",
+                "重复工号员工"
+        ));
+    }
+
+    @Test
+    void meter_reading_is_unique_per_target_period_and_type() {
+        jdbcTemplate.update(
+                "INSERT INTO dms_meter_reading (building_id, account_code, target_type, room_id, period, meter_type, current_reading) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                1L,
+                "ACC1",
+                2,
+                1L,
+                "2026-07",
+                1,
+                100.00
+        );
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update(
+                "INSERT INTO dms_meter_reading (building_id, account_code, target_type, room_id, period, meter_type, current_reading) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                1L,
+                "ACC1",
+                2,
+                1L,
+                "2026-07",
+                1,
+                200.00
+        ));
+    }
+
+    @Test
+    void active_utility_settlement_is_unique_per_account_period() {
+        jdbcTemplate.update(
+                "INSERT INTO dms_utility_settlement (building_id, account_code, period, cycle_start, cycle_end, electricity_price, water_price) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                1L,
+                "ACC1",
+                "2026-07",
+                "2026-07-01",
+                "2026-07-31",
+                0.5383,
+                4.1500
+        );
+        assertThrows(DuplicateKeyException.class, () -> jdbcTemplate.update(
+                "INSERT INTO dms_utility_settlement (building_id, account_code, period, cycle_start, cycle_end, electricity_price, water_price) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                1L,
+                "ACC1",
+                "2026-07",
+                "2026-07-01",
+                "2026-07-31",
+                0.5383,
+                4.1500
+        ));
+        // 已作废（status != 1）的结算单不占用唯一键，可重新结算
+        jdbcTemplate.update(
+                "INSERT INTO dms_utility_settlement (building_id, account_code, period, cycle_start, cycle_end, electricity_price, water_price, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                1L,
+                "ACC2",
+                "2026-07",
+                "2026-07-01",
+                "2026-07-31",
+                0.5383,
+                4.1500,
+                2
+        );
+        assertDoesNotThrow(() -> jdbcTemplate.update(
+                "INSERT INTO dms_utility_settlement (building_id, account_code, period, cycle_start, cycle_end, electricity_price, water_price) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                1L,
+                "ACC2",
+                "2026-07",
+                "2026-07-01",
+                "2026-07-31",
+                0.5383,
+                4.1500
+        ));
+    }
 }

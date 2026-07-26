@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { downloadImportFile, executeImport, validateImport, type ImportResult, type ImportType } from '@/api/import'
 
 interface StepState {
@@ -88,12 +88,13 @@ async function download(type: ImportType, sample: boolean) {
   a.href = url
   a.download = `${type}-${sample ? 'sample' : 'template'}.xlsx`
   a.click()
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url))
 }
 
 async function validate(type: ImportType) {
   const file = state[type].file
   if (!file) return ElMessage.warning('请先选择 xlsx 文件')
+  state[type].result = undefined
   state[type].validating = true
   try {
     state[type].result = await validateImport(type, file)
@@ -105,6 +106,12 @@ async function validate(type: ImportType) {
 async function execute(type: ImportType) {
   const file = state[type].file
   if (!file) return ElMessage.warning('请先选择 xlsx 文件')
+  try {
+    await ElMessageBox.confirm('确认执行导入？数据将直接写入系统', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
+  state[type].result = undefined
   state[type].executing = true
   try {
     state[type].result = await executeImport(type, file)

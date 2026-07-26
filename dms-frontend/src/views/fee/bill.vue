@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="reload">
+    <el-form :inline="true" :model="query" @keyup.enter="search">
       <el-form-item label="楼栋">
         <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 150px" @change="onBuildingFilterChange">
           <el-option v-for="item in buildings" :key="item.id" :label="item.buildingName" :value="item.id" />
@@ -12,26 +12,26 @@
         </el-select>
       </el-form-item>
       <el-form-item label="房间">
-        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="reload">
+        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="search">
           <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
         </el-select>
       </el-form-item>
       <el-form-item label="账期">
         <el-date-picker v-model="query.period" type="month" value-format="YYYY-MM" placeholder="全部" clearable
-          style="width: 140px" @change="reload" />
+          style="width: 140px" @change="search" />
       </el-form-item>
       <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px" @change="reload">
+        <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px" @change="search">
           <el-option v-for="s in BILL_STATUS" :key="s.value" :label="s.label" :value="s.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="类型">
-        <el-select v-model="query.billType" placeholder="全部" clearable style="width: 110px" @change="reload">
+        <el-select v-model="query.billType" placeholder="全部" clearable style="width: 110px" @change="search">
           <el-option v-for="t in BILL_TYPE" :key="t.value" :label="t.label" :value="t.value" />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="reload">查询</el-button>
+        <el-button @click="search">查询</el-button>
         <el-button type="primary" @click="openGenerate">生成账单</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
@@ -59,7 +59,7 @@
       <el-table-column prop="remark" label="明细" show-overflow-tooltip />
       <el-table-column label="状态" width="90">
         <template #default="{ row }">
-          <el-tag :type="tagTypeOf(BILL_STATUS, row.status) as any" size="small" round>{{ labelOf(BILL_STATUS, row.status) }}</el-tag>
+          <el-tag :type="tagTypeOf(BILL_STATUS, row.status)" size="small" round>{{ labelOf(BILL_STATUS, row.status) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="缴费时间" width="180"><template #default="{ row }">{{ formatDateTime(row.paidAt) }}</template></el-table-column>
@@ -72,7 +72,7 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination v-if="total > query.size" style="margin-top: 12px; justify-content: flex-end"
+    <el-pagination style="margin-top: 12px; justify-content: flex-end"
       layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
       @current-change="onPageChange" />
 
@@ -150,13 +150,14 @@ async function reload() {
   }
 }
 function onPageChange(p: number) { query.page = p; reload() }
+function search() { query.page = 1; reload() }
 async function onBuildingFilterChange() {
   query.floorId = undefined; query.roomId = undefined
-  await loadFloors(query.buildingId); reload()
+  await loadFloors(query.buildingId); search()
 }
 async function onFloorFilterChange() {
   query.roomId = undefined
-  await loadRooms(query.buildingId, query.floorId); reload()
+  await loadRooms(query.buildingId, query.floorId); search()
 }
 
 function openGenerate() {
@@ -194,7 +195,11 @@ async function onPay() {
   }
 }
 async function onVoid(row: FeeBill) {
-  await ElMessageBox.confirm(`确认作废「${row.billNo}」？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认作废「${row.billNo}」？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await voidBill(row.id)
   ElMessage.success('已作废')
   reload()

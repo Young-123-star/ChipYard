@@ -96,7 +96,11 @@ async function onSubmit() {
   }
 }
 async function onDelete(row: FeeStandard) {
-  await ElMessageBox.confirm(`确认删除「${labelOf(ROOM_TYPE, row.roomType)}」收费标准？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除「${labelOf(ROOM_TYPE, row.roomType)}」收费标准？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteStandard(row.id)
   ElMessage.success('已删除')
   reload()

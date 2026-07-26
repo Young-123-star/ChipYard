@@ -2,18 +2,18 @@
   <el-card shadow="never">
     <el-tabs v-model="activeTab">
       <el-tab-pane :label="'巡检计划 ' + planTotal" name="plans">
-        <el-form :inline="true" :model="planQuery" @keyup.enter="reloadPlans">
+        <el-form :inline="true" :model="planQuery" @keyup.enter="searchPlans">
           <el-form-item label="状态">
-            <el-select v-model="planQuery.status" clearable placeholder="全部" style="width: 120px" @change="reloadPlans">
+            <el-select v-model="planQuery.status" clearable placeholder="全部" style="width: 120px" @change="searchPlans">
               <el-option label="启用" :value="1" /><el-option label="停用" :value="0" />
             </el-select>
           </el-form-item>
           <el-form-item label="周期">
-            <el-select v-model="planQuery.cycleType" clearable placeholder="全部" style="width: 120px" @change="reloadPlans">
+            <el-select v-model="planQuery.cycleType" clearable placeholder="全部" style="width: 120px" @change="searchPlans">
               <el-option v-for="item in CYCLES" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item><el-button @click="reloadPlans">查询</el-button><el-button type="primary" @click="openPlan()">新建计划</el-button></el-form-item>
+          <el-form-item><el-button @click="searchPlans">查询</el-button><el-button type="primary" @click="openPlan()">新建计划</el-button></el-form-item>
         </el-form>
 
         <el-table v-loading="planLoading" :data="plans">
@@ -31,18 +31,18 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-pagination v-if="planTotal > planQuery.size" class="pager" layout="total, prev, pager, next" :total="planTotal" :current-page="planQuery.page" :page-size="planQuery.size" @current-change="changePlanPage" />
+        <el-pagination class="pager" layout="total, prev, pager, next" :total="planTotal" :current-page="planQuery.page" :page-size="planQuery.size" @current-change="changePlanPage" />
       </el-tab-pane>
 
       <el-tab-pane :label="'巡检任务 ' + taskTotal" name="tasks">
-        <el-form :inline="true" :model="taskQuery" @keyup.enter="reloadTasks">
+        <el-form :inline="true" :model="taskQuery" @keyup.enter="searchTasks">
           <el-form-item label="状态">
-            <el-select v-model="taskQuery.status" clearable placeholder="全部" style="width: 130px" @change="reloadTasks">
+            <el-select v-model="taskQuery.status" clearable placeholder="全部" style="width: 130px" @change="searchTasks">
               <el-option v-for="item in TASK_STATUS" :key="item.value" :label="item.label" :value="item.value" />
             </el-select>
           </el-form-item>
-          <el-form-item label="计划日期"><el-date-picker v-model="taskQuery.plannedDate" type="date" value-format="YYYY-MM-DD" clearable @change="reloadTasks" /></el-form-item>
-          <el-form-item><el-button @click="reloadTasks">查询</el-button></el-form-item>
+          <el-form-item label="计划日期"><el-date-picker v-model="taskQuery.plannedDate" type="date" value-format="YYYY-MM-DD" clearable @change="searchTasks" /></el-form-item>
+          <el-form-item><el-button @click="searchTasks">查询</el-button></el-form-item>
         </el-form>
 
         <el-table v-loading="taskLoading" :data="tasks">
@@ -61,7 +61,7 @@
             </template>
           </el-table-column>
         </el-table>
-        <el-pagination v-if="taskTotal > taskQuery.size" class="pager" layout="total, prev, pager, next" :total="taskTotal" :current-page="taskQuery.page" :page-size="taskQuery.size" @current-change="changeTaskPage" />
+        <el-pagination class="pager" layout="total, prev, pager, next" :total="taskTotal" :current-page="taskQuery.page" :page-size="taskQuery.size" @current-change="changeTaskPage" />
       </el-tab-pane>
     </el-tabs>
   </el-card>
@@ -140,7 +140,7 @@ const planRef = ref<FormInstance>()
 const editingPlan = ref<InspectionPlan>()
 const emptyPlan = (): PlanSave => ({ planName: '', cycleType: 1, targetType: 1, targetId: 0, inspector: '', items: [], remark: '' })
 const planForm = reactive<PlanSave>(emptyPlan())
-const planRules = { planName: [{ required: true, message: '请输入计划名称', trigger: 'blur' }], targetId: [{ required: true, message: '请选择巡检对象', trigger: 'change' }], inspector: [{ required: true, message: '请输入巡检人', trigger: 'blur' }], items: [{ type: 'array', required: true, min: 1, message: '至少选择一个巡检项', trigger: 'change' }] }
+const planRules = { planName: [{ required: true, message: '请输入计划名称', trigger: 'blur' }], targetId: [{ validator: (_rule: any, value: number, callback: any) => (value > 0 ? callback() : callback(new Error('请选择巡检对象'))), trigger: 'change' }], inspector: [{ required: true, message: '请输入巡检人', trigger: 'blur' }], items: [{ type: 'array', required: true, min: 1, message: '至少选择一个巡检项', trigger: 'change' }] }
 const inspectionItems = ref<DictOption[]>([])
 const buildings = ref<Building[]>([])
 const floors = ref<Floor[]>([])
@@ -158,11 +158,13 @@ const rectifyVisible = ref(false)
 const rectificationNote = ref('')
 const detailVisible = ref(false)
 
-function tagType(status: number) { return ({ 1: 'warning', 2: 'success', 3: 'danger', 4: 'success', 5: 'info' } as Record<number, string>)[status] as any }
+function tagType(status: number) { return ({ 1: 'warning', 2: 'success', 3: 'danger', 4: 'success', 5: 'info' } as Record<number, 'warning' | 'success' | 'danger' | 'info'>)[status] }
 async function reloadPlans() { planLoading.value = true; try { const res = await pageInspectionPlans(planQuery); plans.value = res.records; planTotal.value = res.total } finally { planLoading.value = false } }
 async function reloadTasks() { taskLoading.value = true; try { const res = await pageInspectionTasks(taskQuery); tasks.value = res.records; taskTotal.value = res.total } finally { taskLoading.value = false } }
 function changePlanPage(page: number) { planQuery.page = page; reloadPlans() }
 function changeTaskPage(page: number) { taskQuery.page = page; reloadTasks() }
+function searchPlans() { planQuery.page = 1; reloadPlans() }
+function searchTasks() { taskQuery.page = 1; reloadTasks() }
 
 function openPlan(row?: InspectionPlan) {
   editingPlan.value = row
@@ -202,10 +204,10 @@ async function submitRectification() {
   if (!currentTask.value || !rectificationNote.value.trim()) return ElMessage.warning('请填写整改结果')
   saving.value = true; try { await rectifyInspectionTask(currentTask.value.id, rectificationNote.value); ElMessage.success('整改已完成'); rectifyVisible.value = false; reloadTasks() } finally { saving.value = false }
 }
-async function cancelTask(row: InspectionTask) { await ElMessageBox.confirm('确认取消该巡检任务？', '提示', { type: 'warning' }); await cancelInspectionTask(row.id); ElMessage.success('已取消'); reloadTasks() }
+async function cancelTask(row: InspectionTask) { try { await ElMessageBox.confirm('确认取消该巡检任务？', '提示', { type: 'warning' }) } catch { return } await cancelInspectionTask(row.id); ElMessage.success('已取消'); reloadTasks() }
 async function openDetail(row: InspectionTask) { currentTask.value = await getInspectionTask(row.id); detailVisible.value = true }
 
-onMounted(async () => { const [buildingPage, items] = await Promise.all([pageBuildings({ page: 1, size: 100 }), loadDictOptions('INSPECTION_ITEM')]); buildings.value = buildingPage.records; inspectionItems.value = items; await Promise.all([reloadPlans(), reloadTasks()]) })
+onMounted(async () => { const [buildingPage, items] = await Promise.all([pageBuildings({ page: 1, size: 1000 }), loadDictOptions('INSPECTION_ITEM')]); buildings.value = buildingPage.records; inspectionItems.value = items; await Promise.all([reloadPlans(), reloadTasks()]) })
 </script>
 
 <style scoped>

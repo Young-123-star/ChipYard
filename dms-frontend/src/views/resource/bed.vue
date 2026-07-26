@@ -30,7 +30,7 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="tagTypeOf(BED_STATUS, row.status) as any">{{ labelOf(BED_STATUS, row.status) }}</el-tag>
+            <el-tag :type="tagTypeOf(BED_STATUS, row.status)">{{ labelOf(BED_STATUS, row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="160">
@@ -67,17 +67,14 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
-import { pageBuildings } from '@/api/building'
-import { listFloors } from '@/api/floor'
-import { pageRooms } from '@/api/room'
 import { listBeds, createBed, updateBed, deleteBed } from '@/api/bed'
-import type { Building, Floor, Room, Bed } from '@/api/types'
+import type { Bed } from '@/api/types'
 import { BED_TYPE, BED_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 
-const buildings = ref<Building[]>([])
-const floors = ref<Floor[]>([])
-const rooms = ref<Room[]>([])
+// 楼→层→房三级级联选项（内部已带切换竞态防护）
+const { buildings, floors, rooms, loadBuildings, loadFloors, loadRooms } = useRoomLocationOptions()
 const list = ref<Bed[]>([])
 const buildingId = ref<number>()
 const floorId = ref<number>()
@@ -91,19 +88,14 @@ const formRef = ref<FormInstance>()
 const form = reactive<Partial<Bed>>({})
 const rules = { bedNumber: [{ required: true, message: '请输入床位编号', trigger: 'blur' }] }
 
-async function loadBuildings() {
-  const res = await pageBuildings({ page: 1, size: 100 })
-  buildings.value = res.records
-}
-
 async function onBuildingChange() {
-  floorId.value = undefined; roomId.value = undefined; rooms.value = []; list.value = []
-  floors.value = buildingId.value ? await listFloors(buildingId.value) : []
+  floorId.value = undefined; roomId.value = undefined; list.value = []
+  await loadFloors(buildingId.value)
 }
 
 async function onFloorChange() {
   roomId.value = undefined; list.value = []
-  rooms.value = floorId.value ? (await pageRooms({ floorId: floorId.value, page: 1, size: 100 })).records : []
+  await loadRooms(buildingId.value, floorId.value)
 }
 
 async function reload() {
@@ -117,6 +109,7 @@ async function reload() {
 }
 
 function openCreate() {
+  // 表单默认值：类型独立床（3）、状态空闲（1）
   Object.assign(form, { id: undefined, roomId: roomId.value, bedNumber: '', bedType: 3, status: 1 })
   dialogVisible.value = true
 }
@@ -145,7 +138,11 @@ async function onSave() {
 }
 
 async function onDelete(row: Bed) {
-  await ElMessageBox.confirm(`确认删除床位「${row.bedNumber}」？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除床位「${row.bedNumber}」？`, '提示', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
   await deleteBed(row.id)
   ElMessage.success('删除成功')
   reload()

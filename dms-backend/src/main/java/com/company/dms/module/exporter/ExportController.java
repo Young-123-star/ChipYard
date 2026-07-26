@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
-@Tag(name = "Data Export")
+@Tag(name = "数据导出")
 @RestController
 @RequestMapping("/api/export")
 public class ExportController {
@@ -25,7 +25,7 @@ public class ExportController {
         this.exportService = exportService;
     }
 
-    @Operation(summary = "Export ledger")
+    @Operation(summary = "导出台账")
     @GetMapping("/{type}")
     public ResponseEntity<byte[]> export(@PathVariable String type, @RequestParam Map<String, String> params) {
         ExportFile file = exportService.export(type, params);

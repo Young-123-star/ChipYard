@@ -30,4 +30,6 @@ public interface CheckinService {
     /** 按房间取在住(status=1)档案。 */
     java.util.List<CheckinRecord> listActiveRecordsByRoom(Long roomId);
     java.util.List<CheckinRecord> listRecordsByRoomAt(Long roomId, LocalDate date);
+    /** 按 id 批量取入住档案；空集合返回空列表。 */
+    java.util.List<CheckinRecord> listRecordsByIds(java.util.Collection<Long> ids);
 }

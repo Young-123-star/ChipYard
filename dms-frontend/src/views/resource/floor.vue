@@ -32,7 +32,7 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
+            <el-tag :type="tagTypeOf(BUILDING_STATUS, row.status)">{{ labelOf(BUILDING_STATUS, row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="220">
@@ -68,6 +68,7 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageBuildings } from '@/api/building'
 import { listFloors, createFloor, updateFloor, deleteFloor } from '@/api/floor'
 import type { Building, Floor } from '@/api/types'
+import { BUILDING_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
 
 const router = useRouter()
@@ -89,7 +90,7 @@ const form = reactive<Partial<Floor>>({})
 const rules = { floorNumber: [{ required: true, message: '请输入楼层号', trigger: 'blur' }] }
 
 async function loadBuildings() {
-  const res = await pageBuildings({ page: 1, size: 100 })
+  const res = await pageBuildings({ page: 1, size: 1000 })
   buildings.value = res.records
   if (!buildingId.value && res.records.length) {
     buildingId.value = res.records[0].id
@@ -108,6 +109,7 @@ async function reload() {
 }
 
 function openCreate() {
+  // 表单默认值：楼层号 1、状态启用（1）
   Object.assign(form, { id: undefined, buildingId: buildingId.value, floorNumber: 1, floorName: '', status: 1 })
   dialogVisible.value = true
 }
@@ -136,7 +138,11 @@ async function onSave() {
 }
 
 async function onDelete(row: Floor) {
-  await ElMessageBox.confirm(`确认删除楼层「${row.floorName || row.floorNumber}」？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除楼层「${row.floorName || row.floorNumber}」？`, '提示', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
   await deleteFloor(row.id)
   ElMessage.success('删除成功')
   reload()

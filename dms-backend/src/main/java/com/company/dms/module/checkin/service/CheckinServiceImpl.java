@@ -19,6 +19,7 @@ import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.service.BedService;
 import com.company.dms.module.resource.service.RoomService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,18 +57,11 @@ public class CheckinServiceImpl implements CheckinService {
                         .orderByDesc(CheckinIntake::getId));
         List<Long> residentIds = p.getRecords().stream().map(CheckinIntake::getResidentId).distinct().collect(Collectors.toList());
         Map<Long, Resident> residents = residentIds.isEmpty() ? Map.of()
-                : residentService.page(allResidentsQuery()).getRecords().stream()
-                    .filter(r -> residentIds.contains(r.getId()))
+                : residentService.listByIds(residentIds).stream()
                     .collect(Collectors.toMap(Resident::getId, Function.identity(), (a, b) -> a));
         Page<IntakeVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
         voPage.setRecords(p.getRecords().stream().map(i -> toIntakeVO(i, residents.get(i.getResidentId()))).collect(Collectors.toList()));
         return PageResult.of(voPage);
-    }
-
-    private com.company.dms.module.resident.dto.ResidentQuery allResidentsQuery() {
-        com.company.dms.module.resident.dto.ResidentQuery q = new com.company.dms.module.resident.dto.ResidentQuery();
-        q.setSize(1000);
-        return q;
     }
 
     private IntakeVO toIntakeVO(CheckinIntake i, Resident r) {
@@ -109,16 +103,26 @@ public class CheckinServiceImpl implements CheckinService {
         CheckinIntake i = new CheckinIntake();
         BeanUtils.copyProperties(cmd, i);
         i.setStatus(1);
-        intakeMapper.insert(i);
+        try {
+            intakeMapper.insert(i);
+        } catch (DuplicateKeyException e) {
+            // 并发下唯一索引兜底：按 bizNo 回查返回已有记录
+            CheckinIntake existed = intakeMapper.selectOne(Wrappers.<CheckinIntake>lambdaQuery()
+                    .eq(CheckinIntake::getBizNo, cmd.getBizNo()).last("limit 1"));
+            if (existed != null) return existed.getId();
+            throw e;
+        }
         return i.getId();
     }
 
     @Override
     public void cancel(Long intakeId) {
-        CheckinIntake i = getIntake(intakeId);
-        if (i.getStatus() != 1) throw new BizException("仅待分配的意向单可取消");
-        i.setStatus(3);
-        intakeMapper.updateById(i);
+        getIntake(intakeId); // 存在性校验
+        int affected = intakeMapper.update(null, Wrappers.<CheckinIntake>lambdaUpdate()
+                .set(CheckinIntake::getStatus, 3)
+                .eq(CheckinIntake::getId, intakeId)
+                .eq(CheckinIntake::getStatus, 1));
+        if (affected == 0) throw new BizException("单据状态已变化，请刷新后重试");
     }
 
     @Override
@@ -132,8 +136,7 @@ public class CheckinServiceImpl implements CheckinService {
                         .orderByDesc(CheckinRecord::getId));
         List<Long> residentIds = p.getRecords().stream().map(CheckinRecord::getResidentId).distinct().collect(Collectors.toList());
         Map<Long, Resident> residents = residentIds.isEmpty() ? Map.of()
-                : residentService.page(allResidentsQuery()).getRecords().stream()
-                    .filter(r -> residentIds.contains(r.getId()))
+                : residentService.listByIds(residentIds).stream()
                     .collect(Collectors.toMap(Resident::getId, Function.identity(), (a, b) -> a));
         Page<RecordVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
         voPage.setRecords(p.getRecords().stream().map(rec -> {
@@ -151,16 +154,19 @@ public class CheckinServiceImpl implements CheckinService {
     public Long assign(Long intakeId, AssignDTO dto) {
         CheckinIntake intake = getIntake(intakeId);
         if (intake.getStatus() != 1) throw new BizException("仅待分配的意向单可办理入住");
+        if (findActiveRecordByResident(intake.getResidentId()) != null) throw new BizException("该居住人已有在住记录");
 
         Bed bed = bedService.getById(dto.getBedId());
         if (bed.getStatus() == null || bed.getStatus() != 1) throw new BizException("所选床位不可用（非空闲）");
 
         Room room = roomService.getById(bed.getRoomId());
+        if (room.getStatus() != null && room.getStatus() == 3) throw new BizException("该房间维修中，不可入住");
         Resident resident = residentService.getById(intake.getResidentId());
 
-        // 性别校验：房间限性别时，居住人性别须匹配
+        // 性别校验：房间限性别时，居住人性别须非空且匹配
         if (room.getGenderLimit() != null && room.getGenderLimit() != 0
-                && resident.getGender() != null && !resident.getGender().equals(room.getGenderLimit())) {
+                && (resident.getGender() == null || resident.getGender() == 0
+                        || !resident.getGender().equals(room.getGenderLimit()))) {
             throw new BizException("居住人性别与房间性别限制不符");
         }
 
@@ -212,13 +218,13 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
-    public java.util.List<CheckinRecord> listActiveRecords() {
+    public List<CheckinRecord> listActiveRecords() {
         return recordMapper.selectList(Wrappers
                 .<CheckinRecord>lambdaQuery().eq(CheckinRecord::getStatus, 1));
     }
 
     @Override
-    public java.util.List<CheckinRecord> listActiveRecordsByRoom(Long roomId) {
+    public List<CheckinRecord> listActiveRecordsByRoom(Long roomId) {
         return recordMapper.selectList(Wrappers
                 .<CheckinRecord>lambdaQuery()
                 .eq(CheckinRecord::getStatus, 1)
@@ -226,12 +232,18 @@ public class CheckinServiceImpl implements CheckinService {
     }
 
     @Override
-    public java.util.List<CheckinRecord> listRecordsByRoomAt(Long roomId, LocalDate date) {
+    public List<CheckinRecord> listRecordsByRoomAt(Long roomId, LocalDate date) {
         return recordMapper.selectList(Wrappers.<CheckinRecord>lambdaQuery()
                 .eq(CheckinRecord::getRoomId, roomId)
                 .le(CheckinRecord::getCheckinDate, date)
                 .and(q -> q.isNull(CheckinRecord::getCheckoutDate)
                         .or().gt(CheckinRecord::getCheckoutDate, date))
                 .orderByAsc(CheckinRecord::getId));
+    }
+
+    @Override
+    public List<CheckinRecord> listRecordsByIds(java.util.Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return recordMapper.selectBatchIds(ids);
     }
 }

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { CurrentUser } from '@/api/auth'
+import { getCurrentUser, type CurrentUser } from '@/api/auth'
+import { clearDictCache } from '@/utils/dict'
 
 export const useUserStore = defineStore('user', () => {
   const token = ref<string>(localStorage.getItem('dms_token') || '')
@@ -15,11 +16,16 @@ export const useUserStore = defineStore('user', () => {
     userInfo.value = u
   }
 
+  async function fetchCurrentUser() {
+    userInfo.value = await getCurrentUser()
+  }
+
   function logout() {
     token.value = ''
     userInfo.value = null
     localStorage.removeItem('dms_token')
+    clearDictCache()
   }
 
-  return { token, userInfo, setToken, setUserInfo, logout }
+  return { token, userInfo, setToken, setUserInfo, fetchCurrentUser, logout }
 })

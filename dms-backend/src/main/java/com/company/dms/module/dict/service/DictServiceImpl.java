@@ -37,9 +37,13 @@ public class DictServiceImpl implements DictService {
 
     @Override
     public Long createType(DictTypeSaveDTO dto) {
+        String dictType = dto.getDictType().trim();
+        Long duplicate = typeMapper.selectCount(Wrappers.<DictType>lambdaQuery()
+                .eq(DictType::getDictType, dictType));
+        if (duplicate > 0) throw new BizException("字典类型编码已存在");
         DictType type = new DictType();
         BeanUtils.copyProperties(dto, type);
-        type.setDictType(dto.getDictType().trim());
+        type.setDictType(dictType);
         type.setSystemFlag(0);
         if (type.getStatus() == null) type.setStatus(1);
         if (type.getSortOrder() == null) type.setSortOrder(0);
@@ -67,6 +71,9 @@ public class DictServiceImpl implements DictService {
         if (Integer.valueOf(1).equals(existing.getSystemFlag())) {
             throw new BizException("系统字典类型不允许删除");
         }
+        Long itemCount = itemMapper.selectCount(Wrappers.<DictItem>lambdaQuery()
+                .eq(DictItem::getDictType, existing.getDictType()));
+        if (itemCount > 0) throw new BizException("请先删除该类型下的字典项");
         typeMapper.deleteById(id);
     }
 
@@ -90,10 +97,19 @@ public class DictServiceImpl implements DictService {
 
     @Override
     public Long createItem(DictItemSaveDTO dto) {
+        String dictType = dto.getDictType().trim();
+        Long typeExists = typeMapper.selectCount(Wrappers.<DictType>lambdaQuery()
+                .eq(DictType::getDictType, dictType));
+        if (typeExists == 0) throw new BizException(ResultCode.NOT_FOUND.getCode(), "字典类型不存在");
+        String dictValue = dto.getDictValue().trim();
+        Long duplicate = itemMapper.selectCount(Wrappers.<DictItem>lambdaQuery()
+                .eq(DictItem::getDictType, dictType)
+                .eq(DictItem::getDictValue, dictValue));
+        if (duplicate > 0) throw new BizException("该类型下字典值已存在");
         DictItem item = new DictItem();
         BeanUtils.copyProperties(dto, item);
-        item.setDictType(dto.getDictType().trim());
-        item.setDictValue(dto.getDictValue().trim());
+        item.setDictType(dictType);
+        item.setDictValue(dictValue);
         item.setDictLabel(dto.getDictLabel().trim());
         item.setSystemFlag(0);
         if (item.getStatus() == null) item.setStatus(1);

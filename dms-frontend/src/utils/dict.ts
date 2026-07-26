@@ -70,9 +70,10 @@ export const INTAKE_STATUS = [
 ]
 
 export const INTAKE_SOURCE = [
-  { value: 1, label: '手工录入', type: 'primary' },
-  { value: 2, label: 'Excel导入', type: 'success' },
-  { value: 3, label: 'OA同步', type: 'warning' }
+  { value: 1, label: 'OA申请', type: 'warning' },
+  { value: 2, label: 'HCP同步', type: 'info' },
+  { value: 3, label: '手工录入', type: 'primary' },
+  { value: 4, label: 'Excel导入', type: 'success' }
 ]
 
 export const CHECKOUT_STATUS = [
@@ -82,9 +83,10 @@ export const CHECKOUT_STATUS = [
 ]
 
 export const CHECKOUT_SOURCE = [
-  { value: 1, label: '手工录入', type: 'primary' },
-  { value: 2, label: 'Excel导入', type: 'success' },
-  { value: 3, label: 'OA同步', type: 'warning' }
+  { value: 1, label: 'OA申请', type: 'warning' },
+  { value: 2, label: 'HCP同步', type: 'info' },
+  { value: 3, label: '手工录入', type: 'primary' },
+  { value: 4, label: 'Excel导入', type: 'success' }
 ]
 
 export const BILL_STATUS = [
@@ -130,6 +132,28 @@ export const ROOM_FACILITY = [
   { value: '书桌', label: '书桌', type: 'info' }
 ]
 
+// 水电结算相关硬编码字典（无后端字典类型，前端固定）
+export const SETTLEMENT_MODE = [
+  { value: 1, label: '户级账户' },
+  { value: 2, label: '房间账户' }
+]
+
+export const ELECTRIC_RULE = [
+  { value: 0, label: '不计电费' },
+  { value: 1, label: '户级250度' },
+  { value: 2, label: '房间250度' },
+  { value: 3, label: '夫妻实际费用平摊' },
+  { value: 4, label: '公司承担' }
+]
+
+export const WATER_RULE = [
+  { value: 0, label: '不计水费' },
+  { value: 1, label: '户级50吨' },
+  { value: 2, label: '房间17吨' },
+  { value: 3, label: '夫妻实际费用平摊' },
+  { value: 4, label: '公司承担' }
+]
+
 const FALLBACKS: Record<string, DictOption[]> = {
   ROOM_TYPE,
   ROOM_STATUS,
@@ -152,23 +176,25 @@ const FALLBACKS: Record<string, DictOption[]> = {
   ROOM_FACILITY
 }
 
-const cache = new Map<string, DictOption[]>()
+const cache = new Map<string, Promise<DictOption[]>>()
 
 function toValue(value: string): number | string {
   if (/^-?\d+$/.test(value)) return Number(value)
   return value
 }
 
-export async function loadDictOptions(dictType: string, fallback: DictOption[] = FALLBACKS[dictType] || []): Promise<DictOption[]> {
-  if (cache.has(dictType)) return cache.get(dictType)!
-  try {
-    const items = await listDictItems(dictType, true)
-    const options = items.map((item) => ({ value: toValue(item.dictValue), label: item.dictLabel, type: item.tagType, raw: item }))
-    cache.set(dictType, options)
-    return options
-  } catch {
-    return fallback
-  }
+export function loadDictOptions(dictType: string, fallback: DictOption[] = FALLBACKS[dictType] || []): Promise<DictOption[]> {
+  const cached = cache.get(dictType)
+  if (cached) return cached
+  // 缓存 in-flight Promise，并发调用共享同一次请求；失败时清除缓存并回退本地字典
+  const promise = listDictItems(dictType, true)
+    .then((items) => items.map((item) => ({ value: toValue(item.dictValue), label: item.dictLabel, type: item.tagType, raw: item })))
+    .catch(() => {
+      cache.delete(dictType)
+      return fallback
+    })
+  cache.set(dictType, promise)
+  return promise
 }
 
 export function clearDictCache(dictType?: string) {
@@ -181,7 +207,9 @@ export function labelOf(dict: { value: number | string; label: string }[], value
   return item ? item.label : '-'
 }
 
-export function tagTypeOf(dict: { value: number | string; label: string; type?: string }[], value?: number | string): string {
+type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
+
+export function tagTypeOf(dict: { value: number | string; label: string; type?: string }[], value?: number | string): TagType {
   const item = dict.find((d) => d.value === value)
-  return item?.type || 'info'
+  return (item?.type || 'info') as TagType
 }

@@ -1,6 +1,7 @@
 package com.company.dms.module.fee.dto;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 import java.math.BigDecimal;
 
@@ -12,6 +13,7 @@ public class MeterReadingDTO {
     @NotNull(message = "房间不能为空")
     private Long roomId;
     @NotNull(message = "账期不能为空")
+    @Pattern(regexp = "\\d{4}-\\d{2}", message = "账期格式必须为 YYYY-MM")
     private String period;       // YYYY-MM
     @NotNull(message = "表类型不能为空")
     private Integer meterType;   // 1电 2水

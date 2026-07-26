@@ -11,6 +11,8 @@ import com.company.dms.module.resident.entity.Resident;
 import com.company.dms.module.resident.mapper.ResidentMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
+import java.util.Collection;
+import java.util.List;
 
 @Service
 public class ResidentServiceImpl implements ResidentService {
@@ -48,6 +50,12 @@ public class ResidentServiceImpl implements ResidentService {
     }
 
     @Override
+    public List<Resident> listByIds(Collection<Long> ids) {
+        if (ids == null || ids.isEmpty()) return List.of();
+        return residentMapper.selectBatchIds(ids);
+    }
+
+    @Override
     public Long create(ResidentSaveDTO dto) {
         if (getByEmployeeNo(dto.getEmployeeNo()) != null) throw new BizException("工号已存在");
         Resident r = new Resident();
@@ -61,6 +69,8 @@ public class ResidentServiceImpl implements ResidentService {
     @Override
     public void update(Long id, ResidentSaveDTO dto) {
         getById(id);
+        Resident existing = getByEmployeeNo(dto.getEmployeeNo());
+        if (existing != null && !existing.getId().equals(id)) throw new BizException("工号已存在");
         Resident r = new Resident();
         BeanUtils.copyProperties(dto, r);
         r.setId(id);

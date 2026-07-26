@@ -6,6 +6,7 @@ import com.company.dms.module.resident.dto.ResidentSaveDTO;
 import com.company.dms.module.resident.service.ResidentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -23,6 +24,7 @@ public class OaApplicationAdapter {
     }
 
     /** 外部报文 → 解析/创建居住人 → 内部命令 → 创建意向单（幂等）。返回意向单 id。 */
+    @Transactional
     public Long handle(OaCheckinApplicationDTO dto) {
         ResidentSaveDTO r = new ResidentSaveDTO();
         r.setEmployeeNo(dto.getEmployeeNo());

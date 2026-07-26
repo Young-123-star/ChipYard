@@ -8,8 +8,10 @@ import com.company.dms.common.result.ResultCode;
 import com.company.dms.module.fee.dto.MeterQuery;
 import com.company.dms.module.fee.dto.MeterReadingDTO;
 import com.company.dms.module.fee.dto.UtilityRateDTO;
+import com.company.dms.module.fee.entity.FeeBill;
 import com.company.dms.module.fee.entity.MeterReading;
 import com.company.dms.module.fee.entity.UtilityRate;
+import com.company.dms.module.fee.mapper.FeeBillMapper;
 import com.company.dms.module.fee.mapper.MeterReadingMapper;
 import com.company.dms.module.fee.mapper.UtilityRateMapper;
 import com.company.dms.module.fee.vo.GenerateResultVO;
@@ -17,7 +19,7 @@ import com.company.dms.module.fee.vo.MeterReadingVO;
 import com.company.dms.module.checkin.entity.CheckinRecord;
 import com.company.dms.module.checkin.service.CheckinService;
 import com.company.dms.module.resource.entity.Room;
-import com.company.dms.module.resource.service.RoomService;
+import com.company.dms.module.resource.mapper.RoomMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -32,17 +38,19 @@ public class MeterServiceImpl implements MeterService {
 
     private final MeterReadingMapper readingMapper;
     private final UtilityRateMapper rateMapper;
-    private final RoomService roomService;
+    private final RoomMapper roomMapper;
     private final CheckinService checkinService;
     private final FeeBillService feeBillService;
+    private final FeeBillMapper billMapper;
 
-    public MeterServiceImpl(MeterReadingMapper readingMapper, UtilityRateMapper rateMapper, RoomService roomService,
-                            CheckinService checkinService, FeeBillService feeBillService) {
+    public MeterServiceImpl(MeterReadingMapper readingMapper, UtilityRateMapper rateMapper, RoomMapper roomMapper,
+                            CheckinService checkinService, FeeBillService feeBillService, FeeBillMapper billMapper) {
         this.readingMapper = readingMapper;
         this.rateMapper = rateMapper;
-        this.roomService = roomService;
+        this.roomMapper = roomMapper;
         this.checkinService = checkinService;
         this.feeBillService = feeBillService;
+        this.billMapper = billMapper;
     }
 
     @Override
@@ -69,18 +77,21 @@ public class MeterServiceImpl implements MeterService {
                         .eq(query.getRoomId() != null, MeterReading::getRoomId, query.getRoomId())
                         .eq(query.getMeterType() != null, MeterReading::getMeterType, query.getMeterType())
                         .orderByDesc(MeterReading::getId));
+        List<Long> roomIds = p.getRecords().stream()
+                .map(MeterReading::getRoomId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, Room> roomMap = roomIds.isEmpty() ? Map.of()
+                : roomMapper.selectBatchIds(roomIds).stream()
+                        .collect(Collectors.toMap(Room::getId, Function.identity()));
         Page<MeterReadingVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
-        voPage.setRecords(p.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
+        voPage.setRecords(p.getRecords().stream().map(m -> toVO(m, roomMap)).collect(Collectors.toList()));
         return PageResult.of(voPage);
     }
 
-    private MeterReadingVO toVO(MeterReading m) {
+    private MeterReadingVO toVO(MeterReading m, Map<Long, Room> roomMap) {
         MeterReadingVO vo = new MeterReadingVO();
         BeanUtils.copyProperties(m, vo);
-        try {
-            Room room = roomService.getById(m.getRoomId());
-            vo.setRoomNumber(room.getRoomNumber());
-        } catch (Exception ignore) { /* 房间不存在则留空 */ }
+        Room room = roomMap.get(m.getRoomId());
+        if (room != null) vo.setRoomNumber(room.getRoomNumber());  // 房间不存在则留空
         return vo;
     }
 
@@ -102,6 +113,7 @@ public class MeterServiceImpl implements MeterService {
                 .orderByDesc(MeterReading::getPeriod).last("limit 1"));
         BigDecimal prevReading = prev != null ? prev.getCurrentReading() : BigDecimal.ZERO;
         BigDecimal consumption = dto.getCurrentReading().subtract(prevReading);
+        if (consumption.signum() < 0) throw new BizException("本期读数不能小于上期读数");
         BigDecimal amount = consumption.multiply(price).setScale(2, RoundingMode.HALF_UP);
 
         MeterReading existing = readingMapper.selectOne(Wrappers.<MeterReading>lambdaQuery()
@@ -127,13 +139,26 @@ public class MeterServiceImpl implements MeterService {
     public GenerateResultVO generateUtilityBills(String period) {
         List<MeterReading> readings = readingMapper.selectList(Wrappers.<MeterReading>lambdaQuery()
                 .eq(MeterReading::getPeriod, period));
+        // 批量取在住档案按房间分组，避免逐房间查询（N+1）
+        Map<Long, List<CheckinRecord>> occupantsByRoom = checkinService.listActiveRecords().stream()
+                .filter(r -> r.getRoomId() != null)
+                .collect(Collectors.groupingBy(CheckinRecord::getRoomId));
+        // 批量取该期水电账单（不含已作废），幂等判断用 key=档案id:账单类型
+        Set<String> billedKeys = billMapper.selectList(Wrappers.<FeeBill>lambdaQuery()
+                        .eq(FeeBill::getPeriod, period)
+                        .in(FeeBill::getBillType, 2, 3)
+                        .ne(FeeBill::getStatus, 3)).stream()
+                .map(b -> b.getCheckinRecordId() + ":" + b.getBillType())
+                .collect(Collectors.toSet());
         int generated = 0, skipped = 0;
         for (MeterReading reading : readings) {
-            List<CheckinRecord> occupants = checkinService.listActiveRecordsByRoom(reading.getRoomId());
+            if (reading.getConsumption() != null && reading.getConsumption().signum() < 0)
+                throw new BizException("抄表用量为负");
+            List<CheckinRecord> occupants = occupantsByRoom.getOrDefault(reading.getRoomId(), List.of());
             if (occupants.isEmpty()) { skipped++; continue; }              // 无在住，无法分摊
             Integer billType = reading.getMeterType() == 1 ? 2 : 3;        // 电→2 水→3
             // 幂等：该读数已生成（以第一个在住人是否已有该期该类型账单为准）
-            if (feeBillService.getByRecordAndPeriod(occupants.get(0).getId(), period, billType) != null) {
+            if (billedKeys.contains(occupants.get(0).getId() + ":" + billType)) {
                 skipped++; continue;
             }
             int n = occupants.size();

@@ -69,6 +69,7 @@ import { pageInspectionTasks } from '@/api/inspection'
 import type { PeriodSummary, RoomBoard } from '@/api/types'
 
 const router = useRouter()
+const PREVIEW_ROOM_LIMIT = 30
 const loading = ref(false)
 const error = ref(false)
 const rooms = ref<RoomBoard[]>([])
@@ -83,7 +84,7 @@ const totalBeds = computed(() => rooms.value.reduce((sum, room) => sum + room.be
 const occupiedBeds = computed(() => rooms.value.reduce((sum, room) => sum + room.occupiedBeds, 0))
 const freeBeds = computed(() => Math.max(0, totalBeds.value - occupiedBeds.value))
 const occupancyRate = computed(() => totalBeds.value ? Math.round(occupiedBeds.value / totalBeds.value * 100) : 0)
-const previewRooms = computed(() => rooms.value.slice(0, 30))
+const previewRooms = computed(() => rooms.value.slice(0, PREVIEW_ROOM_LIMIT))
 const servicePending = computed(() => pendingRepairs.value + pendingInspections.value + rectifyingInspections.value)
 const currency = (value = 0) => `¥${Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 0 })}`
 
@@ -120,20 +121,25 @@ async function load() {
   loading.value = true
   error.value = false
   try {
-    const [roomData, intakes, checkouts, periods, repairs, inspections, rectifications] = await Promise.all([
+    const [roomData, intakes, checkouts, periods, repairs, inspections, rectifications] = await Promise.allSettled([
       getRoomBoard({}), pageIntakes({ status: 1, page: 1, size: 1 }), pageCheckoutOrders({ status: 1, page: 1, size: 1 }),
       getPeriodSummary(), pageRepairOrders({ status: 1, page: 1, size: 1 }),
       pageInspectionTasks({ status: 1, page: 1, size: 1 }), pageInspectionTasks({ status: 3, page: 1, size: 1 })
     ])
-    rooms.value = roomData
-    pendingIntakes.value = intakes.total
-    pendingCheckouts.value = checkouts.total
-    latestPeriod.value = periods.at(-1)
-    pendingRepairs.value = repairs.total
-    pendingInspections.value = inspections.total
-    rectifyingInspections.value = rectifications.total
-  } catch {
-    error.value = true
+    // 房态为核心数据，失败时整体提示；其余模块独立降级
+    if (roomData.status === 'rejected') {
+      error.value = true
+      return
+    }
+    rooms.value = roomData.value
+    if (intakes.status === 'fulfilled') pendingIntakes.value = intakes.value.total
+    if (checkouts.status === 'fulfilled') pendingCheckouts.value = checkouts.value.total
+    if (periods.status === 'fulfilled' && periods.value.length) {
+      latestPeriod.value = periods.value.reduce((latest, item) => (item.period > latest.period ? item : latest))
+    }
+    if (repairs.status === 'fulfilled') pendingRepairs.value = repairs.value.total
+    if (inspections.status === 'fulfilled') pendingInspections.value = inspections.value.total
+    if (rectifications.status === 'fulfilled') rectifyingInspections.value = rectifications.value.total
   } finally {
     loading.value = false
   }

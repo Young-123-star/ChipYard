@@ -10,6 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -53,6 +54,7 @@ class FeeBillServiceTest {
         assertEquals(2, b.getStatus(), "已缴");
         assertEquals(1, b.getPayMethod());
         assertNotNull(b.getPaidAt());
+        assertFalse(b.getPaidAt().isAfter(LocalDateTime.now()), "缴费时间不晚于当前时间");
         assertThrows(BizException.class, () -> billService.pay(1L, 1), "已缴不可再缴");
     }
 

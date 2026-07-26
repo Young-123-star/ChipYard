@@ -5,6 +5,7 @@ import com.company.dms.module.checkout.vo.CheckoutResultVO;
 import com.company.dms.module.integration.support.IntegrationTokenGuard;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "集成-OA退宿")
@@ -27,7 +28,7 @@ public class OaCheckoutWebhookController {
     @Operation(summary = "OA 退宿申请单推送（需 X-Integration-Token）")
     @PostMapping("/checkout-application")
     public R<CheckoutResultVO> checkoutApplication(@RequestHeader(value = "X-Integration-Token", required = false) String token,
-                                                   @RequestBody OaCheckoutApplicationDTO dto) {
+                                                   @Valid @RequestBody OaCheckoutApplicationDTO dto) {
         tokenGuard.verify(token);
         return R.ok(checkoutAdapter.handle(dto));
     }
@@ -35,7 +36,7 @@ public class OaCheckoutWebhookController {
     @Operation(summary = "OA 离职单推送（需 X-Integration-Token）")
     @PostMapping("/resignation")
     public R<CheckoutResultVO> resignation(@RequestHeader(value = "X-Integration-Token", required = false) String token,
-                                           @RequestBody OaResignationDTO dto) {
+                                           @Valid @RequestBody OaResignationDTO dto) {
         tokenGuard.verify(token);
         return R.ok(resignationAdapter.handle(dto));
     }
