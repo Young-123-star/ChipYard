@@ -17,13 +17,28 @@ service.interceptors.request.use((config) => {
 })
 
 service.interceptors.response.use(
-  (response) => {
-    if (response.config.responseType === 'blob') return response.data
+  async (response) => {
+    if (response.config.responseType === 'blob') {
+      // 导出失败时后端返回 JSON 错误体而非文件，避免把错误内容下载成假 xlsx
+      if (response.data instanceof Blob && response.data.type.includes('application/json')) {
+        let message = '导出失败'
+        try {
+          const res = JSON.parse(await response.data.text())
+          message = res.message || message
+        } catch {
+          // 非标准 JSON 时保留默认提示
+        }
+        ElMessage.error(message)
+        return Promise.reject(new Error(message))
+      }
+      // 放行完整 response，调用处可读 headers（如 Content-Disposition 文件名）
+      return response
+    }
     const res = response.data
     if (res.code === 0) {
       return res.data
     }
-    ElMessage.error(res.message || '\u8bf7\u6c42\u5931\u8d25')
+    ElMessage.error(res.message || '请求失败')
     return Promise.reject(new Error(res.message || 'Error'))
   },
   (error) => {
@@ -32,11 +47,13 @@ service.interceptors.response.use(
       const authorization = error.config?.headers?.get?.('Authorization')
       if (authorization === `Bearer ${userStore.token}`) {
         userStore.logout()
-        router.push('/login')
-        ElMessage.error('\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55')
+        router.push({ path: '/login', query: { redirect: router.currentRoute.value.fullPath } })
+        ElMessage.error('登录已过期，请重新登录')
       }
+    } else if (error.code === 'ECONNABORTED') {
+      ElMessage.error('请求超时，请稍后重试')
     } else {
-      ElMessage.error(error.message || '\u7f51\u7edc\u9519\u8bef')
+      ElMessage.error(error.response?.data?.message || error.message || '网络错误')
     }
     return Promise.reject(error)
   }

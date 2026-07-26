@@ -8,8 +8,10 @@ import com.company.dms.common.result.ResultCode;
 import com.company.dms.module.resource.dto.BuildingQuery;
 import com.company.dms.module.resource.dto.BuildingSaveDTO;
 import com.company.dms.module.resource.entity.Building;
+import com.company.dms.module.resource.entity.Floor;
 import com.company.dms.module.resource.entity.Room;
 import com.company.dms.module.resource.mapper.BuildingMapper;
+import com.company.dms.module.resource.mapper.FloorMapper;
 import com.company.dms.module.resource.mapper.RoomMapper;
 import com.company.dms.module.resource.vo.BuildingVO;
 import org.springframework.beans.BeanUtils;
@@ -23,10 +25,12 @@ public class BuildingServiceImpl implements BuildingService {
 
     private final BuildingMapper buildingMapper;
     private final RoomMapper roomMapper;
+    private final FloorMapper floorMapper;
 
-    public BuildingServiceImpl(BuildingMapper buildingMapper, RoomMapper roomMapper) {
+    public BuildingServiceImpl(BuildingMapper buildingMapper, RoomMapper roomMapper, FloorMapper floorMapper) {
         this.buildingMapper = buildingMapper;
         this.roomMapper = roomMapper;
+        this.floorMapper = floorMapper;
     }
 
     @Override
@@ -80,6 +84,11 @@ public class BuildingServiceImpl implements BuildingService {
     @Override
     public void update(Long id, BuildingSaveDTO dto) {
         getById(id);
+        Long count = buildingMapper.selectCount(
+                Wrappers.<Building>lambdaQuery()
+                        .eq(Building::getBuildingCode, dto.getBuildingCode())
+                        .ne(Building::getId, id));
+        if (count > 0) throw new BizException("楼栋编码已存在");
         Building b = new Building();
         BeanUtils.copyProperties(dto, b);
         b.setId(id);
@@ -89,6 +98,8 @@ public class BuildingServiceImpl implements BuildingService {
     @Override
     public void delete(Long id) {
         getById(id);
+        Long floorCount = floorMapper.selectCount(Wrappers.<Floor>lambdaQuery().eq(Floor::getBuildingId, id));
+        if (floorCount > 0) throw new BizException("楼栋下存在楼层，不能删除");
         buildingMapper.deleteById(id);
     }
 }

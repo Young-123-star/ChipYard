@@ -1,5 +1,6 @@
 package com.company.dms.common.security;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,8 +24,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             String token = header.substring(7);
-            if (jwtUtil.isValid(token)) {
-                Long userId = jwtUtil.getUserId(token);
+            // 只解析一次；解析失败（过期/签名错误/subject 非法）一律视为未认证，交由后续鉴权拦截
+            Claims claims = jwtUtil.parseOrNull(token);
+            if (claims != null) {
+                Long userId = Long.valueOf(claims.getSubject());
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(userId, null, AuthorityUtils.NO_AUTHORITIES);
                 SecurityContextHolder.getContext().setAuthentication(auth);

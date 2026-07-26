@@ -3,8 +3,10 @@ package com.company.dms.module.fee;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.company.dms.module.fee.dto.MeterReadingDTO;
 import com.company.dms.module.fee.entity.FeeBill;
+import com.company.dms.module.fee.entity.UtilityRoomResult;
 import com.company.dms.module.fee.entity.UtilitySettlement;
 import com.company.dms.module.fee.mapper.FeeBillMapper;
+import com.company.dms.module.fee.mapper.UtilityRoomResultMapper;
 import com.company.dms.module.fee.mapper.UtilitySettlementMapper;
 import com.company.dms.module.fee.service.UtilityBillingService;
 import com.company.dms.module.resource.entity.Room;
@@ -27,6 +29,7 @@ class UtilityBillingServiceTest {
     @Autowired RoomMapper roomMapper;
     @Autowired FeeBillMapper billMapper;
     @Autowired UtilitySettlementMapper settlementMapper;
+    @Autowired UtilityRoomResultMapper resultMapper;
 
     @Test
     void room_allowance_generates_employee_and_company_shares_and_can_void() {
@@ -63,6 +66,10 @@ class UtilityBillingServiceTest {
         FeeBill bill = billMapper.selectOne(Wrappers.<FeeBill>lambdaQuery()
                 .isNotNull(FeeBill::getUtilityResultId).eq(FeeBill::getPeriod, "2026-07"));
         assertEquals(0, new BigDecimal("26.92").compareTo(bill.getAmount()));
+        UtilityRoomResult result = resultMapper.selectOne(Wrappers.<UtilityRoomResult>lambdaQuery()
+                .eq(UtilityRoomResult::getSettlementId, settlement.getId()));
+        assertNotNull(result);
+        assertEquals(result.getId(), bill.getUtilityResultId(), "账单应回填分摊结果 id");
 
         service.voidSettlement(settlement.getId());
         assertEquals(2, settlementMapper.selectById(settlement.getId()).getStatus());

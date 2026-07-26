@@ -9,6 +9,7 @@ import com.company.dms.module.resident.entity.Resident;
 import com.company.dms.module.resident.service.ResidentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -28,6 +29,7 @@ public class ResignationAdapter {
         this.objectMapper = objectMapper;
     }
 
+    @Transactional
     public CheckoutResultVO handle(OaResignationDTO dto) {
         Resident resident = residentService.getByEmployeeNo(dto.getEmployeeNo());
         if (resident == null) return CheckoutResultVO.of("NO_RESIDENT", null, false, "无居住记录");

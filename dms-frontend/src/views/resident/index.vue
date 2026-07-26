@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="reload">
+    <el-form :inline="true" :model="query" @keyup.enter="search">
       <el-form-item label="姓名"><el-input v-model="query.realName" placeholder="姓名" clearable /></el-form-item>
       <el-form-item label="工号"><el-input v-model="query.employeeNo" placeholder="工号" clearable /></el-form-item>
       <el-form-item label="类型">
@@ -9,7 +9,7 @@
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="reload">查询</el-button>
+        <el-button @click="search">查询</el-button>
         <el-button type="primary" @click="openCreate">新增</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
@@ -19,7 +19,7 @@
       <el-table-column prop="employeeNo" label="工号" width="120" />
       <el-table-column prop="realName" label="姓名" width="120" />
       <el-table-column label="性别" width="80">
-        <template #default="{ row }">{{ labelOf(GENDER_LIMIT, row.gender) }}</template>
+        <template #default="{ row }">{{ labelOf(GENDER, row.gender) }}</template>
       </el-table-column>
       <el-table-column label="类型" width="100">
         <template #default="{ row }">{{ labelOf(RESIDENT_TYPE, row.residentType) }}</template>
@@ -28,7 +28,7 @@
       <el-table-column prop="phone" label="手机" width="140" />
       <el-table-column label="状态" width="90">
         <template #default="{ row }">
-          <el-tag :type="tagTypeOf(RESIDENT_STATUS, row.status) as any" size="small" round>{{ labelOf(RESIDENT_STATUS, row.status) }}</el-tag>
+          <el-tag :type="tagTypeOf(RESIDENT_STATUS, row.status)" size="small" round>{{ labelOf(RESIDENT_STATUS, row.status) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="140">
@@ -39,7 +39,7 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination v-if="total > query.size" style="margin-top: 12px; justify-content: flex-end"
+    <el-pagination style="margin-top: 12px; justify-content: flex-end"
       layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
       @current-change="onPageChange" />
 
@@ -48,7 +48,7 @@
         <el-form-item label="工号" prop="employeeNo"><el-input v-model="form.employeeNo" :disabled="!!form.id" /></el-form-item>
         <el-form-item label="姓名" prop="realName"><el-input v-model="form.realName" /></el-form-item>
         <el-form-item label="性别">
-          <el-select v-model="form.gender"><el-option v-for="g in GENDER_LIMIT" :key="g.value" :label="g.label" :value="g.value" /></el-select>
+          <el-select v-model="form.gender"><el-option v-for="g in GENDER" :key="g.value" :label="g.label" :value="g.value" /></el-select>
         </el-form-item>
         <el-form-item label="类型">
           <el-select v-model="form.residentType"><el-option v-for="t in RESIDENT_TYPE" :key="t.value" :label="t.label" :value="t.value" /></el-select>
@@ -72,8 +72,14 @@ import { reactive, ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageResidents, createResident, updateResident, deleteResident } from '@/api/resident'
 import type { Resident } from '@/api/types'
-import { RESIDENT_TYPE, RESIDENT_STATUS, GENDER_LIMIT, labelOf, tagTypeOf } from '@/utils/dict'
+import { RESIDENT_TYPE, RESIDENT_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+
+// 人的性别（区别于床位性别限制 GENDER_LIMIT，无「不限」项）：1=男、2=女
+const GENDER = [
+  { value: 1, label: '男', type: 'primary' },
+  { value: 2, label: '女', type: 'danger' }
+]
 
 const loading = ref(false)
 const exporting = ref(false)
@@ -99,8 +105,11 @@ async function reload() {
     loading.value = false
   }
 }
+// 查询：重置到第 1 页再加载（翻页仍走 reload）
+function search() { query.page = 1; reload() }
 function onPageChange(p: number) { query.page = p; reload() }
 function openCreate() {
+  // 表单默认值：性别男（1）、类型员工（1）、状态在职（1）
   Object.assign(form, { id: undefined, employeeNo: '', realName: '', gender: 1, residentType: 1, deptName: '', phone: '', status: 1 })
   dialogVisible.value = true
 }
@@ -119,7 +128,11 @@ async function onSave() {
   }
 }
 async function onDelete(row: Resident) {
-  await ElMessageBox.confirm(`确认删除居住人「${row.realName}」？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除居住人「${row.realName}」？`, '提示', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
   await deleteResident(row.id)
   ElMessage.success('删除成功')
   reload()

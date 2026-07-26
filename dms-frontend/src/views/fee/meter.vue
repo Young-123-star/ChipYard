@@ -205,7 +205,16 @@ async function cancelReading() {
 async function onSaveReading() {
   await readingRef.value?.validate(); saving.value = true
   try {
-    await saveUtilityReading(form as any); ElMessage.success('抄表已保存'); readingVisible.value = false; await loadReadings()
+    await saveUtilityReading({
+      buildingId: form.buildingId!,
+      accountCode: form.accountCode!,
+      targetType: form.targetType!,
+      roomId: form.roomId!,
+      period: form.period!,
+      meterType: form.meterType!,
+      prevReading: form.prevReading,
+      currentReading: form.currentReading!
+    }); ElMessage.success('抄表已保存'); readingVisible.value = false; await loadReadings()
   } finally { saving.value = false }
 }
 async function onSettlementPeriodChange() { preview.value = undefined; await Promise.all([loadReadings(), loadSettlements()]) }
@@ -220,7 +229,11 @@ async function onGenerate() {
   } finally { generating.value = false }
 }
 async function onVoid(id: number) {
-  await ElMessageBox.confirm('确认作废该结算及其未缴个人账单？', '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm('确认作废该结算及其未缴个人账单？', '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await voidUtilitySettlement(id); ElMessage.success('结算已作废，可修改抄表后重新生成'); await loadSettlements()
 }
 onMounted(async () => { await loadBase(); await Promise.all([loadReadings(), loadSettlements()]) })

@@ -1,18 +1,18 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="reload">
+    <el-form :inline="true" :model="query" @keyup.enter="search">
       <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px" @change="reload">
+        <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px" @change="search">
           <el-option v-for="s in INTAKE_STATUS" :key="s.value" :label="s.label" :value="s.value" />
         </el-select>
       </el-form-item>
       <el-form-item label="来源">
-        <el-select v-model="query.source" placeholder="全部" clearable style="width: 120px" @change="reload">
+        <el-select v-model="query.source" placeholder="全部" clearable style="width: 120px" @change="search">
           <el-option v-for="s in INTAKE_SOURCE" :key="s.value" :label="s.label" :value="s.value" />
         </el-select>
       </el-form-item>
       <el-form-item>
-        <el-button @click="reload">查询</el-button>
+        <el-button @click="search">查询</el-button>
         <el-button type="primary" @click="openCreate">手工新建</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
       </el-form-item>
@@ -33,7 +33,7 @@
       <el-table-column prop="remark" label="备注" />
       <el-table-column label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="tagTypeOf(INTAKE_STATUS, row.status) as any" size="small" round>{{ labelOf(INTAKE_STATUS, row.status) }}</el-tag>
+          <el-tag :type="tagTypeOf(INTAKE_STATUS, row.status)" size="small" round>{{ labelOf(INTAKE_STATUS, row.status) }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="操作" width="160">
@@ -47,7 +47,7 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination v-if="total > query.size" style="margin-top: 12px; justify-content: flex-end"
+    <el-pagination style="margin-top: 12px; justify-content: flex-end"
       layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
       @current-change="onPageChange" />
 
@@ -154,6 +154,7 @@ async function reload() {
   }
 }
 function onPageChange(p: number) { query.page = p; reload() }
+function search() { query.page = 1; reload() }
 
 async function loadResidents() {
   const res = await pageResidents({ page: 1, size: 1000, status: 1 })
@@ -183,7 +184,7 @@ async function openAssign(row: CheckinIntake) {
   rooms.value = []
   freeBeds.value = []
   if (!buildings.value.length) {
-    const res = await pageBuildings({ page: 1, size: 100 })
+    const res = await pageBuildings({ page: 1, size: 1000 })
     buildings.value = res.records
   }
   assignVisible.value = true
@@ -218,7 +219,11 @@ async function onAssign() {
   }
 }
 async function onCancel(row: CheckinIntake) {
-  await ElMessageBox.confirm(`确认取消「${row.residentName}」的意向单？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认取消「${row.residentName}」的意向单？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await cancelIntake(row.id)
   ElMessage.success('已取消')
   reload()

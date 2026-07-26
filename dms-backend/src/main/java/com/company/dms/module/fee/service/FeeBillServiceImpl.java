@@ -11,18 +11,24 @@ import com.company.dms.module.fee.dto.BillQuery;
 import com.company.dms.module.fee.entity.FeeBill;
 import com.company.dms.module.fee.entity.FeeStandard;
 import com.company.dms.module.fee.mapper.FeeBillMapper;
+import com.company.dms.module.fee.vo.ArrearsVO;
 import com.company.dms.module.fee.vo.FeeBillVO;
 import com.company.dms.module.fee.vo.GenerateResultVO;
 import com.company.dms.module.resident.entity.Resident;
 import com.company.dms.module.resident.service.ResidentService;
 import com.company.dms.module.resource.entity.Room;
+import com.company.dms.module.resource.mapper.RoomMapper;
 import com.company.dms.module.resource.service.RoomService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,14 +39,17 @@ public class FeeBillServiceImpl implements FeeBillService {
     private final CheckinService checkinService;
     private final ResidentService residentService;
     private final RoomService roomService;
+    private final RoomMapper roomMapper;
 
     public FeeBillServiceImpl(FeeBillMapper billMapper, FeeStandardService standardService,
-                              CheckinService checkinService, ResidentService residentService, RoomService roomService) {
+                              CheckinService checkinService, ResidentService residentService,
+                              RoomService roomService, RoomMapper roomMapper) {
         this.billMapper = billMapper;
         this.standardService = standardService;
         this.checkinService = checkinService;
         this.residentService = residentService;
         this.roomService = roomService;
+        this.roomMapper = roomMapper;
     }
 
     @Override
@@ -54,25 +63,33 @@ public class FeeBillServiceImpl implements FeeBillService {
                         .eq(query.getResidentId() != null, FeeBill::getResidentId, query.getResidentId())
                         .eq(query.getRoomId() != null, FeeBill::getRoomId, query.getRoomId())
                         .orderByDesc(FeeBill::getId));
+        List<Long> residentIds = p.getRecords().stream()
+                .map(FeeBill::getResidentId).filter(Objects::nonNull).distinct().toList();
+        List<Long> roomIds = p.getRecords().stream()
+                .map(FeeBill::getRoomId).filter(Objects::nonNull).distinct().toList();
+        Map<Long, Resident> residentMap = residentIds.isEmpty() ? Map.of()
+                : residentService.listByIds(residentIds).stream()
+                        .collect(Collectors.toMap(Resident::getId, Function.identity()));
+        Map<Long, Room> roomMap = roomIds.isEmpty() ? Map.of()
+                : roomMapper.selectBatchIds(roomIds).stream()
+                        .collect(Collectors.toMap(Room::getId, Function.identity()));
         Page<FeeBillVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
-        voPage.setRecords(p.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
+        voPage.setRecords(p.getRecords().stream().map(b -> toVO(b, residentMap, roomMap)).collect(Collectors.toList()));
         return PageResult.of(voPage);
     }
 
-    private FeeBillVO toVO(FeeBill b) {
+    private FeeBillVO toVO(FeeBill b, Map<Long, Resident> residentMap, Map<Long, Room> roomMap) {
         FeeBillVO vo = new FeeBillVO();
         BeanUtils.copyProperties(b, vo);
-        try {
-            Resident r = residentService.getById(b.getResidentId());
+        Resident r = residentMap.get(b.getResidentId());
+        if (r != null) {                                     // 居住人不存在则留空
             vo.setResidentName(r.getRealName());
             vo.setEmployeeNo(r.getEmployeeNo());
-        } catch (Exception ignore) { /* 居住人不存在则留空 */ }
-        if (b.getRoomId() != null) {
-            try {
-                Room room = roomService.getById(b.getRoomId());
-                vo.setRoomNumber(room.getRoomNumber());
-                vo.setRoomType(room.getRoomType());
-            } catch (Exception ignore) { /* 房间不存在则留空 */ }
+        }
+        Room room = b.getRoomId() == null ? null : roomMap.get(b.getRoomId());
+        if (room != null) {                                  // 房间不存在则留空
+            vo.setRoomNumber(room.getRoomNumber());
+            vo.setRoomType(room.getRoomType());
         }
         return vo;
     }
@@ -90,6 +107,7 @@ public class FeeBillServiceImpl implements FeeBillService {
                 .eq(FeeBill::getCheckinRecordId, checkinRecordId)
                 .eq(FeeBill::getPeriod, period)
                 .eq(FeeBill::getBillType, billType)
+                .ne(FeeBill::getStatus, 3)                       // 已作废不阻断重新生成
                 .last("limit 1"));
     }
 
@@ -138,7 +156,7 @@ public class FeeBillServiceImpl implements FeeBillService {
 
     @Override
     public Long createUtilityBill(Long checkinRecordId, Long residentId, Long roomId, String period,
-                                  Integer billType, java.math.BigDecimal amount, String remark) {
+                                  Integer billType, BigDecimal amount, String remark) {
         FeeBill bill = new FeeBill();
         String code = billType == 2 ? "E" : "W";
         bill.setBillNo("UBILL-" + code + "-" + checkinRecordId + "-" + period.replace("-", ""));
@@ -155,16 +173,24 @@ public class FeeBillServiceImpl implements FeeBillService {
     }
 
     @Override
-    public java.util.List<FeeBill> listUnpaidByRecord(Long checkinRecordId) {
+    public List<FeeBill> listUnpaidByRecord(Long checkinRecordId) {
         return billMapper.selectList(Wrappers.<FeeBill>lambdaQuery()
                 .eq(FeeBill::getCheckinRecordId, checkinRecordId)
                 .eq(FeeBill::getStatus, 1));
     }
 
     @Override
-    public java.math.BigDecimal settleArrearsForRecord(Long checkinRecordId) {
-        java.util.List<FeeBill> unpaid = listUnpaidByRecord(checkinRecordId);
-        java.math.BigDecimal total = java.math.BigDecimal.ZERO;
+    public ArrearsVO arrearsByRecord(Long checkinRecordId) {
+        List<FeeBill> unpaid = listUnpaidByRecord(checkinRecordId);
+        BigDecimal total = unpaid.stream().map(FeeBill::getAmount)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return ArrearsVO.of(unpaid.size(), total);
+    }
+
+    @Override
+    public BigDecimal settleArrearsForRecord(Long checkinRecordId) {
+        List<FeeBill> unpaid = listUnpaidByRecord(checkinRecordId);
+        BigDecimal total = BigDecimal.ZERO;
         for (FeeBill b : unpaid) {
             total = total.add(b.getAmount());
             b.setStatus(4);

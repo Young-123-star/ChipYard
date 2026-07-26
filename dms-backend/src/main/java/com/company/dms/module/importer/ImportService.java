@@ -1,6 +1,8 @@
 package com.company.dms.module.importer;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.company.dms.common.exception.BizException;
+import com.company.dms.common.result.ResultCode;
 import com.company.dms.module.checkin.dto.AssignDTO;
 import com.company.dms.module.checkin.dto.CreateIntakeCommand;
 import com.company.dms.module.checkin.service.CheckinService;
@@ -33,6 +35,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -64,14 +67,17 @@ public class ImportService {
     }
 
     public ImportResult validate(String type, byte[] file) {
-        List<List<String>> rows = readRows(file);
+        return validate(type, readRows(file));
+    }
+
+    private ImportResult validate(String type, List<List<String>> rows) {
         ImportResult result = new ImportResult();
         result.setTotalRows(rows.size());
         switch (type) {
             case "resource" -> validateResource(rows, result);
             case "resident" -> validateResidents(rows, result);
             case "checkin-record" -> validateCheckins(rows, result);
-            default -> result.addError(0, "type", type, "unsupported import type");
+            default -> throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的导入类型：" + type);
         }
         result.setSuccessRows(result.isSuccess() ? rows.size() : 0);
         return result;
@@ -79,14 +85,14 @@ public class ImportService {
 
     @Transactional
     public ImportResult execute(String type, byte[] file) {
-        ImportResult result = validate(type, file);
-        if (!result.isSuccess()) return result;
         List<List<String>> rows = readRows(file);
+        ImportResult result = validate(type, rows);
+        if (!result.isSuccess()) return result;
         switch (type) {
             case "resource" -> executeResource(rows);
             case "resident" -> executeResidents(rows);
             case "checkin-record" -> executeCheckins(rows);
-            default -> throw new IllegalArgumentException("unsupported import type: " + type);
+            default -> throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的导入类型：" + type);
         }
         result.setSuccessRows(rows.size());
         return result;
@@ -97,7 +103,7 @@ public class ImportService {
             case "resource" -> workbook(headersResource(), sample ? sampleResource() : List.of());
             case "resident" -> workbook(headersResident(), sample ? sampleResident() : List.of());
             case "checkin-record" -> workbook(headersCheckin(), sample ? sampleCheckin() : List.of());
-            default -> throw new IllegalArgumentException("unsupported import type: " + type);
+            default -> throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的导入类型：" + type);
         };
     }
 
@@ -112,7 +118,7 @@ public class ImportService {
             required(result, rowNo, "roomNumber", col(r, 5));
             required(result, rowNo, "roomType", col(r, 6));
             required(result, rowNo, "bedCount", col(r, 7));
-            int bedCount = intValue(col(r, 7), 0);
+            int bedCount = intValue(result, rowNo, "bedCount", col(r, 7), 0);
             if (bedCount <= 0) result.addError(rowNo, "bedCount", col(r, 7), "must be greater than 0");
             String roomKey = col(r, 0) + ":" + col(r, 5);
             if (!rooms.add(roomKey)) result.addError(rowNo, "roomNumber", col(r, 5), "duplicate room in file");
@@ -124,7 +130,7 @@ public class ImportService {
                 result.addError(rowNo, "bedNumbers", col(r, 8), "duplicate bed number in row");
             }
             if (!blank(col(r, 14))) {
-                int mode = intValue(col(r, 14), 0);
+                int mode = intValue(result, rowNo, "settlementMode", col(r, 14), 0);
                 if (mode != 1 && mode != 2) result.addError(rowNo, "settlementMode", col(r, 14), "must be 1 or 2");
                 if (mode == 1 && blank(col(r, 15))) result.addError(rowNo, "utilityAccountCode", col(r, 15), "required for household mode");
             }
@@ -155,6 +161,7 @@ public class ImportService {
             required(result, rowNo, "buildingCode", buildingCode);
             required(result, rowNo, "roomNumber", roomNumber);
             required(result, rowNo, "bedNumber", bedNumber);
+            if (!blank(col(r, 4))) dateValue(result, rowNo, "checkinDate", col(r, 4));
             if (!bedKeys.add(buildingCode + ":" + roomNumber + ":" + bedNumber)) {
                 result.addError(rowNo, "bedNumber", bedNumber, "duplicate bed in file");
             }
@@ -268,7 +275,7 @@ public class ImportService {
             Bed bed = findBed(room.getId(), col(r, 3));
             CreateIntakeCommand cmd = new CreateIntakeCommand();
             cmd.setBizNo("IMPORT-" + col(r, 0) + "-" + System.nanoTime());
-            cmd.setSource(3);
+            cmd.setSource(4);
             cmd.setResidentId(resident.getId());
             cmd.setExpectCheckinDate(dateValue(col(r, 4)));
             cmd.setBuildingIdReq(building.getId());
@@ -300,7 +307,7 @@ public class ImportService {
             }
             return rows;
         } catch (Exception e) {
-            throw new IllegalArgumentException("invalid xlsx file", e);
+            throw new BizException("Excel 文件解析失败，请上传有效的 .xlsx 文件");
         }
     }
 
@@ -316,7 +323,7 @@ public class ImportService {
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new BizException("Excel 模板生成失败");
         }
     }
 
@@ -356,15 +363,48 @@ public class ImportService {
 
     private int intValue(String value, int fallback) {
         if (blank(value)) return fallback;
-        return new BigDecimal(value.trim()).intValue();
+        try {
+            return new BigDecimal(value.trim()).intValue();
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
+    }
+
+    private int intValue(ImportResult result, int rowNo, String field, String value, int fallback) {
+        if (blank(value)) return fallback;
+        try {
+            return new BigDecimal(value.trim()).intValue();
+        } catch (NumberFormatException e) {
+            result.addError(rowNo, field, value, "格式错误");
+            return fallback;
+        }
     }
 
     private BigDecimal decimalValue(String value) {
-        return blank(value) ? null : new BigDecimal(value.trim());
+        if (blank(value)) return null;
+        try {
+            return new BigDecimal(value.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private LocalDate dateValue(String value) {
-        return blank(value) ? LocalDate.now() : LocalDate.parse(value.trim());
+        if (blank(value)) return LocalDate.now();
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            return LocalDate.now();
+        }
+    }
+
+    private LocalDate dateValue(ImportResult result, int rowNo, String field, String value) {
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (DateTimeParseException e) {
+            result.addError(rowNo, field, value, "格式错误");
+            return LocalDate.now();
+        }
     }
 
     private List<String> bedNumbers(String value, int bedCount) {

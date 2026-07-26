@@ -55,26 +55,6 @@ export function updateUtilityRate(data: { electricityPrice: number; waterPrice: 
   return request.put('/fee/utility-rate', data)
 }
 
-export interface MeterQuery {
-  period?: string
-  roomId?: number
-  meterType?: number
-  page?: number
-  size?: number
-}
-
-export function pageMeterReadings(params: MeterQuery): Promise<PageResult<MeterReading>> {
-  return request.get('/fee/meter-readings', { params })
-}
-
-export function saveMeterReading(data: { roomId: number; period: string; meterType: number; currentReading: number }): Promise<number> {
-  return request.post('/fee/meter-readings', data)
-}
-
-export function generateUtilityBills(data: { period: string }): Promise<{ generated: number; skipped: number }> {
-  return request.post('/fee/utility-bills/generate', data)
-}
-
 export function listUtilityAccounts(buildingId?: number): Promise<UtilityAccount[]> {
   return request.get('/fee/utility/accounts', { params: { buildingId } })
 }

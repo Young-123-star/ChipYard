@@ -33,7 +33,7 @@
         <div class="tb-cell"><span>维修中</span><b class="c-bad">{{ countByStatus(3) }}</b></div>
         <div class="tb-cell"><span>房间</span><b>{{ list.length }}</b></div>
         <div class="tb-cell"><span>床位</span><b>{{ totalBeds }}</b></div>
-        <div v-if="currentBuilding" class="tb-cell"><span>地址</span><b>{{ currentBuilding.address || '-' }}</b></div>
+        <div v-if="buildingId && currentBuilding" class="tb-cell"><span>地址</span><b>{{ currentBuilding.address || '-' }}</b></div>
       </div>
 
       <div v-loading="loading">
@@ -81,23 +81,7 @@ import { pageBuildings } from '@/api/building'
 import { getRoomBoard } from '@/api/room'
 import type { Building, RoomBoard } from '@/api/types'
 import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, labelOf } from '@/utils/dict'
-
-const FACILITY_NAMES: Record<string, string> = {
-  air_conditioner: '空调', water_heater: '热水器', wardrobe: '衣柜', desk: '书桌'
-}
-function parseFacilities(json?: string): string[] {
-  if (!json) return []
-  try {
-    return Object.entries(JSON.parse(json))
-      .filter(([, v]) => Number(v) > 0)
-      .map(([k, v]) => {
-        const name = FACILITY_NAMES[k] || k
-        return Number(v) > 1 ? `${name}×${v}` : name
-      })
-  } catch {
-    return []
-  }
-}
+import { parseFacilities } from '@/utils/facility'
 
 const buildings = ref<Building[]>([])
 const buildingId = ref<number>()
@@ -151,7 +135,7 @@ function toggleStatus(st: number) {
 }
 
 async function loadBuildings() {
-  const res = await pageBuildings({ page: 1, size: 100 })
+  const res = await pageBuildings({ page: 1, size: 1000 })
   buildings.value = res.records
 }
 

@@ -16,29 +16,40 @@ import com.company.dms.module.resident.entity.Resident;
 import com.company.dms.module.resident.service.ResidentService;
 import com.company.dms.module.resource.entity.Building;
 import com.company.dms.module.resource.entity.Room;
-import com.company.dms.module.resource.service.BuildingService;
+import com.company.dms.module.resource.mapper.BuildingMapper;
+import com.company.dms.module.resource.mapper.RoomMapper;
 import com.company.dms.module.resource.service.RoomService;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 public class RepairServiceImpl implements RepairService {
 
+    private static final int ORDER_NO_MAX_ATTEMPTS = 3;
+
     private final RepairOrderMapper repairOrderMapper;
     private final RoomService roomService;
-    private final BuildingService buildingService;
+    private final RoomMapper roomMapper;
+    private final BuildingMapper buildingMapper;
     private final ResidentService residentService;
 
     public RepairServiceImpl(RepairOrderMapper repairOrderMapper, RoomService roomService,
-                             BuildingService buildingService, ResidentService residentService) {
+                             RoomMapper roomMapper, BuildingMapper buildingMapper,
+                             ResidentService residentService) {
         this.repairOrderMapper = repairOrderMapper;
         this.roomService = roomService;
-        this.buildingService = buildingService;
+        this.roomMapper = roomMapper;
+        this.buildingMapper = buildingMapper;
         this.residentService = residentService;
     }
 
@@ -52,7 +63,7 @@ public class RepairServiceImpl implements RepairService {
                         .eq(query.getRoomId() != null, RepairOrder::getRoomId, query.getRoomId())
                         .orderByDesc(RepairOrder::getId));
         Page<RepairOrderVO> voPage = new Page<>(p.getCurrent(), p.getSize(), p.getTotal());
-        voPage.setRecords(p.getRecords().stream().map(this::toVO).collect(Collectors.toList()));
+        voPage.setRecords(toVOList(p.getRecords()));
         return PageResult.of(voPage);
     }
 
@@ -65,7 +76,7 @@ public class RepairServiceImpl implements RepairService {
 
     @Override
     public RepairOrderVO getDetail(Long id) {
-        return toVO(getOrder(id));
+        return toVOList(List.of(getOrder(id))).get(0);
     }
 
     @Override
@@ -77,20 +88,26 @@ public class RepairServiceImpl implements RepairService {
         BeanUtils.copyProperties(dto, order);
         order.setRoomId(roomId);
         order.setResidentId(residentId);
-        order.setOrderNo(nextOrderNo());
         order.setPriority(dto.getPriority() == null ? 1 : dto.getPriority());
         order.setStatus(1);
-        repairOrderMapper.insert(order);
-        roomService.updateStatus(order.getRoomId(), 3);
-        return order.getId();
+        // 工单号按“RO-yyyyMM-序号”生成，并发下可能撞唯一索引，冲突时重新生成单号重试
+        for (int attempt = 1; ; attempt++) {
+            order.setOrderNo(nextOrderNo());
+            try {
+                repairOrderMapper.insert(order);
+                return order.getId();
+            } catch (DuplicateKeyException e) {
+                if (attempt >= ORDER_NO_MAX_ATTEMPTS) throw e;
+            }
+        }
     }
 
     private Long resolveRoomId(RepairCreateDTO dto) {
         if (dto.getRoomId() != null) return roomService.getById(dto.getRoomId()).getId();
         String code = trimToNull(dto.getRoomCode());
         if (code == null) throw new BizException("room is required");
-        if (code.chars().allMatch(Character::isDigit)) return roomService.getById(Long.valueOf(code)).getId();
-        return roomService.getByRoomNumber(code).getId();
+        if (dto.getBuildingId() == null) throw new BizException("按房号报修时必须指定楼栋");
+        return roomService.getByRoomNumber(dto.getBuildingId(), code).getId();
     }
 
     private Long resolveResidentId(RepairCreateDTO dto) {
@@ -155,21 +172,40 @@ public class RepairServiceImpl implements RepairService {
         return "RO-" + ym + "-" + String.format("%03d", count + 1);
     }
 
-    private RepairOrderVO toVO(RepairOrder order) {
+    /** 批量装配展示字段（房号/楼栋名/居住人姓名），避免逐行单查。 */
+    private List<RepairOrderVO> toVOList(List<RepairOrder> orders) {
+        if (orders.isEmpty()) return List.of();
+        Set<Long> roomIds = orders.stream().map(RepairOrder::getRoomId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, Room> roomMap = roomIds.isEmpty() ? Map.of()
+                : roomMapper.selectBatchIds(roomIds).stream()
+                        .collect(Collectors.toMap(Room::getId, room -> room));
+        Set<Long> buildingIds = roomMap.values().stream().map(Room::getBuildingId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, Building> buildingMap = buildingIds.isEmpty() ? Map.of()
+                : buildingMapper.selectBatchIds(buildingIds).stream()
+                        .collect(Collectors.toMap(Building::getId, building -> building));
+        Set<Long> residentIds = orders.stream().map(RepairOrder::getResidentId)
+                .filter(Objects::nonNull).collect(Collectors.toSet());
+        Map<Long, Resident> residentMap = residentIds.isEmpty() ? Map.of()
+                : residentService.listByIds(residentIds).stream()
+                        .collect(Collectors.toMap(Resident::getId, resident -> resident));
+        return orders.stream().map(order -> toVO(order, roomMap, buildingMap, residentMap))
+                .collect(Collectors.toList());
+    }
+
+    private RepairOrderVO toVO(RepairOrder order, Map<Long, Room> roomMap,
+                               Map<Long, Building> buildingMap, Map<Long, Resident> residentMap) {
         RepairOrderVO vo = new RepairOrderVO();
         BeanUtils.copyProperties(order, vo);
-        try {
-            Room room = roomService.getById(order.getRoomId());
+        Room room = order.getRoomId() == null ? null : roomMap.get(order.getRoomId());
+        if (room != null) {
             vo.setRoomNumber(room.getRoomNumber());
-            Building building = buildingService.getById(room.getBuildingId());
-            vo.setBuildingName(building.getBuildingName());
-        } catch (Exception ignore) { /* display fields are best effort */ }
-        if (order.getResidentId() != null) {
-            try {
-                Resident resident = residentService.getById(order.getResidentId());
-                vo.setResidentName(resident.getRealName());
-            } catch (Exception ignore) { /* display fields are best effort */ }
+            Building building = room.getBuildingId() == null ? null : buildingMap.get(room.getBuildingId());
+            if (building != null) vo.setBuildingName(building.getBuildingName());
         }
+        Resident resident = order.getResidentId() == null ? null : residentMap.get(order.getResidentId());
+        if (resident != null) vo.setResidentName(resident.getRealName());
         return vo;
     }
 }

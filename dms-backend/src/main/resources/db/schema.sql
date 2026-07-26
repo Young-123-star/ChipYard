@@ -45,7 +45,8 @@ CREATE TABLE dms_floor (
     status       TINYINT DEFAULT 1,
     created_at   DATETIME,
     updated_at   DATETIME,
-    deleted_at   DATETIME
+    deleted_at   DATETIME,
+    active_unique_key TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END)
 );
 
 DROP TABLE IF EXISTS dms_room;
@@ -101,7 +102,8 @@ CREATE TABLE dms_resident (
     status        TINYINT      DEFAULT 1,
     created_at    DATETIME,
     updated_at    DATETIME,
-    deleted_at    DATETIME
+    deleted_at    DATETIME,
+    active_unique_key TINYINT GENERATED ALWAYS AS (CASE WHEN deleted_at IS NULL THEN 1 ELSE NULL END)
 );
 
 DROP TABLE IF EXISTS dms_checkin_intake;
@@ -132,13 +134,12 @@ CREATE TABLE dms_checkin_record (
     room_id      BIGINT,
     bed_id       BIGINT,
     checkin_date DATE,
+    checkout_date DATE,
     status       TINYINT DEFAULT 1,
     created_at   DATETIME,
     updated_at   DATETIME,
     deleted_at   DATETIME
 );
-
-ALTER TABLE dms_checkin_record ADD COLUMN checkout_date DATE;
 
 DROP TABLE IF EXISTS dms_checkout_order;
 CREATE TABLE dms_checkout_order (
@@ -347,3 +348,14 @@ CREATE UNIQUE INDEX uk_dms_building_code_active ON dms_building (building_code, 
 CREATE UNIQUE INDEX uk_dms_room_building_number_active ON dms_room (building_id, room_number, active_unique_key);
 CREATE UNIQUE INDEX uk_dms_bed_room_number_active ON dms_bed (room_id, bed_number, active_unique_key);
 CREATE UNIQUE INDEX uk_meter_target_period ON dms_meter_reading (building_id, account_code, target_type, room_id, period, meter_type);
+CREATE UNIQUE INDEX uk_dms_floor_building_number_active ON dms_floor (building_id, floor_number, active_unique_key);
+CREATE UNIQUE INDEX uk_dms_resident_employee_active ON dms_resident (employee_no, active_unique_key);
+CREATE INDEX idx_fee_bill_utility_result ON dms_fee_bill (utility_result_id);
+CREATE UNIQUE INDEX uk_dms_checkin_intake_biz_no ON dms_checkin_intake (biz_no);
+CREATE UNIQUE INDEX uk_dms_checkout_order_biz_no ON dms_checkout_order (biz_no);
+CREATE UNIQUE INDEX uk_dms_repair_order_no ON dms_repair_order (order_no);
+CREATE INDEX idx_fee_bill_period_status ON dms_fee_bill (period, status);
+CREATE INDEX idx_fee_bill_checkin_status ON dms_fee_bill (checkin_record_id, status);
+CREATE INDEX idx_checkin_record_resident_status ON dms_checkin_record (resident_id, status);
+CREATE INDEX idx_checkin_record_room_status ON dms_checkin_record (room_id, status);
+CREATE INDEX idx_meter_room_period_type ON dms_meter_reading (room_id, period, meter_type);

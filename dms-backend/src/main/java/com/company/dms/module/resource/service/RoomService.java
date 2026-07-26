@@ -13,7 +13,7 @@ public interface RoomService {
     PageResult<Room> page(RoomQuery query);
     RoomSummaryVO summary(RoomQuery query);
     Room getById(Long id);
-    Room getByRoomNumber(String roomNumber);
+    Room getByRoomNumber(Long buildingId, String roomNumber);
     Long create(RoomSaveDTO dto);
     void update(Long id, RoomSaveDTO dto);
     void delete(Long id);

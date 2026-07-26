@@ -18,13 +18,13 @@ export function createRepairOrder(data: { roomId?: number; residentId?: number; 
 }
 
 export function acceptRepairOrder(id: number, data: { handler: string }): Promise<void> {
-  return request.post('/repair/orders/' + id + '/accept', data)
+  return request.post(`/repair/orders/${id}/accept`, data)
 }
 
 export function completeRepairOrder(id: number, data: { result: string }): Promise<void> {
-  return request.post('/repair/orders/' + id + '/complete', data)
+  return request.post(`/repair/orders/${id}/complete`, data)
 }
 
 export function cancelRepairOrder(id: number): Promise<void> {
-  return request.post('/repair/orders/' + id + '/cancel')
+  return request.post(`/repair/orders/${id}/cancel`)
 }

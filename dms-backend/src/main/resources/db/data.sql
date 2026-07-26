@@ -1,4 +1,4 @@
--- admin / admin123
+-- 演示口令见部署文档
 INSERT INTO sys_user (username, password, real_name, gender, status, created_at, updated_at)
 VALUES ('admin', '$2a$10$UskK5C9E/NMafS6Gc6KOqe1OIFR6d/qnzpZTteoE2qNyylT9/ggB.', '系统管理员', 1, 1, NOW(), NOW());
 
@@ -114,15 +114,17 @@ INSERT INTO sys_dict_item (dict_type, dict_value, dict_label, sort_order, tag_ty
 ('INTAKE_STATUS', '1', '待分配', 1, 'warning', 1, 1, NOW(), NOW()),
 ('INTAKE_STATUS', '2', '已入住', 2, 'success', 1, 1, NOW(), NOW()),
 ('INTAKE_STATUS', '3', '已取消', 3, 'info', 1, 1, NOW(), NOW()),
-('INTAKE_SOURCE', '1', '手工录入', 1, 'primary', 1, 1, NOW(), NOW()),
-('INTAKE_SOURCE', '2', 'Excel导入', 2, 'success', 1, 1, NOW(), NOW()),
-('INTAKE_SOURCE', '3', 'OA同步', 3, 'warning', 1, 1, NOW(), NOW()),
+('INTAKE_SOURCE', '1', 'OA申请', 1, 'warning', 1, 1, NOW(), NOW()),
+('INTAKE_SOURCE', '2', 'HCP同步', 2, 'info', 1, 1, NOW(), NOW()),
+('INTAKE_SOURCE', '3', '手工录入', 3, 'primary', 1, 1, NOW(), NOW()),
+('INTAKE_SOURCE', '4', 'Excel导入', 4, 'success', 1, 1, NOW(), NOW()),
 ('CHECKOUT_STATUS', '1', '待确认', 1, 'warning', 1, 1, NOW(), NOW()),
 ('CHECKOUT_STATUS', '2', '已退宿', 2, 'success', 1, 1, NOW(), NOW()),
 ('CHECKOUT_STATUS', '3', '已取消', 3, 'info', 1, 1, NOW(), NOW()),
-('CHECKOUT_SOURCE', '1', '手工录入', 1, 'primary', 1, 1, NOW(), NOW()),
-('CHECKOUT_SOURCE', '2', 'Excel导入', 2, 'success', 1, 1, NOW(), NOW()),
-('CHECKOUT_SOURCE', '3', 'OA同步', 3, 'warning', 1, 1, NOW(), NOW()),
+('CHECKOUT_SOURCE', '1', 'OA申请', 1, 'warning', 1, 1, NOW(), NOW()),
+('CHECKOUT_SOURCE', '2', 'HCP同步', 2, 'info', 1, 1, NOW(), NOW()),
+('CHECKOUT_SOURCE', '3', '手工录入', 3, 'primary', 1, 1, NOW(), NOW()),
+('CHECKOUT_SOURCE', '4', 'Excel导入', 4, 'success', 1, 1, NOW(), NOW()),
 ('BILL_STATUS', '1', '未支付', 1, 'warning', 1, 1, NOW(), NOW()),
 ('BILL_STATUS', '2', '已支付', 2, 'success', 1, 1, NOW(), NOW()),
 ('BILL_STATUS', '3', '已作废', 3, 'info', 1, 1, NOW(), NOW()),
@@ -148,7 +150,7 @@ INSERT INTO sys_dict_type (dict_type, dict_name, sort_order, status, system_flag
 VALUES ('INSPECTION_ITEM', STRINGDECODE('\u5de1\u68c0\u9879\u76ee'), 200, 1, 0, NOW(), NOW());
 
 INSERT INTO sys_dict_item (dict_type, dict_value, dict_label, sort_order, tag_type, status, system_flag, created_at, updated_at) VALUES
-('INSPECTION_ITEM', 'FIRE', STRINGDECODE('\u6d88\u9632\u8bbe\u65bd'), 1, 'danger', 1, 0, NOW(), NOW()),
-('INSPECTION_ITEM', 'ELECTRIC', STRINGDECODE('\u7528\u7535\u5b89\u5168'), 2, 'warning', 1, 0, NOW(), NOW()),
-('INSPECTION_ITEM', 'HYGIENE', STRINGDECODE('\u536b\u751f\u72b6\u51b5'), 3, 'success', 1, 0, NOW(), NOW()),
-('INSPECTION_ITEM', 'APPLIANCE', STRINGDECODE('\u8fdd\u89c4\u7535\u5668'), 4, 'info', 1, 0, NOW(), NOW());
+('INSPECTION_ITEM', STRINGDECODE('\u6d88\u9632\u8bbe\u65bd'), STRINGDECODE('\u6d88\u9632\u8bbe\u65bd'), 1, 'danger', 1, 0, NOW(), NOW()),
+('INSPECTION_ITEM', STRINGDECODE('\u7528\u7535\u5b89\u5168'), STRINGDECODE('\u7528\u7535\u5b89\u5168'), 2, 'warning', 1, 0, NOW(), NOW()),
+('INSPECTION_ITEM', STRINGDECODE('\u536b\u751f\u72b6\u51b5'), STRINGDECODE('\u536b\u751f\u72b6\u51b5'), 3, 'success', 1, 0, NOW(), NOW()),
+('INSPECTION_ITEM', STRINGDECODE('\u8fdd\u89c4\u7535\u5668'), STRINGDECODE('\u8fdd\u89c4\u7535\u5668'), 4, 'info', 1, 0, NOW(), NOW());

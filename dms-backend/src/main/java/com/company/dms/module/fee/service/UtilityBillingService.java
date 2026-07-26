@@ -29,6 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -78,10 +79,10 @@ public class UtilityBillingService {
         Group group = findGroup(dto.getBuildingId(), dto.getAccountCode());
         if (!accountErrors(group).isEmpty()) throw new BizException(String.join("; ", accountErrors(group)));
         if (dto.getTargetType() == null || (dto.getTargetType() != 1 && dto.getTargetType() != 2)) {
-            throw new BizException("invalid meter target");
+            throw new BizException("抄表对象类型无效");
         }
         if (dto.getMeterType() == null || dto.getMeterType() < 1 || dto.getMeterType() > 3) {
-            throw new BizException("invalid meter type");
+            throw new BizException("表类型无效");
         }
         Long roomId = canonicalRoomId(group, dto.getTargetType(), dto.getRoomId());
         ensureUnlocked(group, dto.getPeriod());
@@ -95,9 +96,9 @@ public class UtilityBillingService {
                 .lt(MeterReading::getPeriod, dto.getPeriod())
                 .orderByDesc(MeterReading::getPeriod).last("limit 1"));
         BigDecimal previousValue = previous == null ? dto.getPrevReading() : previous.getCurrentReading();
-        if (previousValue == null) throw new BizException("first reading requires previous reading");
+        if (previousValue == null) throw new BizException("首次抄表必须填写上期读数");
         BigDecimal consumption = dto.getCurrentReading().subtract(previousValue);
-        if (consumption.signum() < 0) throw new BizException("current reading cannot be less than previous reading");
+        if (consumption.signum() < 0) throw new BizException("本期读数不能小于上期读数");
 
         MeterReading reading = readingMapper.selectOne(Wrappers.<MeterReading>lambdaQuery()
                 .eq(MeterReading::getBuildingId, group.buildingId())
@@ -222,14 +223,15 @@ public class UtilityBillingService {
     @Transactional
     public void voidSettlement(Long id) {
         UtilitySettlement settlement = settlementMapper.selectById(id);
-        if (settlement == null) throw new BizException("settlement not found");
-        if (settlement.getStatus() != 1) throw new BizException("only active settlement can be voided");
+        if (settlement == null) throw new BizException("结算单不存在");
+        if (settlement.getStatus() != 1) throw new BizException("仅生效中的结算单可作废");
         List<Long> resultIds = resultMapper.selectList(Wrappers.<UtilityRoomResult>lambdaQuery()
                 .eq(UtilityRoomResult::getSettlementId, id)).stream().map(UtilityRoomResult::getId).toList();
         if (!resultIds.isEmpty()) {
             List<FeeBill> bills = billMapper.selectList(Wrappers.<FeeBill>lambdaQuery()
                     .in(FeeBill::getUtilityResultId, resultIds));
-            if (bills.stream().anyMatch(b -> b.getStatus() == 2)) throw new BizException("paid bills block void");
+            if (bills.stream().anyMatch(b -> b.getStatus() == 4)) throw new BizException("存在已挂账账单，不允许作废");
+            if (bills.stream().anyMatch(b -> b.getStatus() == 2)) throw new BizException("存在已缴费账单，不允许作废");
             for (FeeBill bill : bills) {
                 bill.setStatus(3);
                 billMapper.updateById(bill);
@@ -242,7 +244,7 @@ public class UtilityBillingService {
     private AccountCalculation calculate(Group group, String period) {
         List<String> configErrors = accountErrors(group);
         if (!configErrors.isEmpty()) throw new BizException(String.join(", ", configErrors));
-        if (activeSettlement(group, period) != null) throw new BizException("settlement already generated");
+        if (activeSettlement(group, period) != null) throw new BizException("该账期结算单已生成");
         UtilityRate rate = meterService.getRate();
         LocalDate cutoff = cycleEnd(period);
         List<RoomCalculation> results = new ArrayList<>();
@@ -262,7 +264,7 @@ public class UtilityBillingService {
                     subTotal = subTotal.add(use);
                 }
                 BigDecimal common = master.subtract(subTotal);
-                if (common.signum() < 0) throw new BizException("household electricity common usage is negative");
+                if (common.signum() < 0) throw new BizException("公摊电量为负，请检查抄表读数");
                 BigDecimal commonShare = common.divide(BigDecimal.valueOf(group.rooms().size()), 8, RoundingMode.HALF_UP);
                 List<BigDecimal> actuals = roomReadings.stream().map(v -> v.add(commonShare)).toList();
                 List<BigDecimal> costs = allocate(master.multiply(rate.getElectricityPrice()), actuals);
@@ -295,7 +297,7 @@ public class UtilityBillingService {
                     BigDecimal employee = occupants.isEmpty() ? BigDecimal.ZERO : money(excessShare.multiply(rate.getWaterPrice()));
                     results.add(new RoomCalculation(room, 2, roomUse,
                             HOUSEHOLD_WATER_ALLOWANCE.divide(BigDecimal.valueOf(group.rooms().size()), 8, RoundingMode.HALF_UP),
-                            excessShare, costs.get(i), employee, occupants, "household water allowance 50"));
+                            excessShare, costs.get(i), employee, occupants, "按户水费免额 50 吨"));
                 }
                 waterUsage = use;
             } else {
@@ -317,17 +319,17 @@ public class UtilityBillingService {
         BigDecimal employee;
         String note;
         if (rule == 3) {
-            if (occupants.size() != 2) throw new BizException("couple room requires exactly 2 occupants at cutoff");
+            if (occupants.size() != 2) throw new BizException("夫妻房结算时需恰好 2 名在住人员");
             employee = totalCost;
             allowance = BigDecimal.ZERO;
             excess = usage;
-            note = "couple room actual cost split equally";
+            note = "夫妻房按实际费用均摊";
         } else if (rule == 4 || occupants.isEmpty()) {
             employee = BigDecimal.ZERO;
-            note = occupants.isEmpty() ? "empty room paid by company" : "company paid";
+            note = occupants.isEmpty() ? "空房间费用由公司承担" : "公司承担";
         } else {
             employee = money(excess.multiply(price));
-            note = type == 1 ? "room allowance 250" : "room allowance 17";
+            note = type == 1 ? "房间电费免额 250 度" : "房间水费免额 17 吨";
         }
         return new RoomCalculation(room, type, usage, allowance, excess, totalCost, employee, occupants, note);
     }
@@ -370,44 +372,44 @@ public class UtilityBillingService {
 
     private Group findGroup(Long buildingId, String accountCode) {
         return groups(buildingId).stream().filter(g -> Objects.equals(g.accountCode(), accountCode))
-                .findFirst().orElseThrow(() -> new BizException("utility account not found"));
+                .findFirst().orElseThrow(() -> new BizException("水电账户不存在"));
     }
 
     private List<String> unconfiguredErrors() {
         return roomMapper.selectList(Wrappers.<Room>lambdaQuery()).stream()
                 .filter(r -> r.getSettlementMode() == null || r.getUtilityAccountCode() == null || r.getUtilityAccountCode().isBlank())
-                .map(r -> "room " + r.getRoomNumber() + " utility account is not configured")
+                .map(r -> "房间 " + r.getRoomNumber() + " 未配置水电账户")
                 .toList();
     }
 
     private List<String> accountErrors(Group group) {
         List<String> errors = new ArrayList<>();
         Room first = firstRoom(group);
-        if (group.accountCode().isBlank()) errors.add("utility account code required");
+        if (group.accountCode().isBlank()) errors.add("水电账户编号不能为空");
         if (value(first.getElectricityRule()) < 0 || value(first.getElectricityRule()) > 4
-                || value(first.getWaterRule()) < 0 || value(first.getWaterRule()) > 4) errors.add("invalid utility rule");
-        if (first.getSettlementMode() == 2 && group.rooms().size() != 1) errors.add("room account must contain one room");
+                || value(first.getWaterRule()) < 0 || value(first.getWaterRule()) > 4) errors.add("水电结算规则无效");
+        if (first.getSettlementMode() == 2 && group.rooms().size() != 1) errors.add("房间账户只能包含一个房间");
         if (value(first.getElectricityRule()) == 0 && value(first.getWaterRule()) == 0)
-            errors.add("at least one utility rule is required");
+            errors.add("至少需配置一项水电规则");
         if (group.rooms().stream().anyMatch(r -> !Objects.equals(r.getSettlementMode(), first.getSettlementMode())
                 || !Objects.equals(value(r.getElectricityRule()), value(first.getElectricityRule()))
                 || !Objects.equals(value(r.getWaterRule()), value(first.getWaterRule())))) {
-            errors.add("rooms in one account must use the same mode and rules");
+            errors.add("同一账户内的房间必须使用相同的结算模式与规则");
         }
         if ((value(first.getElectricityRule()) == 1 || value(first.getWaterRule()) == 1)
-                && first.getSettlementMode() != 1) errors.add("household rule requires household mode");
+                && first.getSettlementMode() != 1) errors.add("按户结算规则要求按户结算模式");
         if ((value(first.getElectricityRule()) == 3 || value(first.getWaterRule()) == 3)
-                && (first.getSettlementMode() != 2 || group.rooms().size() != 1)) errors.add("couple rule requires one room account");
+                && (first.getSettlementMode() != 2 || group.rooms().size() != 1)) errors.add("夫妻房规则要求单房间账户");
         return errors;
     }
 
     private Long canonicalRoomId(Group group, int targetType, Long roomId) {
         if (targetType == 1) {
-            if (firstRoom(group).getSettlementMode() != 1) throw new BizException("master meter requires household account");
+            if (firstRoom(group).getSettlementMode() != 1) throw new BizException("总表抄表要求按户结算账户");
             return firstRoom(group).getId();
         }
         if (group.rooms().stream().noneMatch(r -> Objects.equals(r.getId(), roomId))) {
-            throw new BizException("room does not belong to utility account");
+            throw new BizException("房间不属于该水电账户");
         }
         return roomId;
     }
@@ -420,13 +422,13 @@ public class UtilityBillingService {
                 .eq(MeterReading::getRoomId, roomId)
                 .eq(MeterReading::getPeriod, period)
                 .eq(MeterReading::getMeterType, meterType).last("limit 1"));
-        if (reading == null) throw new BizException("missing meter reading");
-        if (reading.getConsumption().signum() < 0) throw new BizException("negative meter usage");
+        if (reading == null) throw new BizException("缺少抄表读数");
+        if (reading.getConsumption().signum() < 0) throw new BizException("抄表用量为负");
         return reading.getConsumption();
     }
 
     private void ensureUnlocked(Group group, String period) {
-        if (activeSettlement(group, period) != null) throw new BizException("settled readings are locked");
+        if (activeSettlement(group, period) != null) throw new BizException("该账期已结算，抄表读数已锁定");
     }
 
     private UtilitySettlement activeSettlement(Group group, String period) {
@@ -475,7 +477,7 @@ public class UtilityBillingService {
     }
 
     private BigDecimal sum(List<RoomCalculation> values,
-                           java.util.function.Function<RoomCalculation, BigDecimal> field) {
+                           Function<RoomCalculation, BigDecimal> field) {
         return values.stream().map(field).reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
@@ -484,7 +486,7 @@ public class UtilityBillingService {
     }
 
     private Room onlyRoom(Group group) {
-        if (group.rooms().size() != 1) throw new BizException("rule requires one room account");
+        if (group.rooms().size() != 1) throw new BizException("该规则要求单房间账户");
         return firstRoom(group);
     }
 
@@ -492,7 +494,7 @@ public class UtilityBillingService {
         try {
             return YearMonth.parse(period).atDay(24);
         } catch (Exception e) {
-            throw new BizException("period must be YYYY-MM");
+            throw new BizException("账期格式必须为 YYYY-MM");
         }
     }
 

@@ -1,6 +1,8 @@
 package com.company.dms.module.exporter;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.company.dms.common.exception.BizException;
+import com.company.dms.common.result.ResultCode;
 import com.company.dms.module.checkin.dto.IntakeQuery;
 import com.company.dms.module.checkin.dto.RecordQuery;
 import com.company.dms.module.checkin.service.CheckinService;
@@ -93,7 +95,7 @@ public class ExportService {
             case "fee-bills" -> feeBills(params);
             case "meter-readings" -> meterReadings(params);
             case "repair-orders" -> repairOrders(params);
-            default -> throw new IllegalArgumentException("unsupported export type: " + type);
+            default -> throw new BizException(ResultCode.PARAM_ERROR.getCode(), "不支持的导出类型：" + type);
         };
         return new ExportFile(type + "-" + LocalDateTime.now().format(FILE_TS) + ".xlsx", body);
     }
@@ -114,7 +116,7 @@ public class ExportService {
     private byte[] floors(Map<String, String> p) {
         List<Floor> rows = floorMapper.selectList(Wrappers.<Floor>lambdaQuery()
                 .eq(longVal(p, "buildingId") != null, Floor::getBuildingId, longVal(p, "buildingId"))
-                .orderByAsc(Floor::getBuildingId).orderByAsc(Floor::getFloorNumber));
+                .orderByAsc(Floor::getBuildingId).orderByAsc(Floor::getFloorNumber).last("limit " + EXPORT_SIZE));
         return workbook("floors",
                 new String[]{"ID", "楼栋ID", "楼层号", "楼层名称", "房间数", "床位数", "状态"},
                 rows.stream().map(f -> List.of(f.getId(), f.getBuildingId(), f.getFloorNumber(), val(f.getFloorName()),
@@ -139,7 +141,7 @@ public class ExportService {
     private byte[] beds(Map<String, String> p) {
         List<Bed> rows = bedMapper.selectList(Wrappers.<Bed>lambdaQuery()
                 .eq(longVal(p, "roomId") != null, Bed::getRoomId, longVal(p, "roomId"))
-                .orderByAsc(Bed::getRoomId).orderByAsc(Bed::getBedNumber));
+                .orderByAsc(Bed::getRoomId).orderByAsc(Bed::getBedNumber).last("limit " + EXPORT_SIZE));
         return workbook("beds",
                 new String[]{"ID", "房间ID", "床位号", "床位类型", "当前居住人ID", "状态"},
                 rows.stream().map(b -> List.of(b.getId(), b.getRoomId(), b.getBedNumber(), bedType(b.getBedType()),
@@ -260,12 +262,19 @@ public class ExportService {
             for (int r = 0; r < rows.size(); r++) {
                 var row = sheet.createRow(r + 1);
                 List<Object> values = rows.get(r);
-                for (int c = 0; c < values.size(); c++) row.createCell(c).setCellValue(String.valueOf(val(values.get(c))));
+                for (int c = 0; c < values.size(); c++) {
+                    Object value = val(values.get(c));
+                    if (value instanceof Number number) {
+                        row.createCell(c).setCellValue(number.doubleValue());
+                    } else {
+                        row.createCell(c).setCellValue(String.valueOf(value));
+                    }
+                }
             }
             workbook.write(out);
             return out.toByteArray();
         } catch (Exception e) {
-            throw new IllegalStateException(e);
+            throw new BizException("Excel 文件生成失败");
         }
     }
 
@@ -281,12 +290,22 @@ public class ExportService {
 
     private Long longVal(Map<String, String> p, String key) {
         String value = str(p, key);
-        return value == null ? null : Long.valueOf(value);
+        if (value == null) return null;
+        try {
+            return Long.valueOf(value);
+        } catch (NumberFormatException e) {
+            throw new BizException(ResultCode.PARAM_ERROR.getCode(), "导出参数 " + key + " 必须为数字");
+        }
     }
 
     private Integer intVal(Map<String, String> p, String key) {
         String value = str(p, key);
-        return value == null ? null : Integer.valueOf(value);
+        if (value == null) return null;
+        try {
+            return Integer.valueOf(value);
+        } catch (NumberFormatException e) {
+            throw new BizException(ResultCode.PARAM_ERROR.getCode(), "导出参数 " + key + " 必须为数字");
+        }
     }
 
     private Object val(Object value) {
@@ -307,10 +326,10 @@ public class ExportService {
     private String residentType(Integer v) { return label(Map.of(1, "正式", 2, "外包", 3, "其他"), v); }
     private String residentStatus(Integer v) { return label(Map.of(0, "离职", 1, "在职"), v); }
     private String intakeStatus(Integer v) { return label(Map.of(1, "待分配", 2, "已入住", 3, "已取消"), v); }
-    private String intakeSource(Integer v) { return label(Map.of(1, "OA", 2, "HCP", 3, "手工"), v); }
+    private String intakeSource(Integer v) { return label(Map.of(1, "OA", 2, "HCP", 3, "手工", 4, "导入"), v); }
     private String recordStatus(Integer v) { return label(Map.of(1, "在住", 2, "已退宿"), v); }
     private String checkoutStatus(Integer v) { return label(Map.of(1, "待退宿", 2, "已退宿", 3, "已取消"), v); }
-    private String checkoutSource(Integer v) { return label(Map.of(1, "退宿申请", 2, "离职", 3, "手工"), v); }
+    private String checkoutSource(Integer v) { return label(Map.of(1, "退宿申请", 2, "离职", 3, "手工", 4, "导入"), v); }
     private String billStatus(Integer v) { return label(Map.of(1, "未缴", 2, "已缴", 3, "已作废", 4, "挂账"), v); }
     private String payMethod(Integer v) { return label(Map.of(1, "现金", 2, "转账"), v); }
     private String billType(Integer v) { return label(Map.of(1, "住宿费", 2, "电费", 3, "水费"), v); }

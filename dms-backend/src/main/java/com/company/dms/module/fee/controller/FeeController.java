@@ -9,9 +9,10 @@ import com.company.dms.module.fee.dto.MeterQuery;
 import com.company.dms.module.fee.dto.MeterReadingDTO;
 import com.company.dms.module.fee.dto.PayBillDTO;
 import com.company.dms.module.fee.dto.UtilityRateDTO;
-import com.company.dms.module.fee.entity.FeeBill;
 import com.company.dms.module.fee.entity.FeeStandard;
+import com.company.dms.module.fee.entity.MeterReading;
 import com.company.dms.module.fee.entity.UtilityRate;
+import com.company.dms.module.fee.entity.UtilitySettlement;
 import com.company.dms.module.fee.service.FeeBillService;
 import com.company.dms.module.fee.service.FeeStandardService;
 import com.company.dms.module.fee.service.MeterService;
@@ -25,7 +26,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.util.Map;
 import java.util.List;
 
@@ -104,9 +104,7 @@ public class FeeController {
     @Operation(summary = "查在住档案待结算欠费（预览）")
     @GetMapping("/arrears")
     public R<ArrearsVO> arrears(@RequestParam Long checkinRecordId) {
-        List<FeeBill> unpaid = billService.listUnpaidByRecord(checkinRecordId);
-        BigDecimal total = unpaid.stream().map(FeeBill::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
-        return R.ok(ArrearsVO.of(unpaid.size(), total));
+        return R.ok(billService.arrearsByRecord(checkinRecordId));
     }
 
     // ---- 水电抄表 ----
@@ -147,7 +145,7 @@ public class FeeController {
     }
 
     @GetMapping("/utility/readings")
-    public R<List<com.company.dms.module.fee.entity.MeterReading>> utilityReadings(
+    public R<List<MeterReading>> utilityReadings(
             @RequestParam(required = false) String period,
             @RequestParam(required = false) Long buildingId,
             @RequestParam(required = false) String accountCode) {
@@ -170,7 +168,7 @@ public class FeeController {
     }
 
     @GetMapping("/utility/settlements")
-    public R<List<com.company.dms.module.fee.entity.UtilitySettlement>> utilitySettlements(
+    public R<List<UtilitySettlement>> utilitySettlements(
             @RequestParam(required = false) String period) {
         return R.ok(utilityBillingService.listSettlements(period));
     }

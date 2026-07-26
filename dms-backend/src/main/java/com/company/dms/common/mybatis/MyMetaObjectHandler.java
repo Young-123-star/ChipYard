@@ -16,6 +16,7 @@ public class MyMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        this.strictUpdateFill(metaObject, "updatedAt", LocalDateTime.class, LocalDateTime.now());
+        // 强制覆盖 updatedAt，避免业务代码手动赋值后 strictUpdateFill 跳过填充
+        this.setFieldValByName("updatedAt", LocalDateTime.now(), metaObject);
     }
 }

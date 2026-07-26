@@ -9,8 +9,10 @@ import com.company.dms.module.dict.service.DictService;
 import com.company.dms.module.resource.dto.BoardQuery;
 import com.company.dms.module.resource.dto.RoomQuery;
 import com.company.dms.module.resource.dto.RoomSaveDTO;
+import com.company.dms.module.resource.entity.Bed;
 import com.company.dms.module.resource.entity.Floor;
 import com.company.dms.module.resource.entity.Room;
+import com.company.dms.module.resource.mapper.BedMapper;
 import com.company.dms.module.resource.mapper.FloorMapper;
 import com.company.dms.module.resource.mapper.RoomMapper;
 import com.company.dms.module.resource.vo.RoomBoardVO;
@@ -31,18 +33,18 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomMapper roomMapper;
     private final FloorMapper floorMapper;
-    private final com.company.dms.module.resource.mapper.BedMapper bedMapper;
+    private final BedMapper bedMapper;
     private final DictService dictService;
     private final ObjectMapper objectMapper;
     private static final Map<String, String> LEGACY_FACILITY_NAMES = Map.of(
-            "air_conditioner", "\u7a7a\u8c03",
-            "water_heater", "\u70ed\u6c34\u5668",
-            "wardrobe", "\u8863\u67dc",
-            "desk", "\u4e66\u684c"
+            "air_conditioner", "空调",
+            "water_heater", "热水器",
+            "wardrobe", "衣柜",
+            "desk", "书桌"
     );
 
     public RoomServiceImpl(RoomMapper roomMapper, FloorMapper floorMapper,
-                           com.company.dms.module.resource.mapper.BedMapper bedMapper,
+                           BedMapper bedMapper,
                            DictService dictService,
                            ObjectMapper objectMapper) {
         this.roomMapper = roomMapper;
@@ -105,25 +107,27 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public Room getById(Long id) {
         Room r = roomMapper.selectById(id);
-        if (r == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "\u623f\u95f4\u4e0d\u5b58\u5728");
+        if (r == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "房间不存在");
         return r;
     }
 
     @Override
-    public Room getByRoomNumber(String roomNumber) {
+    public Room getByRoomNumber(Long buildingId, String roomNumber) {
         Room r = roomMapper.selectOne(Wrappers.<Room>lambdaQuery()
+                .eq(Room::getBuildingId, buildingId)
                 .eq(Room::getRoomNumber, roomNumber).last("limit 1"));
-        if (r == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "room not found");
+        if (r == null) throw new BizException(ResultCode.NOT_FOUND.getCode(), "房间不存在");
         return r;
     }
 
     @Override
     public Long create(RoomSaveDTO dto) {
         normalizeUtilityConfig(dto);
+        validateFloor(dto);
         Long count = roomMapper.selectCount(Wrappers.<Room>lambdaQuery()
                 .eq(Room::getBuildingId, dto.getBuildingId())
                 .eq(Room::getRoomNumber, dto.getRoomNumber()));
-        if (count > 0) throw new BizException("\u8be5\u697c\u680b\u5df2\u5b58\u5728\u76f8\u540c\u623f\u95f4\u53f7");
+        if (count > 0) throw new BizException("该楼栋已存在相同房间号");
         Room r = new Room();
         BeanUtils.copyProperties(dto, r);
         r.setFacilities(normalizeFacilities(dto.getFacilities()));
@@ -136,6 +140,12 @@ public class RoomServiceImpl implements RoomService {
     public void update(Long id, RoomSaveDTO dto) {
         getById(id);
         normalizeUtilityConfig(dto);
+        validateFloor(dto);
+        Long count = roomMapper.selectCount(Wrappers.<Room>lambdaQuery()
+                .eq(Room::getBuildingId, dto.getBuildingId())
+                .eq(Room::getRoomNumber, dto.getRoomNumber())
+                .ne(Room::getId, id));
+        if (count > 0) throw new BizException("该楼栋已存在相同房间号");
         Room r = new Room();
         BeanUtils.copyProperties(dto, r);
         r.setId(id);
@@ -145,20 +155,25 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public void delete(Long id) {
-        getById(id);
+        Room room = getById(id);
+        if (room.getOccupiedBeds() != null && room.getOccupiedBeds() > 0) {
+            throw new BizException("房间存在在住床位，不能删除");
+        }
+        Long bedCount = bedMapper.selectCount(Wrappers.<Bed>lambdaQuery().eq(Bed::getRoomId, id));
+        if (bedCount > 0) throw new BizException("房间下存在床位，不能删除");
         roomMapper.deleteById(id);
     }
 
     @Override
     public void refreshOccupancy(Long roomId) {
         Room room = getById(roomId);
-        long occupied = bedMapper.selectCount(com.baomidou.mybatisplus.core.toolkit.Wrappers.<com.company.dms.module.resource.entity.Bed>lambdaQuery()
-                .eq(com.company.dms.module.resource.entity.Bed::getRoomId, roomId)
-                .eq(com.company.dms.module.resource.entity.Bed::getStatus, 2));
+        long occupied = bedMapper.selectCount(Wrappers.<Bed>lambdaQuery()
+                .eq(Bed::getRoomId, roomId)
+                .eq(Bed::getStatus, 2));
         room.setOccupiedBeds((int) occupied);
         int bedCount = room.getBedCount() == null ? 0 : room.getBedCount();
         if (room.getStatus() != null && (room.getStatus() == 1 || room.getStatus() == 2)) {
-            room.setStatus(occupied >= bedCount ? 2 : 1);
+            room.setStatus(bedCount > 0 && occupied >= bedCount ? 2 : 1);
         }
         roomMapper.updateById(room);
     }
@@ -173,13 +188,21 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void restoreStatusFromOccupancy(Long roomId) {
         Room room = getById(roomId);
-        long occupied = bedMapper.selectCount(com.baomidou.mybatisplus.core.toolkit.Wrappers.<com.company.dms.module.resource.entity.Bed>lambdaQuery()
-                .eq(com.company.dms.module.resource.entity.Bed::getRoomId, roomId)
-                .eq(com.company.dms.module.resource.entity.Bed::getStatus, 2));
+        // 仅维修中(3)的房间按床位占用恢复状态，停用(0)/预留(4)等其他状态不覆盖
+        if (room.getStatus() == null || room.getStatus() != 3) return;
+        long occupied = bedMapper.selectCount(Wrappers.<Bed>lambdaQuery()
+                .eq(Bed::getRoomId, roomId)
+                .eq(Bed::getStatus, 2));
         room.setOccupiedBeds((int) occupied);
         int bedCount = room.getBedCount() == null ? 0 : room.getBedCount();
-        room.setStatus(occupied >= bedCount ? 2 : 1);
+        room.setStatus(bedCount > 0 && occupied >= bedCount ? 2 : 1);
         roomMapper.updateById(room);
+    }
+
+    private void validateFloor(RoomSaveDTO dto) {
+        Floor floor = floorMapper.selectById(dto.getFloorId());
+        if (floor == null) throw new BizException("所属楼层不存在");
+        if (!floor.getBuildingId().equals(dto.getBuildingId())) throw new BizException("所选楼层不属于该楼栋");
     }
 
     private void normalizeUtilityConfig(RoomSaveDTO dto) {
@@ -190,11 +213,11 @@ public class RoomServiceImpl implements RoomService {
             dto.setWaterRule(0);
             return;
         }
-        if (mode != 1 && mode != 2) throw new BizException("invalid settlement mode");
+        if (mode != 1 && mode != 2) throw new BizException("无效的结算方式");
         if (mode == 2 && !StringUtils.hasText(dto.getUtilityAccountCode())) {
             dto.setUtilityAccountCode(dto.getRoomNumber());
         }
-        if (!StringUtils.hasText(dto.getUtilityAccountCode())) throw new BizException("utility account code required");
+        if (!StringUtils.hasText(dto.getUtilityAccountCode())) throw new BizException("水电账户编号不能为空");
         dto.setUtilityAccountCode(dto.getUtilityAccountCode().trim());
         if (dto.getElectricityRule() == null) dto.setElectricityRule(0);
         if (dto.getWaterRule() == null) dto.setWaterRule(0);
@@ -214,7 +237,7 @@ public class RoomServiceImpl implements RoomService {
             dictService.ensureItems("ROOM_FACILITY", normalized.keySet());
             return objectMapper.writeValueAsString(normalized);
         } catch (Exception e) {
-            throw new BizException("\u623f\u95f4\u8bbe\u65bd\u683c\u5f0f\u4e0d\u6b63\u786e");
+            throw new BizException("房间设施格式不正确");
         }
     }
 

@@ -55,7 +55,7 @@ const periodList = ref<PeriodSummary[]>([])
 const buildingList = ref<BuildingSummary[]>([])
 const arrearsList = ref<ArrearsRank[]>([])
 const usageList = ref<UsageTrend[]>([])
-const latest = computed(() => periodList.value.at(-1))
+const latest = computed(() => periodList.value.reduce<PeriodSummary | undefined>((max, item) => (max && max.period > item.period ? max : item), undefined))
 const money = (value?: number) => `¥${Number(value || 0).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const summaryItems = computed(() => [
   { label: '本期应收', value: money(latest.value?.total), note: '住宿与水电合计', tone: '' },

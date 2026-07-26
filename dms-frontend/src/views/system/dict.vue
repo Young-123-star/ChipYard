@@ -161,12 +161,13 @@ async function onTypeSelect(row?: DictType) {
 }
 
 function openTypeDialog(row?: DictType) {
+  Object.keys(typeForm).forEach((key) => delete typeForm[key as keyof DictType])
   Object.assign(typeForm, row || { id: undefined, dictType: '', dictName: '', sortOrder: 0, status: 1, systemFlag: 0, remark: '' })
   typeDialog.value = true
 }
 
 async function saveType() {
-  if (!typeForm.dictType || !typeForm.dictName) {
+  if (!typeForm.dictType?.trim() || !typeForm.dictName?.trim()) {
     ElMessage.warning('请填写类型编码和类型名称')
     return
   }
@@ -184,7 +185,11 @@ async function saveType() {
 }
 
 async function removeType(row: DictType) {
-  await ElMessageBox.confirm(`确认删除字典类型“${row.dictName}”？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除字典类型“${row.dictName}”？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteDictType(row.id)
   if (currentType.value?.id === row.id) currentType.value = undefined
   ElMessage.success('删除成功')
@@ -193,12 +198,13 @@ async function removeType(row: DictType) {
 
 function openItemDialog(row?: DictItem) {
   if (!currentType.value) return
+  Object.keys(itemForm).forEach((key) => delete itemForm[key as keyof DictItem])
   Object.assign(itemForm, row || { id: undefined, dictType: currentType.value.dictType, dictValue: '', dictLabel: '', sortOrder: 0, tagType: 'info', status: 1, systemFlag: 0, remark: '' })
   itemDialog.value = true
 }
 
 async function saveItem() {
-  if (!itemForm.dictType || !itemForm.dictValue || !itemForm.dictLabel) {
+  if (!itemForm.dictType || !itemForm.dictValue?.trim() || !itemForm.dictLabel?.trim()) {
     ElMessage.warning('请填写显示名称和值')
     return
   }
@@ -225,7 +231,11 @@ async function saveItem() {
 }
 
 async function removeItem(row: DictItem) {
-  await ElMessageBox.confirm(`确认删除字典项“${row.dictLabel}”？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除字典项“${row.dictLabel}”？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteDictItem(row.id)
   clearDictCache(row.dictType)
   ElMessage.success('删除成功')

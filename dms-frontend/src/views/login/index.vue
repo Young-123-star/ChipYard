@@ -18,39 +18,50 @@
         </el-form-item>
         <el-button type="primary" size="large" :loading="loading" style="width: 100%" @click="onSubmit">登录</el-button>
       </el-form>
-      <p class="hint">演示账号：admin / admin123</p>
+      <p v-if="isDev" class="hint">演示账号：admin / admin123</p>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, type FormInstance } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login, getCurrentUser } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
-const form = reactive({ username: 'admin', password: 'admin123' })
+const isDev = import.meta.env.DEV
+const form = reactive({ username: isDev ? 'admin' : '', password: isDev ? 'admin123' : '' })
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
 async function onSubmit() {
-  await formRef.value?.validate()
+  try {
+    await formRef.value?.validate()
+  } catch {
+    return
+  }
   loading.value = true
   try {
     const res = await login(form)
     userStore.setToken(res.token)
-    const me = await getCurrentUser()
-    userStore.setUserInfo(me)
+    try {
+      const me = await getCurrentUser()
+      userStore.setUserInfo(me)
+    } catch (e) {
+      userStore.logout()
+      throw e
+    }
     ElMessage.success('登录成功')
-    router.push('/')
+    router.push(route.query.redirect ? String(route.query.redirect) : '/')
   } finally {
     loading.value = false
   }

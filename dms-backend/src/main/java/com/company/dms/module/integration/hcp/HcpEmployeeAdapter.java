@@ -6,6 +6,7 @@ import com.company.dms.module.resident.dto.ResidentSaveDTO;
 import com.company.dms.module.resident.service.ResidentService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
@@ -22,7 +23,8 @@ public class HcpEmployeeAdapter {
         this.objectMapper = objectMapper;
     }
 
-    /** HCP 新员工 → upsert 居住人(来源2HCP) → 建意向单（bizNo=HCP-工号-入职日，幂等）。 */
+    /** HCP 新员工 → upsert 居住人(来源1HCP) → 建意向单（bizNo=HCP-工号-入职日，幂等）。 */
+    @Transactional
     public Long handle(HcpEmployeeDTO dto) {
         ResidentSaveDTO r = new ResidentSaveDTO();
         r.setEmployeeNo(dto.getEmployeeNo());

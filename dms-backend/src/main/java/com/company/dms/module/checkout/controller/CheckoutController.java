@@ -2,6 +2,7 @@ package com.company.dms.module.checkout.controller;
 
 import com.company.dms.common.result.PageResult;
 import com.company.dms.common.result.R;
+import com.company.dms.module.checkout.dto.CheckoutConfirmDTO;
 import com.company.dms.module.checkout.dto.CheckoutCreateDTO;
 import com.company.dms.module.checkout.dto.CheckoutQuery;
 import com.company.dms.module.checkout.service.CheckoutService;
@@ -12,7 +13,6 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
-import java.util.Map;
 
 @Tag(name = "退宿管理")
 @RestController
@@ -39,9 +39,10 @@ public class CheckoutController {
 
     @Operation(summary = "办理退宿")
     @PostMapping("/orders/{id}/confirm")
-    public R<Void> confirm(@PathVariable Long id, @RequestBody(required = false) Map<String, String> body) {
-        LocalDate date = (body != null && body.get("checkoutDate") != null && !body.get("checkoutDate").isBlank())
-                ? LocalDate.parse(body.get("checkoutDate")) : null;
+    public R<Void> confirm(@PathVariable Long id, @Valid @RequestBody CheckoutConfirmDTO dto) {
+        // 日期格式已由 @Pattern 校验保证；未传时默认当天
+        String dateText = dto.getCheckoutDate();
+        LocalDate date = (dateText == null || dateText.isBlank()) ? LocalDate.now() : LocalDate.parse(dateText);
         checkoutService.confirm(id, date);
         return R.ok();
     }

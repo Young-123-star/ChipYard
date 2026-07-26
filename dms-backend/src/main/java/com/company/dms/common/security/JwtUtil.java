@@ -35,6 +35,19 @@ public class JwtUtil {
         return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
     }
 
+    /**
+     * 解析 token，任何异常（过期、签名错误、subject 非数字等）一律返回 null，视为未认证。
+     */
+    public Claims parseOrNull(String token) {
+        try {
+            Claims claims = parse(token);
+            Long.valueOf(claims.getSubject());
+            return claims;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     public Long getUserId(String token) {
         return Long.valueOf(parse(token).getSubject());
     }

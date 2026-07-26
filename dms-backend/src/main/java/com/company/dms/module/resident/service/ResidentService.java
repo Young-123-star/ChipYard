@@ -4,11 +4,15 @@ import com.company.dms.common.result.PageResult;
 import com.company.dms.module.resident.dto.ResidentQuery;
 import com.company.dms.module.resident.dto.ResidentSaveDTO;
 import com.company.dms.module.resident.entity.Resident;
+import java.util.Collection;
+import java.util.List;
 
 public interface ResidentService {
     PageResult<Resident> page(ResidentQuery query);
     Resident getById(Long id);
     Resident getByEmployeeNo(String employeeNo);
+    /** 按 id 集合批量查询，空集合返回空列表。 */
+    List<Resident> listByIds(Collection<Long> ids);
     Long create(ResidentSaveDTO dto);
     void update(Long id, ResidentSaveDTO dto);
     void delete(Long id);

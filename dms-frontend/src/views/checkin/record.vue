@@ -1,6 +1,6 @@
 <template>
   <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="reload">
+    <el-form :inline="true" :model="query" @keyup.enter="search">
       <el-form-item label="楼栋">
         <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 160px" @change="onBuildingChange">
           <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
@@ -12,11 +12,11 @@
         </el-select>
       </el-form-item>
       <el-form-item label="房间">
-        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="reload">
+        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="search">
           <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
         </el-select>
       </el-form-item>
-      <el-form-item><el-button @click="reload">查询</el-button>
+      <el-form-item><el-button @click="search">查询</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button></el-form-item>
     </el-form>
 
@@ -37,7 +37,7 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination v-if="total > query.size" style="margin-top: 12px; justify-content: flex-end"
+    <el-pagination style="margin-top: 12px; justify-content: flex-end"
       layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
       @current-change="onPageChange" />
   </el-card>
@@ -71,13 +71,14 @@ async function reload() {
   }
 }
 function onPageChange(p: number) { query.page = p; reload() }
+function search() { query.page = 1; reload() }
 async function onBuildingChange() {
   query.floorId = undefined; query.roomId = undefined
-  await loadFloors(query.buildingId); reload()
+  await loadFloors(query.buildingId); search()
 }
 async function onFloorChange() {
   query.roomId = undefined
-  await loadRooms(query.buildingId, query.floorId); reload()
+  await loadRooms(query.buildingId, query.floorId); search()
 }
 async function onExport() {
   exporting.value = true

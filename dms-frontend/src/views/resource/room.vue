@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-card shadow="never">
-      <el-form :inline="true" :model="query" @keyup.enter="reload">
+      <el-form :inline="true" :model="query" @keyup.enter="search">
         <el-form-item label="楼栋">
           <el-select v-model="query.buildingId" placeholder="全部" clearable style="width: 160px" @change="onBuildingChange">
             <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
@@ -23,7 +23,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="reload">查询</el-button>
+          <el-button @click="search">查询</el-button>
           <el-button type="primary" @click="openCreate">新增</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
@@ -49,7 +49,7 @@
                 </el-table-column>
                 <el-table-column label="状态" width="120">
                   <template #default="{ row: bed }">
-                    <el-tag :type="tagTypeOf(BED_STATUS, bed.status) as any" size="small">{{ labelOf(BED_STATUS, bed.status) }}</el-tag>
+                    <el-tag :type="tagTypeOf(BED_STATUS, bed.status)" size="small">{{ labelOf(BED_STATUS, bed.status) }}</el-tag>
                   </template>
                 </el-table-column>
               </el-table>
@@ -66,14 +66,14 @@
         </el-table-column>
         <el-table-column label="水电账户" min-width="150">
           <template #default="{ row }">
-            <span v-if="row.settlementMode">{{ row.settlementMode === 1 ? '户级' : '房间' }} · {{ row.utilityAccountCode }}</span>
+            <span v-if="row.settlementMode">{{ labelOf(SETTLEMENT_MODE, row.settlementMode) }} · {{ row.utilityAccountCode }}</span>
             <el-tag v-else type="danger" size="small">未配置</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="配套设施" min-width="180">
           <template #default="{ row }">
-            <template v-if="parseFacilities(row.facilities).length">
-              <el-tag v-for="f in parseFacilities(row.facilities)" :key="f" size="small" class="fac-tag" type="info" effect="plain">{{ f }}</el-tag>
+            <template v-if="row.facilitiesList.length">
+              <el-tag v-for="f in row.facilitiesList" :key="f" size="small" class="fac-tag" type="info" effect="plain">{{ f }}</el-tag>
             </template>
             <span v-else class="fac-none">-</span>
           </template>
@@ -83,7 +83,7 @@
         </el-table-column>
         <el-table-column label="状态" width="95">
           <template #default="{ row }">
-            <el-tag :type="tagTypeOf(ROOM_STATUS, row.status) as any">{{ labelOf(ROOM_STATUS, row.status) }}</el-tag>
+            <el-tag :type="tagTypeOf(ROOM_STATUS, row.status)">{{ labelOf(ROOM_STATUS, row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="225">
@@ -188,19 +188,20 @@
 import { reactive, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
-import { pageBuildings } from '@/api/building'
-import { listFloors } from '@/api/floor'
 import { pageRooms, roomSummary, createRoom, updateRoom, deleteRoom } from '@/api/room'
 import { listBeds } from '@/api/bed'
-import type { Building, Floor, Room, Bed, RoomSummary } from '@/api/types'
-import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, ROOM_FACILITY, labelOf, tagTypeOf, loadDictOptions, clearDictCache, type DictOption } from '@/utils/dict'
+import type { Room, Bed, RoomSummary } from '@/api/types'
+import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, ROOM_FACILITY, SETTLEMENT_MODE, ELECTRIC_RULE, WATER_RULE, labelOf, tagTypeOf, loadDictOptions, clearDictCache, type DictOption } from '@/utils/dict'
+import { parseFacilities, parseFacilityRows, serializeFacilities, type FacilityRow } from '@/utils/facility'
+import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 import { exportLedger } from '@/api/export'
 
+type RoomRow = Room & { facilitiesList: string[] }
+
 const route = useRoute()
-const buildings = ref<Building[]>([])
-const floors = ref<Floor[]>([])
-const formFloors = ref<Floor[]>([])
-const list = ref<Room[]>([])
+const { buildings, floors, loadBuildings, loadFloors } = useRoomLocationOptions()
+const { floors: formFloors, loadFloors: loadFormFloors } = useRoomLocationOptions()
+const list = ref<RoomRow[]>([])
 const total = ref(0)
 const loading = ref(false)
 const exporting = ref(false)
@@ -213,17 +214,7 @@ const dialogVisible = ref(false)
 const formRef = ref<FormInstance>()
 const form = reactive<Partial<Room>>({})
 const facilityOptions = ref<DictOption[]>(ROOM_FACILITY)
-type FacilityRow = { name: string; count: number }
 const facilityRows = ref<FacilityRow[]>([])
-const SETTLEMENT_MODE = [{ value: 1, label: '户级账户' }, { value: 2, label: '房间账户' }]
-const ELECTRIC_RULE = [
-  { value: 0, label: '不计电费' }, { value: 1, label: '户级250度' }, { value: 2, label: '房间250度' },
-  { value: 3, label: '夫妻实际费用平摊' }, { value: 4, label: '公司承担' }
-]
-const WATER_RULE = [
-  { value: 0, label: '不计水费' }, { value: 1, label: '户级50吨' }, { value: 2, label: '房间17吨' },
-  { value: 3, label: '夫妻实际费用平摊' }, { value: 4, label: '公司承担' }
-]
 const rules = {
   buildingId: [{ required: true, message: '请选择楼栋', trigger: 'change' }],
   floorId: [{ required: true, message: '请选择楼层', trigger: 'change' }],
@@ -232,33 +223,13 @@ const rules = {
   bedCount: [{ required: true, message: '请输入床位数', trigger: 'blur' }]
 }
 
-const LEGACY_FACILITY_NAMES: Record<string, string> = {
-  air_conditioner: '空调',
-  water_heater: '热水器',
-  wardrobe: '衣柜',
-  desk: '书桌'
-}
-
 async function loadFacilityOptions(refresh = false) {
   if (refresh) clearDictCache('ROOM_FACILITY')
   facilityOptions.value = await loadDictOptions('ROOM_FACILITY', ROOM_FACILITY)
 }
 
-function normalizeFacilityName(name: string): string {
-  return LEGACY_FACILITY_NAMES[name] || name
-}
-
 function loadFacilities(json?: string) {
-  facilityRows.value = []
-  if (!json) return
-  try {
-    const obj = JSON.parse(json) as Record<string, unknown>
-    facilityRows.value = Object.entries(obj)
-      .map(([key, value]) => ({ name: normalizeFacilityName(key), count: Number(value) }))
-      .filter((item) => item.name && Number.isFinite(item.count) && item.count > 0)
-  } catch {
-    facilityRows.value = []
-  }
+  facilityRows.value = parseFacilityRows(json)
 }
 
 function addFacilityRow() {
@@ -267,32 +238,6 @@ function addFacilityRow() {
 
 function removeFacilityRow(index: number) {
   facilityRows.value.splice(index, 1)
-}
-
-function serializeFacilities(): string {
-  const obj: Record<string, number> = {}
-  facilityRows.value.forEach((row) => {
-    const name = row.name.trim()
-    const count = Number(row.count)
-    if (!name || !Number.isFinite(count) || count <= 0) return
-    obj[name] = (obj[name] || 0) + Math.floor(count)
-  })
-  return Object.keys(obj).length ? JSON.stringify(obj) : ''
-}
-
-function parseFacilities(json?: string): string[] {
-  if (!json) return []
-  try {
-    const obj = JSON.parse(json) as Record<string, unknown>
-    return Object.entries(obj)
-      .filter(([, v]) => Number(v) > 0)
-      .map(([k, v]) => {
-        const name = normalizeFacilityName(k)
-        return Number(v) > 1 ? `${name}x${v}` : name
-      })
-  } catch {
-    return []
-  }
 }
 
 async function onExpand(row: Room, expanded: Room[]) {
@@ -304,37 +249,43 @@ async function onExpand(row: Room, expanded: Room[]) {
 async function markRepair(row: Room, toRepair: boolean) {
   const target = toRepair ? 3 : 1
   const label = toRepair ? '标记维修' : '恢复空闲'
-  await ElMessageBox.confirm(`确认将房间“${row.roomNumber}”${label}？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认将房间“${row.roomNumber}”${label}？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await updateRoom(row.id, { ...row, status: target })
   ElMessage.success(`已${label}`)
   reload()
 }
 
-async function loadBuildings() {
-  const res = await pageBuildings({ page: 1, size: 100 })
-  buildings.value = res.records
-}
-
 async function onBuildingChange() {
   query.floorId = undefined
-  floors.value = query.buildingId ? await listFloors(query.buildingId) : []
+  await loadFloors(query.buildingId)
 }
 
 async function onFormBuildingChange() {
   form.floorId = undefined
-  formFloors.value = form.buildingId ? await listFloors(form.buildingId) : []
+  await loadFormFloors(form.buildingId)
 }
 
 async function reload() {
   loading.value = true
   try {
+    // 床位缓存随列表刷新一并失效，避免展示过期数据
+    Object.keys(bedsMap).forEach((key) => { delete bedsMap[Number(key)] })
     const [res, sum] = await Promise.all([pageRooms(query), roomSummary(query)])
-    list.value = res.records
+    list.value = res.records.map((room) => ({ ...room, facilitiesList: parseFacilities(room.facilities) }))
     total.value = res.total
     Object.assign(summary, sum)
   } finally {
     loading.value = false
   }
+}
+
+function search() {
+  query.page = 1
+  reload()
 }
 
 async function openCreate() {
@@ -349,12 +300,11 @@ async function openCreate() {
   dialogVisible.value = true
 }
 
-
 async function openEdit(row: Room) {
   await loadFacilityOptions()
   Object.assign(form, row)
   loadFacilities(row.facilities)
-  formFloors.value = await listFloors(row.buildingId)
+  await loadFormFloors(row.buildingId)
   dialogVisible.value = true
 }
 
@@ -362,7 +312,7 @@ async function onSave() {
   await formRef.value?.validate()
   saving.value = true
   try {
-    const payload = { ...form, facilities: serializeFacilities() }
+    const payload = { ...form, facilities: serializeFacilities(facilityRows.value) }
     if (form.id) {
       await updateRoom(form.id, payload)
     } else {
@@ -378,7 +328,11 @@ async function onSave() {
 }
 
 async function onDelete(row: Room) {
-  await ElMessageBox.confirm(`确认删除房间“${row.roomNumber}”？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除房间“${row.roomNumber}”？`, '提示', { type: 'warning' })
+  } catch {
+    return
+  }
   await deleteRoom(row.id)
   ElMessage.success('删除成功')
   reload()
@@ -399,7 +353,7 @@ onMounted(async () => {
   const qf = Number(route.query.floorId)
   if (qb) {
     query.buildingId = qb
-    floors.value = await listFloors(qb)
+    await loadFloors(qb)
     if (qf) query.floorId = qf
   }
   reload()

@@ -1,7 +1,7 @@
 <template>
   <div>
     <el-card shadow="never">
-      <el-form :inline="true" :model="query" @keyup.enter="reload">
+      <el-form :inline="true" :model="query" @keyup.enter="search">
         <el-form-item label="楼栋名称">
           <el-input v-model="query.buildingName" placeholder="名称" clearable />
         </el-form-item>
@@ -11,7 +11,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button @click="reload">查询</el-button>
+          <el-button @click="search">查询</el-button>
           <el-button type="primary" @click="openCreate">新增</el-button>
           <el-button :loading="exporting" @click="onExport">导出</el-button>
         </el-form-item>
@@ -24,7 +24,7 @@
               <span class="bld-name">{{ b.buildingName }}</span>
               <span class="bld-code">{{ b.buildingCode }}</span>
             </div>
-            <el-tag :type="tagTypeOf(BUILDING_STATUS, b.status) as any" size="small" round>{{ labelOf(BUILDING_STATUS, b.status) }}</el-tag>
+            <el-tag :type="tagTypeOf(BUILDING_STATUS, b.status)" size="small" round>{{ labelOf(BUILDING_STATUS, b.status) }}</el-tag>
           </div>
           <div class="bld-addr">{{ b.address || '—' }}</div>
 
@@ -61,7 +61,6 @@
       </div>
 
       <el-pagination
-        v-if="total > query.size"
         style="margin-top: 12px; justify-content: flex-end"
         layout="total, prev, pager, next"
         :total="total"
@@ -148,12 +147,19 @@ async function reload() {
   }
 }
 
+// 查询：重置到第 1 页再加载（翻页仍走 reload）
+function search() {
+  query.page = 1
+  reload()
+}
+
 function onPageChange(p: number) {
   query.page = p
   reload()
 }
 
 function openCreate() {
+  // 表单默认值：楼层数 1 层、无电梯（0）、状态启用（1）
   Object.assign(form, { id: undefined, buildingCode: '', buildingName: '', address: '', floorCount: 1, hasElevator: 0, status: 1, remark: '' })
   dialogVisible.value = true
 }
@@ -181,7 +187,11 @@ async function onSave() {
 }
 
 async function onDelete(row: Building) {
-  await ElMessageBox.confirm(`确认删除楼栋「${row.buildingName}」？`, '提示', { type: 'warning' })
+  try {
+    await ElMessageBox.confirm(`确认删除楼栋「${row.buildingName}」？`, '提示', { type: 'warning' })
+  } catch {
+    return // 用户取消
+  }
   await deleteBuilding(row.id)
   ElMessage.success('删除成功')
   reload()

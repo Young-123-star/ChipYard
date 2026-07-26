@@ -137,7 +137,7 @@ class UtilityBillingAcceptanceTest {
         Map<String, Object> missingPreview = service.preview(PERIOD);
         assertFalse((Boolean) missingPreview.get("valid"));
         assertTrue(((List<?>) missingPreview.get("errors")).stream()
-                .map(String::valueOf).anyMatch(error -> error.contains("missing meter reading")));
+                .map(String::valueOf).anyMatch(error -> error.contains("缺少抄表读数")));
         assertThrows(BizException.class, () -> service.generate(PERIOD));
 
         clearFixture();
@@ -147,7 +147,7 @@ class UtilityBillingAcceptanceTest {
         reading("HH", 2, first, 1, "260");
         reading("HH", 2, second, 1, "340");
         assertTrue(((List<?>) service.preview(PERIOD).get("errors")).stream()
-                .map(String::valueOf).anyMatch(error -> error.contains("common usage is negative")));
+                .map(String::valueOf).anyMatch(error -> error.contains("公摊电量为负")));
     }
 
     @Test
