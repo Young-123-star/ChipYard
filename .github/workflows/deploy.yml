@@ -30,7 +30,10 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "${DEPLOY_PORT:-22}" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT:-22}" "$DEPLOY_USER@$DEPLOY_HOST" "
+          # 构建可能长时间无输出，开启 SSH 保活防止连接被中间设备/服务端判定空闲断开
+          ssh -i ~/.ssh/deploy_key -p "${DEPLOY_PORT:-22}" \
+            -o ServerAliveInterval=30 -o ServerAliveCountMax=20 \
+            "$DEPLOY_USER@$DEPLOY_HOST" "
             set -e
             cd '$DEPLOY_PATH'
             git pull --ff-only origin main

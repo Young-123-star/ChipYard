@@ -1,7 +1,8 @@
 FROM docker.m.daocloud.io/library/maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
-RUN mvn -B -q dependency:go-offline
+# 首次构建需下载全部 Maven 依赖，去掉 -q 保持输出流动，避免部署端 SSH 因长时间静默断开
+RUN mvn -B dependency:go-offline
 COPY src ./src
 RUN mvn -DskipTests package
 
