@@ -47,7 +47,7 @@ import { computed, onMounted, ref } from 'vue'
 import { getArrearsRanking, getBuildingSummary, getPeriodSummary, getUsageTrend } from '@/api/report'
 import type { ArrearsRank, BuildingSummary, PeriodSummary, UsageTrend } from '@/api/types'
 
-const COLORS = ['#1f6feb', '#53a6e8', '#7cc8b5', '#d23b34']
+const COLORS = ['#2b5ce6', '#53a6e8', '#7cc8b5', '#d23b34']
 const axis = { axisLine: { lineStyle: { color: '#dfe4ec' } }, axisLabel: { color: '#6b7485' }, splitLine: { lineStyle: { color: '#eef1f5' } } }
 const loading = ref(false)
 const error = ref(false)
