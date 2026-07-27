@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ChipMore Dorm · 蓝色主题 2.0 精修预览</title>
+<style>
+  :root {
+    /* —— 品牌靛蓝（新） —— */
+    --accent: #2b5ce6;
+    --accent-strong: #1e46b8;
+    --accent-soft: #e9effd;
+
+    /* —— 深蓝实色侧栏 —— */
+    --nav-bg-top: #0c2f63;
+    --nav-bg-bottom: #0a2750;
+    --nav-text: rgba(255, 255, 255, 0.78);
+    --nav-text-strong: #ffffff;
+    --nav-hover-bg: rgba(255, 255, 255, 0.08);
+    --nav-divider: rgba(255, 255, 255, 0.10);
+
+    /* —— 内容区 —— */
+    --bg-top: #f6f8fc;
+    --bg-bottom: #f1f4fa;
+    --card: #ffffff;
+    --ink: #16203a;
+    --ink-2: #5b6577;
+    --hairline: #e6e9f0;
+    --radius: 14px;
+    --radius-ctl: 10px;
+
+    /* 阴影三档（新） */
+    --shadow-card: 0 1px 2px rgba(16, 32, 70, 0.05), 0 4px 14px rgba(16, 32, 70, 0.05);
+    --shadow-raised: 0 4px 10px rgba(16, 32, 70, 0.08), 0 12px 28px rgba(16, 32, 70, 0.10);
+    --shadow-float: 0 18px 50px rgba(16, 32, 70, 0.18);
+
+    --ok: #1aa251; --ok-bg: #e7f6ec;
+    --warn: #b97a0a; --warn-bg: #fdf2dc;
+    --bad: #d23b34; --bad-bg: #fbe7e6;
+    --hold: #2f6fbe; --hold-bg: #e7f0fb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "SF Pro SC", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+    color: var(--ink);
+    background:
+      radial-gradient(1200px 500px at 70% -10%, rgba(255,255,255,0.55), rgba(255,255,255,0) 60%),
+      linear-gradient(180deg, var(--bg-top), var(--bg-bottom)) fixed;
+    -webkit-font-smoothing: antialiased;
+    letter-spacing: -0.01em;
+  }
+  .app { display: flex; min-height: 100vh; }
+  .app + .app { min-height: 0; }
+
+  /* ===== 侧边栏（选中项改指示条 + 半透底） ===== */
+  .aside {
+    width: 232px; flex-shrink: 0;
+    background: linear-gradient(180deg, var(--nav-bg-top), var(--nav-bg-bottom));
+    color: var(--nav-text);
+    padding: 0 14px;
+    box-shadow: 1px 0 0 rgba(9, 30, 66, 0.16);
+    display: flex; flex-direction: column;
+  }
+  .brand {
+    height: 64px; display: flex; align-items: center; gap: 10px;
+    padding: 0 4px; color: var(--nav-text-strong);
+    font-size: 17px; font-weight: 700; letter-spacing: -0.02em;
+    border-bottom: 1px solid var(--nav-divider);
+  }
+  .brand .mark {
+    width: 34px; height: 34px; border-radius: 9px; flex: 0 0 34px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    display: grid; place-items: center;
+    font-size: 11px; font-weight: 800; color: #fff; letter-spacing: -0.04em;
+    box-shadow: 0 4px 12px rgba(43, 92, 230, 0.4);
+  }
+  .brand em { color: #9db9f5; font-style: normal; }
+  .nav-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+    color: rgba(255,255,255,0.42); padding: 15px 10px 5px; }
+  .nav-item {
+    position: relative;
+    display: flex; align-items: center; gap: 11px;
+    height: 40px; padding: 0 12px; margin-bottom: 3px;
+    border-radius: 9px; cursor: pointer;
+    font-size: 13px; color: var(--nav-text);
+    transition: background 0.15s, color 0.15s;
+  }
+  .nav-item .ico { width: 16px; height: 16px; opacity: 0.9; }
+  .nav-item:hover { background: var(--nav-hover-bg); color: #fff; }
+  .nav-item.active {
+    background: rgba(255, 255, 255, 0.10);
+    color: #fff; font-weight: 600;
+  }
+  .nav-item.active::before {
+    content: ""; position: absolute; left: -14px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #6f97f5, var(--accent));
+    box-shadow: 0 0 10px rgba(43, 92, 230, 0.8);
+  }
+
+  /* ===== 主区 ===== */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    height: 60px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 24px;
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--hairline);
+    box-shadow: 0 1px 3px rgba(16, 32, 70, 0.04);
+  }
+  .topbar .page { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 600; }
+  .topbar .page .fold {
+    width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    color: var(--ink-2); cursor: pointer;
+  }
+  .topbar .page .fold:hover { background: #f0f2f7; color: var(--ink); }
+  .user {
+    display: flex; align-items: center; gap: 8px;
+    padding: 5px 10px 5px 5px; border-radius: 99px; cursor: pointer;
+    font-size: 13px; color: var(--ink);
+    transition: background 0.15s;
+  }
+  .user:hover { background: #f0f2f7; }
+  .user .avatar {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+    color: #fff; display: grid; place-items: center;
+    font-size: 13px; font-weight: 700;
+  }
+  .user .caret { font-size: 10px; color: var(--ink-2); }
+
+  .content { padding: 24px; }
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; min-height: 56px; margin-bottom: 20px; }
+  .page-head h1 { font-size: 26px; letter-spacing: -0.035em; line-height: 1.2; }
+  .page-head .eyebrow { display: block; margin-bottom: 6px; color: var(--accent); font-size: 12px; font-weight: 700; letter-spacing: 0.09em; }
+  .page-head p { margin-top: 7px; color: var(--ink-2); font-size: 14px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--hairline);
+    border-radius: var(--radius); box-shadow: var(--shadow-card);
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+  }
+  .card.hoverable:hover { box-shadow: var(--shadow-raised); transform: translateY(-1px); }
+
+  /* ===== 看板 ===== */
+  .stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; padding: 16px 20px; margin-bottom: 20px; }
+  .stat { padding: 4px 20px; border-right: 1px solid var(--hairline); }
+  .stat:first-child { padding-left: 0; }
+  .stat:last-child { border-right: 0; }
+  .stat .k { font-size: 12px; color: var(--ink-2); }
+  .stat .v { margin-top: 4px; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .stat .v.blue { color: var(--accent); } .stat .v.green { color: var(--ok); }
+  .stat .v.amber { color: var(--warn); } .stat .v.red { color: var(--bad); }
+
+  .floor-title { margin: 18px 0 10px; font-size: 15px; font-weight: 700; }
+  .floor-title span { margin-left: 8px; font-size: 12px; font-weight: 400; color: var(--ink-2); }
+  .rooms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .room { padding: 16px 18px; cursor: pointer; }
+  .room .no { display: flex; align-items: center; justify-content: space-between; font-size: 17px; font-weight: 700; letter-spacing: -0.02em; }
+  .room .meta { margin-top: 4px; font-size: 12.5px; color: var(--ink-2); }
+  .room .foot { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; }
+
+  .pill { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 11px;
+    border-radius: 99px; font-size: 12px; font-weight: 600; }
+  .pill .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .pill.ok { background: var(--ok-bg); color: var(--ok); } .pill.ok .dot { background: var(--ok); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); } .pill.warn .dot { background: var(--warn); }
+  .pill.bad { background: var(--bad-bg); color: var(--bad); } .pill.bad .dot { background: var(--bad); }
+  .pill.hold { background: var(--hold-bg); color: var(--hold); } .pill.hold .dot { background: var(--hold); }
+
+  .beds { display: flex; gap: 3px; }
+  .bed { width: 14px; height: 18px; border-radius: 4px 4px 2px 2px; border: 1.5px solid #c9d2e2; background: #fff; }
+  .bed.full { border-color: var(--accent); background: var(--accent); }
+  .bed.maint { border-color: var(--bad); background: var(--bad); }
+
+  /* ===== 表格页 ===== */
+  .filter-bar { margin: -20px -20px 20px; padding: 18px 20px 0; border-bottom: 1px solid var(--hairline); background: #fbfcfe;
+    display: flex; gap: 12px; flex-wrap: wrap; }
+  .input, .select {
+    height: 34px; padding: 0 12px; min-width: 150px;
+    border: 1px solid #d6dbe6; border-radius: var(--radius-ctl);
+    font-size: 13px; color: var(--ink); background: #fff;
+    display: inline-flex; align-items: center; justify-content: space-between;
+  }
+  .input.placeholder, .select.placeholder { color: #9aa3b5; }
+  .btn {
+    height: 34px; padding: 0 16px; border-radius: var(--radius-ctl);
+    font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: box-shadow 0.15s, transform 0.05s, background 0.15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 1px 4px rgba(43, 92, 230, 0.3); }
+  .btn-primary:hover { background: var(--accent-strong); }
+  .btn-plain { background: #fff; border-color: #d6dbe6; color: var(--ink); }
+  .btn-plain:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-link { background: none; border: 0; padding: 0 6px; height: auto; color: var(--accent); font-weight: 500; }
+  .btn-link.danger { color: var(--bad); }
+
+  .table-wrap { padding: 4px 20px 16px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    text-align: left; padding: 11px 12px;
+    background: #f7f9fc; color: var(--ink-2);
+    font-size: 12.5px; font-weight: 600;
+    border-bottom: 1px solid var(--hairline);
+  }
+  thead th:first-child { border-radius: 8px 0 0 0; }
+  thead th:last-child { border-radius: 0 8px 0 0; }
+  tbody td { padding: 12px; border-bottom: 1px solid var(--hairline); font-variant-numeric: tabular-nums; }
+  tbody tr:hover { background: var(--accent-soft); }
+  tbody td.strong { font-weight: 600; }
+  .sub { color: var(--ink-2); font-size: 12px; }
+
+  .pager { display: flex; justify-content: flex-end; align-items: center; gap: 6px; padding: 14px 20px 18px; }
+  .pager .pg { min-width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center;
+    font-size: 13px; color: var(--ink-2); cursor: pointer; font-variant-numeric: tabular-nums; }
+  .pager .pg:hover { background: #f0f2f7; }
+  .pager .pg.cur { background: var(--accent); color: #fff; font-weight: 600; }
+  .pager .total { margin-right: auto; font-size: 13px; color: var(--ink-2); }
+
+  /* ===== 弹窗（头/脚分层演示） ===== */
+  .dialog-mock { width: 460px; margin: 26px auto; border-radius: 20px; overflow: hidden; box-shadow: var(--shadow-float); background: #fff; }
+  .dialog-mock .d-head { padding: 16px 22px; border-bottom: 1px solid var(--hairline); font-size: 15px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+  .dialog-mock .d-head .x { color: var(--ink-2); cursor: pointer; }
+  .dialog-mock .d-body { padding: 18px 22px; display: grid; gap: 12px; }
+  .dialog-mock .d-foot { padding: 12px 22px; background: #f7f9fc; display: flex; justify-content: flex-end; gap: 10px; }
+  .form-item { display: flex; align-items: center; gap: 12px; }
+  .form-item label { width: 76px; font-size: 13px; font-weight: 500; color: var(--ink-2); }
+  .form-item .input { flex: 1; }
+
+  .section-title { margin: 34px 0 12px; font-size: 13px; font-weight: 700; color: var(--ink-2); letter-spacing: 0.06em; }
+  .note { margin-top: 8px; font-size: 12px; color: var(--ink-2); }
+  .screen-label { position: sticky; top: 0; z-index: 5; padding: 6px 12px; background: #16203a; color: #fff;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.1em; border-radius: 0 0 8px 0; display: inline-block; }
+
+  /* ===== 密度开关 ===== */
+  #density-toggle {
+    position: fixed; right: 18px; bottom: 18px; z-index: 99;
+    height: 36px; padding: 0 18px; border: 0; border-radius: 99px;
+    background: #16203a; color: #fff; font-size: 13px; font-weight: 600;
+    cursor: pointer; box-shadow: 0 8px 24px rgba(16,32,70,.3);
+  }
+
+  /* ===== 紧凑模式（density: compact） ===== */
+  .compact { font-size: 13px; }
+  .compact .aside { width: 204px; padding: 0 10px; }
+  .compact .brand { height: 52px; font-size: 15px; }
+  .compact .brand .mark { width: 28px; height: 28px; flex-basis: 28px; font-size: 10px; }
+  .compact .nav-label { padding: 9px 10px 3px; }
+  .compact .nav-item { height: 34px; font-size: 12.5px; margin-bottom: 2px; border-radius: 7px; }
+  .compact .topbar { height: 50px; padding: 0 16px; }
+  .compact .topbar .page { font-size: 14px; }
+  .compact .user { font-size: 12.5px; }
+  .compact .user .avatar { width: 26px; height: 26px; font-size: 12px; }
+  .compact .content { padding: 16px; }
+  .compact .page-head { min-height: 0; margin-bottom: 14px; }
+  .compact .page-head h1 { font-size: 22px; }
+  .compact .page-head .eyebrow { margin-bottom: 3px; font-size: 11px; }
+  .compact .page-head p { display: none; }
+  .compact .card { border-radius: 12px; }
+  .compact .stats { padding: 10px 16px; margin-bottom: 12px; }
+  .compact .stat { padding: 2px 16px; }
+  .compact .stat .v { font-size: 19px; margin-top: 2px; }
+  .compact .floor-title { margin: 12px 0 8px; font-size: 14px; }
+  .compact .rooms { gap: 10px; }
+  .compact .room { padding: 12px 14px; }
+  .compact .room .no { font-size: 15px; }
+  .compact .room .foot { margin-top: 9px; }
+  .compact .filter-bar { padding: 12px 16px 0; margin-bottom: 14px; gap: 8px; }
+  .compact .input, .compact .select { height: 30px; min-width: 130px; font-size: 12.5px; border-radius: 8px; }
+  .compact .btn { height: 30px; padding: 0 13px; font-size: 12.5px; border-radius: 8px; }
+  .compact .table-wrap { padding: 2px 16px 10px; }
+  .compact table { font-size: 12.5px; }
+  .compact thead th { padding: 8px 10px; font-size: 12px; }
+  .compact tbody td { padding: 8px 10px; }
+  .compact .pager { padding: 10px 16px 12px; }
+  .compact .pager .pg { min-width: 26px; height: 26px; font-size: 12.5px; }
+  .compact .dialog-mock { width: 420px; }
+  .compact .dialog-mock .d-head { padding: 12px 18px; font-size: 14px; }
+  .compact .dialog-mock .d-body { padding: 14px 18px; gap: 9px; }
+  .compact .dialog-mock .d-foot { padding: 9px 18px; }
+  .compact .pill { height: 20px; padding: 0 9px; font-size: 11.5px; }
+</style>
+</head>
+<body>
+
+<!-- ================= 界面一：房态看板 ================= -->
+<div class="app">
+  <aside class="aside">
+    <div class="brand"><span class="mark">CM</span><span>ChipMore <em>Dorm</em></span></div>
+    <div class="nav-label">运营总览</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>工作台</div>
+    <div class="nav-item active"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>房态看板</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>统计报表</div>
+    <div class="nav-label">房源管理</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>楼栋管理</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="M4 9h16M4 14h16"/></svg>楼层管理</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10l9-7 9 7v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>房间管理</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20v-8a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v8"/><path d="M4 10V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4"/></svg>床位管理</div>
+    <div class="nav-label">入退住</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>居住人管理</div>
+    <div class="nav-item"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/><path d="M5 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/></svg>入住意向单</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page">
+        <span class="fold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+        房态看板
+      </div>
+      <div class="user"><span class="avatar">系</span>系统管理员<span class="caret">▾</span></div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <span class="eyebrow">ROOM BOARD</span>
+          <h1>房间状态看板</h1>
+          <p>实时查看各楼层房间与床位占用情况</p>
+        </div>
+        <button class="btn btn-primary">＋ 办理入住</button>
+      </div>
+
+      <div class="card" style="margin-bottom: 4px;">
+        <div class="stats">
+          <div class="stat"><div class="k">入住率</div><div class="v blue">10%</div></div>
+          <div class="stat"><div class="k">空闲床位</div><div class="v green">9</div></div>
+          <div class="stat"><div class="k">已满房间</div><div class="v amber">1</div></div>
+          <div class="stat"><div class="k">维修中</div><div class="v red">1</div></div>
+          <div class="stat"><div class="k">房间</div><div class="v">4</div></div>
+          <div class="stat"><div class="k">床位</div><div class="v">10</div></div>
+        </div>
+      </div>
+
+      <div class="floor-title">1F <span>2 间 · 空闲床位 3</span></div>
+      <div class="rooms">
+        <div class="card hoverable room">
+          <div class="no">A101 <span class="pill ok"><span class="dot"></span>空闲</span></div>
+          <div class="meta">双人间 · 0/2 床 · 南</div>
+          <div class="foot"><span class="sub">空调×1 热水器×1</span>
+            <span class="beds"><span class="bed"></span><span class="bed"></span></span></div>
+        </div>
+        <div class="card hoverable room">
+          <div class="no">A102 <span class="pill warn"><span class="dot"></span>已满</span></div>
+          <div class="meta">双人间 · 1/2 床 · 南</div>
+          <div class="foot"><span class="sub">空调×1 衣柜×2</span>
+            <span class="beds"><span class="bed full"></span><span class="bed"></span></span></div>
+        </div>
+        <div class="card hoverable room">
+          <div class="no">A103 <span class="pill bad"><span class="dot"></span>维修中</span></div>
+          <div class="meta">双人间 · 0/2 床 · 北</div>
+          <div class="foot"><span class="sub">工单 RO-202607-003</span>
+            <span class="beds"><span class="bed maint"></span><span class="bed maint"></span></span></div>
+        </div>
+      </div>
+
+      <div class="floor-title">2F <span>1 间 · 空闲床位 6</span></div>
+      <div class="rooms">
+        <div class="card hoverable room">
+          <div class="no">A201 <span class="pill hold"><span class="dot"></span>预留</span></div>
+          <div class="meta">四人间 · 0/4 床 · 北</div>
+          <div class="foot"><span class="sub">空调×1 书桌×4</span>
+            <span class="beds"><span class="bed"></span><span class="bed"></span><span class="bed"></span><span class="bed"></span></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= 界面二：表格页 + 弹窗 ================= -->
+<div class="app" style="border-top: 8px solid var(--hairline);">
+  <aside class="aside">
+    <div class="brand"><span class="mark">CM</span><span>ChipMore <em>Dorm</em></span></div>
+    <div class="nav-label">运营总览</div>
+    <div class="nav-item">工作台</div>
+    <div class="nav-item">房态看板</div>
+    <div class="nav-item">统计报表</div>
+    <div class="nav-label">房源管理</div>
+    <div class="nav-item active"><svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14"/><path d="M9 21v-6h6v6"/></svg>楼栋管理</div>
+    <div class="nav-item">楼层管理</div>
+    <div class="nav-item">房间管理</div>
+    <div class="nav-item">床位管理</div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="page">
+        <span class="fold"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16"/></svg></span>
+        楼栋管理
+      </div>
+      <div class="user"><span class="avatar">系</span>系统管理员<span class="caret">▾</span></div>
+    </div>
+
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <span class="eyebrow">BUILDINGS</span>
+          <h1>楼栋管理</h1>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button class="btn btn-plain">导出</button>
+          <button class="btn btn-primary">＋ 新增楼栋</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="filter-bar" style="margin:0;border-radius:14px 14px 0 0;">
+          <span class="input placeholder">楼栋编码 / 名称</span>
+          <span class="select placeholder">状态：全部 <span style="color:#9aa3b5">▾</span></span>
+          <button class="btn btn-primary">查询</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>楼栋</th><th>地址</th><th>层数</th><th>房间</th><th>床位</th><th>入住率</th><th>状态</th><th style="text-align:right">操作</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="strong">A栋员工宿舍<div class="sub">BLD-A</div></td>
+                <td>园区东路1号</td><td>6</td><td>4</td><td>10</td><td>10%</td>
+                <td><span class="pill ok"><span class="dot"></span>启用</span></td>
+                <td style="text-align:right"><button class="btn-link">编辑</button><button class="btn-link danger">删除</button></td>
+              </tr>
+              <tr>
+                <td class="strong">B栋员工宿舍<div class="sub">BLD-B</div></td>
+                <td>园区东路3号</td><td>6</td><td>0</td><td>0</td><td>—</td>
+                <td><span class="pill hold"><span class="dot"></span>预留</span></td>
+                <td style="text-align:right"><button class="btn-link">编辑</button><button class="btn-link danger">删除</button></td>
+              </tr>
+              <tr>
+                <td class="strong">C栋干部公寓<div class="sub">BLD-C</div></td>
+                <td>园区西路8号</td><td>3</td><td>0</td><td>0</td><td>—</td>
+                <td><span class="pill bad"><span class="dot"></span>停用</span></td>
+                <td style="text-align:right"><button class="btn-link">编辑</button><button class="btn-link danger">删除</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pager"><span class="total">共 3 条</span><span class="pg">‹</span><span class="pg cur">1</span><span class="pg">›</span></div>
+      </div>
+
+      <div class="section-title">弹窗：头部/底部 分层</div>
+      <div class="dialog-mock">
+        <div class="d-head">新增楼栋 <span class="x">✕</span></div>
+        <div class="d-body">
+          <div class="form-item"><label>楼栋编码</label><span class="input placeholder">如 BLD-D</span></div>
+          <div class="form-item"><label>楼栋名称</label><span class="input placeholder">如 D栋员工宿舍</span></div>
+          <div class="form-item"><label>地址</label><span class="input placeholder">请输入地址</span></div>
+        </div>
+        <div class="d-foot"><button class="btn btn-plain">取消</button><button class="btn btn-primary">保存</button></div>
+      </div>
+      <p class="note">预览要点：靛蓝品牌色 · 侧栏指示条选中态 · 顶栏显示当前页名 · 卡片 hover 浮起 · 弹窗头/脚分层 · 按钮去浮夸加按压感</p>
+    </div>
+  </div>
+</div>
+
+<button id="density-toggle">切换：紧凑模式</button>
+<script>
+  // 便于分段查看/截图：#screen1 / #screen2 只显示对应界面，可叠加 #compact（如 #screen2-compact）
+  if (location.hash.includes('screen1') || location.hash.includes('screen2')) {
+    const keep = location.hash.includes('screen1') ? 0 : 1
+    document.querySelectorAll('.app').forEach((el, i) => { if (i !== keep) el.style.display = 'none' })
+  }
+  // 密度对比开关（#compact 直接进入紧凑模式）
+  const toggleBtn = document.getElementById('density-toggle')
+  function syncDensity() {
+    const on = document.body.classList.contains('compact')
+    toggleBtn.textContent = on ? '切换：标准模式' : '切换：紧凑模式'
+  }
+  toggleBtn.onclick = () => { document.body.classList.toggle('compact'); syncDensity() }
+  if (location.hash.includes('compact')) document.body.classList.add('compact')
+  syncDensity()
+</script>
+</body>
+</html>
