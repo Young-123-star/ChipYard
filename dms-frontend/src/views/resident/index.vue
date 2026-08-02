@@ -1,23 +1,27 @@
 <template>
-  <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="search">
-      <el-form-item label="姓名"><el-input v-model="query.realName" placeholder="姓名" clearable /></el-form-item>
-      <el-form-item label="工号"><el-input v-model="query.employeeNo" placeholder="工号" clearable /></el-form-item>
-      <el-form-item label="类型">
-        <el-select v-model="query.residentType" placeholder="全部" clearable style="width: 120px">
-          <el-option v-for="t in RESIDENT_TYPE" :key="t.value" :label="t.label" :value="t.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="search">查询</el-button>
-        <el-button type="primary" @click="openCreate">新增</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-      </el-form-item>
-    </el-form>
+  <DataView title="居住人列表" :total="total">
+    <template #filters>
+      <el-input v-model="query.realName" placeholder="姓名" clearable style="width: 160px" @keyup.enter="search" />
+      <el-input v-model="query.employeeNo" placeholder="工号" clearable style="width: 160px" @keyup.enter="search" />
+      <el-select v-model="query.residentType" placeholder="类型：全部" clearable style="width: 120px">
+        <el-option v-for="t in RESIDENT_TYPE" :key="t.value" :label="t.label" :value="t.value" />
+      </el-select>
+    </template>
+    <template #filter-actions>
+      <el-button type="primary" @click="search">查询</el-button>
+    </template>
+    <template #actions>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
+      <el-button type="primary" @click="openCreate">新增</el-button>
+    </template>
 
     <el-table v-loading="loading" :data="list">
-      <el-table-column prop="employeeNo" label="工号" width="120" />
-      <el-table-column prop="realName" label="姓名" width="120" />
+      <el-table-column label="居住人" width="140">
+        <template #default="{ row }">
+          <div class="cell-main">{{ row.realName }}</div>
+          <div class="cell-sub">{{ row.employeeNo }}</div>
+        </template>
+      </el-table-column>
       <el-table-column label="性别" width="80">
         <template #default="{ row }">{{ labelOf(GENDER, row.gender) }}</template>
       </el-table-column>
@@ -39,11 +43,13 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination style="margin-top: 12px; justify-content: flex-end"
-      layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
-      @current-change="onPageChange" />
+    <template #pagination>
+      <el-pagination layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
+        @current-change="onPageChange" />
+    </template>
+  </DataView>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑居住人' : '新增居住人'" width="480px">
+  <el-dialog v-model="dialogVisible" :title="form.id ? '编辑居住人' : '新增居住人'" width="480px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="工号" prop="employeeNo"><el-input v-model="form.employeeNo" :disabled="!!form.id" /></el-form-item>
         <el-form-item label="姓名" prop="realName"><el-input v-model="form.realName" /></el-form-item>
@@ -64,7 +70,6 @@
         <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>
       </template>
     </el-dialog>
-  </el-card>
 </template>
 
 <script setup lang="ts">
@@ -74,6 +79,7 @@ import { pageResidents, createResident, updateResident, deleteResident } from '@
 import type { Resident } from '@/api/types'
 import { RESIDENT_TYPE, RESIDENT_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import DataView from '@/components/layout/DataView.vue'
 
 // 人的性别（区别于床位性别限制 GENDER_LIMIT，无「不限」项）：1=男、2=女
 const GENDER = [

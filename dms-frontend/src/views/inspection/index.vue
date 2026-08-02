@@ -2,19 +2,16 @@
   <el-card shadow="never">
     <el-tabs v-model="activeTab">
       <el-tab-pane :label="'巡检计划 ' + planTotal" name="plans">
-        <el-form :inline="true" :model="planQuery" @keyup.enter="searchPlans">
-          <el-form-item label="状态">
-            <el-select v-model="planQuery.status" clearable placeholder="全部" style="width: 120px" @change="searchPlans">
-              <el-option label="启用" :value="1" /><el-option label="停用" :value="0" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="周期">
-            <el-select v-model="planQuery.cycleType" clearable placeholder="全部" style="width: 120px" @change="searchPlans">
-              <el-option v-for="item in CYCLES" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-          </el-form-item>
-          <el-form-item><el-button @click="searchPlans">查询</el-button><el-button type="primary" @click="openPlan()">新建计划</el-button></el-form-item>
-        </el-form>
+        <div class="filters" @keyup.enter="searchPlans">
+          <el-select v-model="planQuery.status" clearable placeholder="状态：全部" style="width: 120px" @change="searchPlans">
+            <el-option label="启用" :value="1" /><el-option label="停用" :value="0" />
+          </el-select>
+          <el-select v-model="planQuery.cycleType" clearable placeholder="周期：全部" style="width: 120px" @change="searchPlans">
+            <el-option v-for="item in CYCLES" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+          <el-button @click="searchPlans">查询</el-button>
+          <el-button type="primary" class="filters__end" @click="openPlan()">新建计划</el-button>
+        </div>
 
         <el-table v-loading="planLoading" :data="plans">
           <el-table-column prop="planName" label="计划名称" min-width="170" />
@@ -23,11 +20,18 @@
           <el-table-column prop="inspector" label="默认巡检人" width="120" />
           <el-table-column label="巡检项" min-width="220"><template #default="{ row }">{{ row.items.join('、') }}</template></el-table-column>
           <el-table-column label="状态" width="80"><template #default="{ row }"><el-tag :type="row.status === 1 ? 'success' : 'info'">{{ row.status === 1 ? '启用' : '停用' }}</el-tag></template></el-table-column>
-          <el-table-column label="操作" width="240" fixed="right">
+          <el-table-column label="操作" width="180" fixed="right">
             <template #default="{ row }">
               <el-button link type="primary" @click="openPlan(row)">编辑</el-button>
-              <el-button v-if="row.status === 1" link type="success" @click="openGenerate(row)">按日期派发</el-button>
-              <el-button link :type="row.status === 1 ? 'danger' : 'success'" @click="togglePlan(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-button>
+              <el-button v-if="row.status === 1" link type="primary" @click="openGenerate(row)">按日期派发</el-button>
+              <el-dropdown trigger="click">
+                <el-button link type="primary">更多<el-icon><ArrowDown /></el-icon></el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="togglePlan(row)">{{ row.status === 1 ? '停用' : '启用' }}</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </template>
           </el-table-column>
         </el-table>
@@ -35,15 +39,13 @@
       </el-tab-pane>
 
       <el-tab-pane :label="'巡检任务 ' + taskTotal" name="tasks">
-        <el-form :inline="true" :model="taskQuery" @keyup.enter="searchTasks">
-          <el-form-item label="状态">
-            <el-select v-model="taskQuery.status" clearable placeholder="全部" style="width: 130px" @change="searchTasks">
-              <el-option v-for="item in TASK_STATUS" :key="item.value" :label="item.label" :value="item.value" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="计划日期"><el-date-picker v-model="taskQuery.plannedDate" type="date" value-format="YYYY-MM-DD" clearable @change="searchTasks" /></el-form-item>
-          <el-form-item><el-button @click="searchTasks">查询</el-button></el-form-item>
-        </el-form>
+        <div class="filters" @keyup.enter="searchTasks">
+          <el-select v-model="taskQuery.status" clearable placeholder="状态：全部" style="width: 130px" @change="searchTasks">
+            <el-option v-for="item in TASK_STATUS" :key="item.value" :label="item.label" :value="item.value" />
+          </el-select>
+          <el-date-picker v-model="taskQuery.plannedDate" type="date" value-format="YYYY-MM-DD" placeholder="计划日期" clearable @change="searchTasks" />
+          <el-button @click="searchTasks">查询</el-button>
+        </div>
 
         <el-table v-loading="taskLoading" :data="tasks">
           <el-table-column prop="taskNo" label="任务号" width="160" />
@@ -66,7 +68,7 @@
     </el-tabs>
   </el-card>
 
-  <el-dialog v-model="planVisible" :title="editingPlan ? '编辑巡检计划' : '新建巡检计划'" width="600px">
+  <el-dialog v-model="planVisible" :title="editingPlan ? '编辑巡检计划' : '新建巡检计划'" width="720px">
     <el-form ref="planRef" :model="planForm" :rules="planRules" label-width="95px">
       <el-form-item label="计划名称" prop="planName"><el-input v-model="planForm.planName" /></el-form-item>
       <el-form-item label="巡检周期" prop="cycleType"><el-select v-model="planForm.cycleType" style="width: 100%"><el-option v-for="item in CYCLES" :key="item.value" :label="item.label" :value="item.value" /></el-select></el-form-item>
@@ -86,20 +88,20 @@
     <template #footer><el-button @click="planVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="savePlan">保存</el-button></template>
   </el-dialog>
 
-  <el-dialog v-model="generateVisible" title="按日期派发巡检任务" width="440px">
+  <el-dialog v-model="generateVisible" title="按日期派发巡检任务" width="480px">
     <el-alert title="周期计划可按不同日期重复派发；同一计划日期只能派发一次" type="info" show-icon :closable="false" style="margin-bottom: 16px" />
     <el-form label-width="85px"><el-form-item label="计划日期"><el-date-picker v-model="generateForm.plannedDate" type="date" value-format="YYYY-MM-DD" style="width: 100%" /></el-form-item><el-form-item label="巡检人"><el-input v-model="generateForm.inspector" placeholder="留空使用计划默认值" /></el-form-item></el-form>
     <template #footer><el-button @click="generateVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="generateTask">按日期派发</el-button></template>
   </el-dialog>
 
-  <el-dialog v-model="executeVisible" title="执行巡检" width="650px">
+  <el-dialog v-model="executeVisible" title="执行巡检" width="720px">
     <el-table :data="executeItems" border><el-table-column prop="item" label="巡检项" width="160" /><el-table-column label="结果" width="180"><template #default="{ row }"><el-radio-group v-model="row.passed"><el-radio :value="true">正常</el-radio><el-radio :value="false">异常</el-radio></el-radio-group></template></el-table-column><el-table-column label="说明"><template #default="{ row }"><el-input v-model="row.note" :placeholder="row.passed ? '选填' : '异常时必填'" /></template></el-table-column></el-table>
     <template #footer><el-button @click="executeVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="submitExecution">提交</el-button></template>
   </el-dialog>
 
   <el-dialog v-model="rectifyVisible" title="确认整改" width="480px"><el-input v-model="rectificationNote" type="textarea" :rows="4" placeholder="填写整改结果" /><template #footer><el-button @click="rectifyVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="submitRectification">确认完成</el-button></template></el-dialog>
 
-  <el-dialog v-model="detailVisible" title="巡检详情" width="620px">
+  <el-dialog v-model="detailVisible" title="巡检详情" width="720px">
     <el-descriptions v-if="currentTask" :column="2" border><el-descriptions-item label="任务号">{{ currentTask.taskNo }}</el-descriptions-item><el-descriptions-item label="状态">{{ labelOf(TASK_STATUS, currentTask.status) }}</el-descriptions-item><el-descriptions-item label="对象">{{ currentTask.targetName }}</el-descriptions-item><el-descriptions-item label="巡检人">{{ currentTask.inspector }}</el-descriptions-item><el-descriptions-item v-if="currentTask.rectificationNote" label="整改结果" :span="2">{{ currentTask.rectificationNote }}</el-descriptions-item></el-descriptions>
     <el-table v-if="currentTask" :data="currentTask.results" style="margin-top: 16px"><el-table-column prop="item" label="巡检项" /><el-table-column label="结果" width="100"><template #default="{ row }"><el-tag :type="row.passed ? 'success' : 'danger'">{{ row.passed ? '正常' : '异常' }}</el-tag></template></el-table-column><el-table-column prop="note" label="说明" /></el-table>
   </el-dialog>
@@ -108,6 +110,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { pageBuildings } from '@/api/building'
 import { listFloors } from '@/api/floor'
 import { pageRooms } from '@/api/room'
@@ -211,9 +214,17 @@ onMounted(async () => { const [buildingPage, items] = await Promise.all([pageBui
 </script>
 
 <style scoped>
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; }
+.filters__end { margin-left: auto; }
 .pager { margin-top: 12px; justify-content: flex-end; }
 .target-selects { display: grid; gap: 8px; width: 100%; }
 :deep(.el-tabs__header) { margin-bottom: 18px; }
 :deep(.el-tabs__item) { height: 44px; font-weight: 600; }
-@media (max-width: 767px) { :deep(.el-tabs__nav-wrap) { padding: 0 4px; } :deep(.el-dialog__body) { overflow-x: auto; } .target-selects { min-width: 0; } }
+@media (max-width: 767px) {
+  :deep(.el-tabs__nav-wrap) { padding: 0 4px; }
+  :deep(.el-dialog__body) { overflow-x: auto; }
+  .target-selects { min-width: 0; }
+  .filters__end { margin-left: 0; }
+  .filters .el-select, .filters .el-date-editor { width: 100% !important; }
+}
 </style>

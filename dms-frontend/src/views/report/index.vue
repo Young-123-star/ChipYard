@@ -33,8 +33,12 @@
       <template #header><div class="card-title"><div><b>欠费明细</b><span>欠费金额前 10 名</span></div><el-tag type="danger" effect="light">{{ arrearsList.length }} 人</el-tag></div></template>
       <el-table :data="arrearsList" empty-text="当前没有欠费数据">
         <el-table-column type="index" label="#" width="54" />
-        <el-table-column prop="residentName" label="居住人" min-width="120" />
-        <el-table-column prop="employeeNo" label="工号" min-width="120" />
+        <el-table-column label="居住人" min-width="130">
+          <template #default="{ row }">
+            <div class="cell-main">{{ row.residentName }}</div>
+            <div class="cell-sub">{{ row.employeeNo }}</div>
+          </template>
+        </el-table-column>
         <el-table-column label="欠费金额" min-width="130"><template #default="{ row }"><strong class="danger-text">{{ money(row.unpaidAmount) }}</strong></template></el-table-column>
         <el-table-column prop="unpaidCount" label="欠费账单" min-width="100" />
       </el-table>
@@ -47,8 +51,9 @@ import { computed, onMounted, ref } from 'vue'
 import { getArrearsRanking, getBuildingSummary, getPeriodSummary, getUsageTrend } from '@/api/report'
 import type { ArrearsRank, BuildingSummary, PeriodSummary, UsageTrend } from '@/api/types'
 
-const COLORS = ['#2b5ce6', '#53a6e8', '#7cc8b5', '#d23b34']
-const axis = { axisLine: { lineStyle: { color: '#dfe4ec' } }, axisLabel: { color: '#6b7485' }, splitLine: { lineStyle: { color: '#eef1f5' } } }
+// ECharts 无法直接读 CSS 变量，此处色值与 theme.css 的 --dms-* 令牌保持一致
+const COLORS = ['#2b5ce6', '#53a6e8', '#7cc8b5', '#cf3a32']
+const axis = { axisLine: { lineStyle: { color: '#e6e7ea' } }, axisLabel: { color: '#5c6470' }, splitLine: { lineStyle: { color: '#efeff1' } } }
 const loading = ref(false)
 const error = ref(false)
 const periodList = ref<PeriodSummary[]>([])
@@ -63,8 +68,8 @@ const summaryItems = computed(() => [
   { label: '未收金额', value: money(latest.value?.unpaid), note: '需要跟进', tone: 'danger-text' },
   { label: '收缴率', value: `${Number(latest.value?.collectRate || 0).toFixed(1)}%`, note: '当前账期', tone: 'accent-text' }
 ])
-const base = { color: COLORS, tooltip: { trigger: 'axis' }, legend: { top: 0, textStyle: { color: '#5b6577' } }, grid: { left: 58, right: 28, top: 48, bottom: 34 } }
-const periodOption = computed(() => ({ ...base, xAxis: { ...axis, type: 'category', data: periodList.value.map(v => v.period) }, yAxis: [{ ...axis, type: 'value' }, { ...axis, type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#6b7485' } }], series: [
+const base = { color: COLORS, tooltip: { trigger: 'axis' }, legend: { top: 0, textStyle: { color: '#5c6470' } }, grid: { left: 58, right: 28, top: 48, bottom: 34 } }
+const periodOption = computed(() => ({ ...base, xAxis: { ...axis, type: 'category', data: periodList.value.map(v => v.period) }, yAxis: [{ ...axis, type: 'value' }, { ...axis, type: 'value', min: 0, max: 100, axisLabel: { formatter: '{value}%', color: '#5c6470' } }], series: [
   { name: '住宿费', type: 'bar', stack: 'amount', data: periodList.value.map(v => Number(v.rentTotal)), barMaxWidth: 26 },
   { name: '电费', type: 'bar', stack: 'amount', data: periodList.value.map(v => Number(v.elecTotal)) },
   { name: '水费', type: 'bar', stack: 'amount', data: periodList.value.map(v => Number(v.waterTotal)) },
@@ -89,7 +94,7 @@ onMounted(load)
 </script>
 
 <style scoped>
-.report-page { display: grid; gap: 16px; }.period-summary { display: grid; grid-template-columns: 1.1fr repeat(4, 1fr); overflow: hidden; border: 1px solid var(--dms-hairline); border-radius: 14px; background: var(--dms-surface); box-shadow: var(--dms-shadow-card); }.period-summary__title,.summary-item { min-width: 0; padding: 20px; border-right: 1px solid var(--dms-hairline); }.summary-item:last-child { border-right: 0; }.period-summary__title { display: flex; flex-direction: column; justify-content: center; color: white; background: linear-gradient(135deg,#0c2f63,#14569b); }.period-summary span,.summary-item small { display: block; font-size: 12px; }.period-summary__title span { color: #a9ceff; }.period-summary__title strong { margin-top: 7px; font-size: 22px; }.summary-item span,.summary-item small { color: var(--dms-ink-2); }.summary-item strong { display: block; overflow: hidden; margin: 8px 0 5px; font-size: 21px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; }.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }.usage-card { grid-column: 1 / -1; }.card-title { display: flex; align-items: center; justify-content: space-between; }.card-title div > * { display: block; }.card-title b { font-size: 16px; }.card-title span { margin-top: 4px; color: var(--dms-ink-2); font-size: 12px; }.chart { width: 100%; height: 310px; }.success-text { color: var(--dms-ok); }.danger-text { color: var(--dms-bad); }.accent-text { color: var(--dms-accent); }
+.report-page { display: grid; gap: 16px; }.period-summary { display: grid; grid-template-columns: 1.1fr repeat(4, 1fr); overflow: hidden; border: 1px solid var(--dms-hairline); border-radius: 14px; background: var(--dms-surface); box-shadow: var(--dms-shadow-card); }.period-summary__title,.summary-item { min-width: 0; padding: 20px; border-right: 1px solid var(--dms-hairline); }.summary-item:last-child { border-right: 0; }.period-summary__title { display: flex; flex-direction: column; justify-content: center; background: var(--dms-accent-soft); }.period-summary span,.summary-item small { display: block; font-size: 12px; }.period-summary__title span { color: var(--dms-accent-ink); }.period-summary__title strong { margin-top: 7px; font-size: 22px; }.summary-item span,.summary-item small { color: var(--dms-ink-2); }.summary-item strong { display: block; overflow: hidden; margin: 8px 0 5px; font-size: 21px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; }.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }.usage-card { grid-column: 1 / -1; }.card-title { display: flex; align-items: center; justify-content: space-between; }.card-title div > * { display: block; }.card-title b { font-size: 16px; }.card-title span { margin-top: 4px; color: var(--dms-ink-2); font-size: 12px; }.chart { width: 100%; height: 310px; }.success-text { color: var(--dms-ok); }.danger-text { color: var(--dms-bad); }.accent-text { color: var(--dms-accent); }
 @media (max-width: 1050px) { .period-summary { grid-template-columns: repeat(2,1fr); }.period-summary__title { grid-column: 1 / -1; }.summary-item { border-top: 1px solid var(--dms-hairline); }.chart-grid { grid-template-columns: 1fr; }.usage-card { grid-column: auto; } }
 @media (max-width: 767px) { .period-summary { grid-template-columns: 1fr; }.summary-item { border-right: 0; }.chart { min-width: 560px; }.chart-grid :deep(.el-card__body) { overflow-x: auto; } }
 </style>

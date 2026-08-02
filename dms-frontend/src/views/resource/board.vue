@@ -1,39 +1,37 @@
 <template>
   <div>
     <el-card shadow="never">
-      <el-form :inline="true">
-        <el-form-item label="楼栋">
-          <el-select v-model="buildingId" placeholder="全部" clearable style="width: 180px" @change="reload">
-            <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <span class="legend">
-            <button
-              v-for="s in ROOM_STATUS"
-              :key="s.value"
-              class="legend-item"
-              :class="{ active: statusFilter === s.value, dimmed: statusFilter !== null && statusFilter !== s.value }"
-              @click.prevent="toggleStatus(s.value)"
-            >
-              <i class="legend-swatch" :class="'sw-' + s.value"></i>{{ s.label }}
-              <em v-if="statusCount(s.value)" class="legend-count">{{ statusCount(s.value) }}</em>
-            </button>
-          </span>
-        </el-form-item>
-      </el-form>
+      <div class="filters">
+        <el-select v-model="buildingId" placeholder="全部楼栋" clearable style="width: 180px" @change="reload">
+          <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
+        </el-select>
+        <span class="legend">
+          <button
+            v-for="s in ROOM_STATUS"
+            :key="s.value"
+            class="legend-item"
+            :class="{ active: statusFilter === s.value, dimmed: statusFilter !== null && statusFilter !== s.value }"
+            @click.prevent="toggleStatus(s.value)"
+          >
+            <i class="legend-swatch" :class="'sw-' + s.value"></i>{{ s.label }}
+            <em v-if="statusCount(s.value)" class="legend-count">{{ statusCount(s.value) }}</em>
+          </button>
+        </span>
+      </div>
 
-      <div class="title-block">
-        <div class="tb-cell tb-rate">
-          <span>入住率</span>
-          <b>{{ occupancyRate }}<small>%</small></b>
+      <div class="board-head">
+        <div class="bh-main">
+          <h2>{{ buildingId && currentBuilding ? currentBuilding.buildingName : '全部楼栋' }}</h2>
+          <div class="addr">{{ buildingId && currentBuilding ? (currentBuilding.address || '-') : '全局统计' }}</div>
         </div>
-        <div class="tb-cell"><span>空闲床位</span><b class="c-ok">{{ freeBeds }}</b></div>
-        <div class="tb-cell"><span>已满房间</span><b class="c-warn">{{ countByStatus(2) }}</b></div>
-        <div class="tb-cell"><span>维修中</span><b class="c-bad">{{ countByStatus(3) }}</b></div>
-        <div class="tb-cell"><span>房间</span><b>{{ list.length }}</b></div>
-        <div class="tb-cell"><span>床位</span><b>{{ totalBeds }}</b></div>
-        <div v-if="buildingId && currentBuilding" class="tb-cell"><span>地址</span><b>{{ currentBuilding.address || '-' }}</b></div>
+        <div class="kv num">
+          <div class="item"><div class="n c-accent">{{ occupancyRate }}<small>%</small></div><div class="l">入住率</div></div>
+          <div class="item"><div class="n c-ok">{{ freeBeds }}</div><div class="l">空闲床位</div></div>
+          <div class="item"><div class="n c-warn">{{ countByStatus(2) }}</div><div class="l">已满</div></div>
+          <div class="item"><div class="n c-bad">{{ countByStatus(3) }}</div><div class="l">维修中</div></div>
+          <div class="item"><div class="n">{{ list.length }}</div><div class="l">房间数</div></div>
+          <div class="item"><div class="n">{{ totalBeds }}</div><div class="l">床位数</div></div>
+        </div>
       </div>
 
       <div v-loading="loading">
@@ -59,12 +57,14 @@
                     <i v-if="r.genderLimit === 1" class="gender male">♂</i>
                     <i v-else-if="r.genderLimit === 2" class="gender female">♀</i>
                   </span>
-                  <span class="beds">
-                    <i v-for="i in r.bedCount" :key="i" class="bed" :class="{ occupied: i <= r.occupiedBeds }"></i>
-                  </span>
+                  <span class="status">{{ labelOf(ROOM_STATUS, r.status) }}</span>
                 </div>
-                <div class="meta">{{ labelOf(ROOM_TYPE, r.roomType) }} · {{ r.occupiedBeds }}/{{ r.bedCount }} 床</div>
-                <span class="status">{{ labelOf(ROOM_STATUS, r.status) }}</span>
+                <div class="meta">
+                  {{ labelOf(ROOM_TYPE, r.roomType) }}<template v-if="r.orientation"> · {{ r.orientation }}</template><template v-if="r.area"> · {{ r.area }}㎡</template>
+                </div>
+                <div class="bedbar" :title="`已住 ${r.occupiedBeds}/${r.bedCount} 床`">
+                  <i v-for="i in r.bedCount" :key="i" :class="{ used: i <= r.occupiedBeds }"></i>
+                </div>
               </div>
             </el-tooltip>
           </div>
@@ -152,8 +152,11 @@ onMounted(() => { loadBuildings(); reload() })
 </script>
 
 <style scoped>
+/* 筛选行：楼栋选择 + 可点击图例 */
+.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 14px; }
+
 /* 图例（可点击筛选） */
-.legend { display: inline-flex; gap: 8px; align-items: center; }
+.legend { display: inline-flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .legend-item {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12.5px; color: var(--dms-ink-2);
@@ -161,30 +164,32 @@ onMounted(() => { loadBuildings(); reload() })
   border: 1px solid transparent; background: transparent; cursor: pointer;
   font-family: inherit; transition: all 0.15s;
 }
-.legend-item:hover { background: rgba(0, 0, 0, 0.04); }
-.legend-item.active { border-color: var(--dms-accent); color: var(--dms-accent); background: rgba(0, 113, 227, 0.06); }
+.legend-item:hover { background: var(--dms-hover); }
+.legend-item.active { border-color: var(--dms-accent); color: var(--dms-accent); background: var(--dms-accent-soft); }
 .legend-item.dimmed { opacity: 0.45; }
-.legend-count { font-style: normal; font-weight: 700; font-size: 11.5px; }
-.legend-swatch { width: 11px; height: 11px; border-radius: 3px; border: 1.5px solid; display: inline-block; }
-.sw-0 { color: #98989d; } .sw-1 { color: var(--dms-ok); } .sw-2 { color: var(--dms-warn); }
+.legend-count { font-style: normal; font-weight: 700; font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.legend-swatch { width: 9px; height: 9px; border-radius: 3px; background: currentColor; display: inline-block; }
+.sw-0 { color: var(--dms-ink-3); } .sw-1 { color: var(--dms-ok); } .sw-2 { color: var(--dms-warn); }
 .sw-3 { color: var(--dms-bad); } .sw-4 { color: var(--dms-hold); }
 
-/* 图签信息条 */
-.title-block {
-  display: inline-flex;
+/* board-head：左楼栋名 + 地址，右侧大数字统计 */
+.board-head {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 14px 18px; margin-bottom: 16px;
   border: 1px solid var(--dms-hairline);
-  border-radius: 12px;
-  overflow: hidden;
-  margin-bottom: 18px;
-  background: rgba(255, 255, 255, 0.55);
+  border-radius: var(--dms-radius-card);
+  background: var(--dms-surface);
+  box-shadow: none;
 }
-.tb-cell { padding: 10px 18px; border-right: 1px solid var(--dms-hairline); }
-.tb-cell:last-child { border-right: none; }
-.tb-cell span { display: block; font-size: 11.5px; color: var(--dms-ink-2); margin-bottom: 2px; }
-.tb-cell b { font-size: 14.5px; font-weight: 600; letter-spacing: -0.01em; }
-.tb-rate b { font-size: 22px; font-weight: 700; color: var(--dms-accent); }
-.tb-rate small { font-size: 12px; font-weight: 600; margin-left: 1px; }
-.c-ok { color: #1d8a3e; } .c-warn { color: #b06b00; } .c-bad { color: #c22a20; }
+.bh-main { min-width: 200px; }
+.bh-main h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; }
+.bh-main .addr { font-size: 12px; color: var(--dms-ink-3); margin-top: 2px; }
+.kv { display: flex; gap: 24px; margin-left: auto; flex-wrap: wrap; }
+.kv .item .n { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.kv .item .n small { font-size: 12px; font-weight: 600; margin-left: 1px; }
+.kv .item .l { font-size: 11px; color: var(--dms-ink-3); margin-top: 1px; }
+.c-accent { color: var(--dms-accent-ink); }
+.c-ok { color: var(--dms-ok); } .c-warn { color: var(--dms-warn); } .c-bad { color: var(--dms-bad); }
 
 /* 楼层分组 */
 .floor-group { margin-bottom: 18px; }
@@ -195,59 +200,65 @@ onMounted(() => { loadBuildings(); reload() })
 .floor-name { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; }
 .floor-stat { font-size: 12px; color: var(--dms-ink-2); }
 
-/* 平面图：连体房间格 */
+/* 平面图：独立卡片网格 */
 .plan {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  border: 1px solid var(--dms-hairline);
-  border-radius: 14px;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.45);
+  gap: 10px;
 }
 .room {
   position: relative;
-  min-height: 124px;
-  padding: 16px 18px;
-  border-right: 1px solid var(--dms-hairline);
-  border-bottom: 1px solid var(--dms-hairline);
-  transition: background 0.18s;
+  min-height: 108px;
+  padding: 13px 14px 12px;
+  border: 1px solid var(--dms-hairline);
+  border-radius: var(--dms-radius-card);
+  background: var(--dms-surface);
+  transition: border-color 0.15s;
 }
-.room:hover { background: rgba(0, 113, 227, 0.04); }
-.room-head { display: flex; justify-content: space-between; align-items: flex-start; }
-.no { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 6px; }
+.room:hover { border-color: var(--el-border-color); }
+/* 左缘 3px 状态色条 */
+.room::before {
+  content: ""; position: absolute; left: 0; top: 13px; bottom: 13px;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--st-c);
+}
+.room-head { display: flex; justify-content: space-between; align-items: center; }
+.no { font-size: 15px; font-weight: 700; letter-spacing: -0.01em; display: inline-flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
 .gender {
   font-style: normal; font-size: 12px; font-weight: 700;
   width: 18px; height: 18px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center;
 }
-.gender.male { background: rgba(0, 113, 227, 0.12); color: #0b6bd0; }
-.gender.female { background: rgba(255, 45, 85, 0.12); color: #d6336c; }
-.meta { font-size: 12.5px; color: var(--dms-ink-2); margin-top: 4px; }
+.gender.male { background: var(--dms-accent-soft); color: var(--dms-accent-ink); }
+.gender.female { background: color-mix(in srgb, var(--dms-bad) 12%, transparent); color: var(--dms-bad); }
+.meta { font-size: 12px; color: var(--dms-ink-3); margin-top: 4px; }
 
-/* 床位图标：空心=空闲，实心=已入住 */
-.beds { display: flex; gap: 4px; }
-.bed { width: 9px; height: 15px; border: 1.5px solid #c7c7cc; border-radius: 3px; }
-.bed.occupied { background: var(--st-c); border-color: var(--st-c); }
+/* 床位占用条：整段=一张床，实心=已入住 */
+.bedbar { display: flex; gap: 4px; margin-top: 12px; }
+.bedbar i { flex: 1; height: 5px; border-radius: 2.5px; background: var(--dms-hairline); }
+.bedbar i.used { background: var(--dms-accent); }
+.room.st-3 .bedbar i.used { background: color-mix(in srgb, var(--dms-bad) 55%, transparent); }
+.room.st-0 .bedbar i.used { background: var(--dms-ink-3); }
 
-/* 状态角标 */
+/* 状态圆点标签（右上角） */
 .status {
-  position: absolute;
-  left: 18px; bottom: 14px;
-  font-size: 11.5px; font-weight: 600;
-  padding: 3px 10px;
-  border-radius: 99px;
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11.5px; font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 6px;
   color: var(--st-c);
   background: color-mix(in srgb, var(--st-c) 12%, transparent);
 }
-.st-0 { --st-c: #98989d; }
-.st-1 { --st-c: #1d8a3e; }
-.st-2 { --st-c: #b06b00; }
-.st-3 { --st-c: #c22a20; }
-.st-4 { --st-c: #2f6fbe; }
+.status::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.st-0 { --st-c: var(--dms-ink-3); }
+.st-1 { --st-c: var(--dms-ok); }
+.st-2 { --st-c: var(--dms-warn); }
+.st-3 { --st-c: var(--dms-bad); }
+.st-4 { --st-c: var(--dms-hold); }
 
 /* 悬停提示 */
 .tip { font-size: 12.5px; line-height: 1.7; }
 .tip-title { font-weight: 700; margin-bottom: 2px; }
-@media (max-width: 1199px) { .title-block { display: grid; grid-template-columns: repeat(4, 1fr); width: 100%; } .tb-cell { border-bottom: 1px solid var(--dms-hairline); } .plan { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
-@media (max-width: 767px) { .legend { flex-wrap: wrap; } .title-block { grid-template-columns: repeat(2, 1fr); } .tb-cell { padding: 10px 12px; } .plan { grid-template-columns: repeat(2, minmax(132px, 1fr)); overflow-x: auto; } .room { min-height: 112px; } }
+@media (max-width: 1199px) { .kv { gap: 18px; } .plan { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); } }
+@media (max-width: 767px) { .board-head { padding: 12px 14px; } .kv { margin-left: 0; gap: 16px; } .plan { grid-template-columns: repeat(2, minmax(132px, 1fr)); overflow-x: auto; } .room { min-height: 112px; } }
 </style>

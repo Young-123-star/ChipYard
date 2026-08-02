@@ -144,7 +144,7 @@ function summaryOf(result?: ImportResult) {
 .step-head h3 { margin: 0 0 4px; font-size: 16px; }
 .step-head p { margin: 0; color: var(--dms-ink-2); font-size: 13px; }
 .actions { display: flex; align-items: center; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
-.file-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border: 1px solid var(--el-border-color); border-radius: 4px; cursor: pointer; font-size: 14px; background: #fff; }
+.file-btn { position: relative; overflow: hidden; display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border: 1px solid var(--el-border-color); border-radius: 4px; cursor: pointer; font-size: 14px; background: var(--dms-surface); }
 .file-btn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .filename { color: var(--dms-ink-2); font-size: 13px; }
 .result { margin-top: 12px; }

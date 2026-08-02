@@ -1,21 +1,19 @@
 <template>
   <div>
-    <el-card shadow="never">
-      <el-form :inline="true" :model="query" @keyup.enter="search">
-        <el-form-item label="楼栋名称">
-          <el-input v-model="query.buildingName" placeholder="名称" clearable />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px">
-            <el-option v-for="s in BUILDING_STATUS" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button @click="search">查询</el-button>
-          <el-button type="primary" @click="openCreate">新增</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-        </el-form-item>
-      </el-form>
+    <DataView title="楼栋列表" :total="total">
+      <template #filters>
+        <el-input v-model="query.buildingName" placeholder="楼栋名称" clearable style="width: 180px" @keyup.enter="search" />
+        <el-select v-model="query.status" placeholder="状态：全部" clearable style="width: 120px">
+          <el-option v-for="s in BUILDING_STATUS" :key="s.value" :label="s.label" :value="s.value" />
+        </el-select>
+      </template>
+      <template #filter-actions>
+        <el-button @click="search">查询</el-button>
+      </template>
+      <template #actions>
+        <el-button :loading="exporting" @click="onExport">导出</el-button>
+        <el-button type="primary" @click="openCreate">新增</el-button>
+      </template>
 
       <div v-loading="loading" class="cards">
         <div v-for="b in list" :key="b.id" class="bld-card">
@@ -60,15 +58,16 @@
         <el-empty v-if="!loading && !list.length" description="暂无楼栋" />
       </div>
 
-      <el-pagination
-        style="margin-top: 12px; justify-content: flex-end"
-        layout="total, prev, pager, next"
-        :total="total"
-        :current-page="query.page"
-        :page-size="query.size"
-        @current-change="onPageChange"
-      />
-    </el-card>
+      <template #pagination>
+        <el-pagination
+          layout="total, prev, pager, next"
+          :total="total"
+          :current-page="query.page"
+          :page-size="query.size"
+          @current-change="onPageChange"
+        />
+      </template>
+    </DataView>
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑楼栋' : '新增楼栋'" width="480px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
@@ -104,6 +103,7 @@ import { pageBuildings, createBuilding, updateBuilding, deleteBuilding } from '@
 import type { Building } from '@/api/types'
 import { BUILDING_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import DataView from '@/components/layout/DataView.vue'
 
 const router = useRouter()
 
@@ -112,9 +112,9 @@ function rate(b: Building): number {
   return beds ? Math.round(((b.occupiedBeds ?? 0) / beds) * 100) : 0
 }
 function rateColor(pct: number): string {
-  if (pct >= 90) return '#f56c6c'
-  if (pct >= 60) return '#e6a23c'
-  return '#34c759'
+  if (pct >= 90) return 'var(--dms-bad)'
+  if (pct >= 60) return 'var(--dms-warn)'
+  return 'var(--dms-ok)'
 }
 function goRooms(b: Building) {
   router.push({ path: '/rooms', query: { buildingId: String(b.id) } })
@@ -234,10 +234,10 @@ onMounted(reload)
 .bld-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; flex: 1; }
 .bld-stats div { font-size: 12.5px; color: var(--dms-ink-2); display: flex; justify-content: space-between; }
 .bld-stats b { color: var(--dms-ink); font-weight: 600; }
-.bld-stats b.free { color: #1d8a3e; }
+.bld-stats b.free { color: var(--dms-ok); }
 .bld-foot {
   display: flex; justify-content: flex-end; gap: 4px;
   border-top: 1px solid var(--dms-hairline); padding-top: 10px; margin-top: 8px;
 }
-.bld-stats b.warning { color: #e6a23c; }
+.bld-stats b.warning { color: var(--dms-warn); }
 </style>

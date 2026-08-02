@@ -1,27 +1,25 @@
 <template>
-  <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="search">
-      <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px" @change="search">
-          <el-option v-for="s in CHECKOUT_STATUS" :key="s.value" :label="s.label" :value="s.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="来源">
-        <el-select v-model="query.source" placeholder="全部" clearable style="width: 120px" @change="search">
-          <el-option v-for="s in CHECKOUT_SOURCE" :key="s.value" :label="s.label" :value="s.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="search">查询</el-button>
-        <el-button type="primary" @click="openCreate">手工新建</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-      </el-form-item>
-    </el-form>
+  <DataView title="退宿单列表" :total="total">
+    <template #filters>
+      <el-select v-model="query.status" placeholder="状态：全部" clearable style="width: 130px" @change="search">
+        <el-option v-for="s in CHECKOUT_STATUS" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
+      <el-select v-model="query.source" placeholder="来源：全部" clearable style="width: 130px" @change="search">
+        <el-option v-for="s in CHECKOUT_SOURCE" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
+    </template>
+    <template #filter-actions>
+      <el-button type="primary" @click="search">查询</el-button>
+    </template>
+    <template #actions>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
+      <el-button type="primary" @click="openCreate">手工新建</el-button>
+    </template>
 
     <el-table v-loading="loading" :data="list">
       <el-table-column prop="bizNo" label="业务号" width="170" />
       <el-table-column label="居住人" width="160">
-        <template #default="{ row }">{{ row.residentName }}（{{ row.employeeNo }}）</template>
+        <template #default="{ row }"><div class="cell-main">{{ row.residentName }}</div><div class="cell-sub">{{ row.employeeNo }}</div></template>
       </el-table-column>
       <el-table-column label="来源" width="100">
         <template #default="{ row }">{{ labelOf(CHECKOUT_SOURCE, row.source) }}</template>
@@ -50,12 +48,14 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination style="margin-top: 12px; justify-content: flex-end"
-      layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
-      @current-change="onPageChange" />
+    <template #pagination>
+      <el-pagination layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
+        @current-change="onPageChange" />
+    </template>
+  </DataView>
 
-    <!-- 手工新建 -->
-    <el-dialog v-model="createVisible" title="手工新建退宿单" width="460px">
+  <!-- 手工新建 -->
+  <el-dialog v-model="createVisible" title="手工新建退宿单" width="480px">
       <el-form ref="createRef" :model="createForm" :rules="createRules" label-width="90px">
         <el-form-item label="居住人" prop="residentId">
           <el-select v-model="createForm.residentId" filterable placeholder="选择在住居住人" style="width: 100%">
@@ -71,8 +71,8 @@
       </template>
     </el-dialog>
 
-    <!-- 办理退宿 -->
-    <el-dialog v-model="confirmVisible" title="办理退宿" width="460px">
+  <!-- 办理退宿 -->
+  <el-dialog v-model="confirmVisible" title="办理退宿" width="480px">
       <el-descriptions :column="1" border size="small" style="margin-bottom: 14px">
         <el-descriptions-item label="居住人">{{ current?.residentName }}（{{ current?.employeeNo }}）</el-descriptions-item>
         <el-descriptions-item label="所退房间/床位">房间 {{ current?.roomId ?? '-' }} / 床位 {{ current?.bedId ?? '-' }}</el-descriptions-item>
@@ -90,11 +90,11 @@
         <el-button type="primary" :loading="saving" @click="onConfirm">确认退宿</el-button>
       </template>
     </el-dialog>
-  </el-card>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageCheckoutOrders, createCheckoutOrder, confirmCheckout, cancelCheckout } from '@/api/checkout'
 import { getArrears } from '@/api/fee'
@@ -102,6 +102,7 @@ import { pageRecords } from '@/api/checkin'
 import type { CheckoutOrder, CheckinRecord } from '@/api/types'
 import { CHECKOUT_STATUS, CHECKOUT_SOURCE, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import DataView from '@/components/layout/DataView.vue'
 
 const loading = ref(false)
 const exporting = ref(false)
@@ -109,6 +110,11 @@ const saving = ref(false)
 const list = ref<CheckoutOrder[]>([])
 const total = ref(0)
 const query = reactive({ status: undefined as number | undefined, source: undefined as number | undefined, page: 1, size: 10 })
+
+// 支持从仪表盘带 status 跳转进来时初始化筛选
+const route = useRoute()
+const initStatus = Number(route.query.status)
+if (route.query.status !== undefined && CHECKOUT_STATUS.some(s => s.value === initStatus)) query.status = initStatus
 
 const activeResidents = ref<CheckinRecord[]>([])
 const createVisible = ref(false)

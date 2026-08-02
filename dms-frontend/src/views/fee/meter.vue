@@ -26,8 +26,52 @@
       <el-tab-pane label="抄表台账" name="readings">
         <el-form :inline="true">
           <el-form-item label="账期"><el-date-picker v-model="period" type="month" value-format="YYYY-MM" style="width: 140px" @change="loadReadings" /></el-form-item>
-          <el-form-item><el-button @click="loadReadings">查询</el-button><el-button type="primary" @click="openReading">录入抄表</el-button></el-form-item>
+          <el-form-item><el-button @click="loadReadings">查询</el-button><el-button type="primary" @click="openBatch">批量录入</el-button><el-button @click="openReading">单条录入</el-button></el-form-item>
         </el-form>
+        <div v-if="batchVisible" class="batch-card">
+          <el-form :inline="true">
+            <el-form-item label="楼栋">
+              <el-select v-model="batch.buildingId" filterable style="width: 170px" @change="onBatchBuildingChange">
+                <el-option v-for="item in buildings" :key="item.id" :label="item.buildingName" :value="item.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="楼层">
+              <el-select v-model="batch.floorId" filterable style="width: 150px">
+                <el-option v-for="item in batchFloors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="账期"><el-date-picker v-model="batch.period" type="month" value-format="YYYY-MM" style="width: 140px" /></el-form-item>
+            <el-form-item>
+              <el-button type="primary" :loading="batchLoading" @click="generateBatchRows">生成抄表行</el-button>
+              <el-button @click="batchVisible = false">收起</el-button>
+            </el-form-item>
+          </el-form>
+          <template v-if="batchRows.length">
+            <el-table :data="batchRows" border :row-class-name="batchRowClass">
+              <el-table-column label="房间/账户" min-width="180"><template #default="{ row }">{{ row.accountCode }}（{{ row.roomLabel }}）</template></el-table-column>
+              <el-table-column label="表位" width="130"><template #default="{ row }">{{ row.targetType === 1 ? '户总表' : ('房间 ' + roomNumber(row.roomId)) }}</template></el-table-column>
+              <el-table-column label="表类型" width="90"><template #default="{ row }">{{ meterLabel(row.meterType) }}</template></el-table-column>
+              <el-table-column label="上期读数" width="150">
+                <template #default="{ row }"><el-input-number v-model="row.prevReading" :min="0" :precision="2" :controls="false" placeholder="首次必填" style="width: 100%" /></template>
+              </el-table-column>
+              <el-table-column label="本期读数" width="150">
+                <template #default="{ row }"><el-input-number v-model="row.currentReading" :min="0" :precision="2" :controls="false" style="width: 100%" /></template>
+              </el-table-column>
+              <el-table-column label="状态" min-width="150">
+                <template #default="{ row }">
+                  <el-tag v-if="row.status === 'fail'" type="danger">失败：{{ row.error }}</el-tag>
+                  <el-tag v-else-if="row.status === 'ok'" type="success">已保存</el-tag>
+                  <span v-else class="hint">待录入</span>
+                </template>
+              </el-table-column>
+            </el-table>
+            <div class="batch-footer">
+              <span class="hint">共 {{ batchRows.length }} 行，仅提交已填本期读数的行；本期读数需不小于上期读数</span>
+              <el-button type="primary" :loading="batchSaving" @click="saveBatch">保存全部</el-button>
+            </div>
+          </template>
+          <el-alert v-else-if="batchGenerated" title="该楼层没有需要抄表的表位" type="info" show-icon :closable="false" />
+        </div>
         <el-table :data="readings" border>
           <el-table-column prop="accountCode" label="账户" width="130" />
           <el-table-column label="表位" min-width="150"><template #default="{ row }">{{ row.targetType === 1 ? '户总表' : ('房间 ' + roomNumber(row.roomId)) }}</template></el-table-column>
@@ -135,6 +179,8 @@ const rate = reactive({ electricityPrice: 0, waterPrice: 0 })
 const readingVisible = ref(false)
 const readingRef = ref<FormInstance>()
 const { buildings, floors, rooms: locationRooms, loadBuildings, loadFloors, loadRooms } = useRoomLocationOptions()
+// 批量录入使用独立的级联实例，避免与单条录入弹窗的楼层/房间选项互相清空
+const { floors: batchFloors, rooms: batchRooms, loadFloors: loadBatchFloors, loadRooms: loadBatchRooms } = useRoomLocationOptions()
 const form = reactive<{ accountKey?: string; buildingId?: number; floorId?: number; accountCode?: string; targetType?: number; roomId?: number; meterType?: number; period?: string; prevReading?: number; currentReading?: number }>({})
 const rules = {
   buildingId: [{ required: true, message: '请选择楼栋', trigger: 'change' }],
@@ -167,6 +213,114 @@ async function loadBase() {
   await loadBuildings()
 }
 async function loadReadings() { readings.value = await listUtilityReadings({ period: period.value }) }
+
+// ---- 批量行内录入 ----
+interface BatchRow {
+  key: string
+  accountCode: string
+  targetType: number
+  roomId: number
+  roomLabel: string
+  meterType: number
+  prevReading?: number
+  currentReading?: number
+  status?: 'ok' | 'fail'
+  error?: string
+}
+const batchVisible = ref(false)
+const batchLoading = ref(false)
+const batchSaving = ref(false)
+const batchGenerated = ref(false)
+const batchRows = ref<BatchRow[]>([])
+const batch = reactive<{ buildingId?: number; floorId?: number; period?: string }>({})
+// 与单条录入弹窗相同的账户过滤口径：已配置 + 楼栋一致 + 至少一个房间在该楼层
+const batchAccounts = computed(() => accounts.value.filter(item => item.configured && item.buildingId === batch.buildingId && item.roomIds.some(id => batchRooms.value.some(room => room.id === id))))
+
+function openBatch() {
+  batch.buildingId = undefined; batch.floorId = undefined; batch.period = period.value
+  batchFloors.value = []; batchRooms.value = []; batchRows.value = []; batchGenerated.value = false
+  batchVisible.value = true
+}
+async function onBatchBuildingChange() {
+  batch.floorId = undefined; batchRows.value = []; batchGenerated.value = false
+  await loadBatchFloors(batch.buildingId)
+}
+// 表位/表类型推导与后端结算口径一致（UtilityBillingService.calculate）：
+// 用电规则=1 需户总表电表，用水规则=1 需户总表冷水+热水表；用电规则≠0 每房间需电表，用水规则为 2/3/4 每房间需冷水+热水表
+async function generateBatchRows() {
+  if (!batch.buildingId || !batch.floorId || !batch.period) { ElMessage.warning('请选择楼栋、楼层和账期'); return }
+  batchLoading.value = true
+  try {
+    await loadBatchRooms(batch.buildingId, batch.floorId)
+    const history = await listUtilityReadings({ buildingId: batch.buildingId })
+    const rows: BatchRow[] = []
+    for (const account of batchAccounts.value) {
+      const floorRoomIds = account.roomIds.filter(id => batchRooms.value.some(room => room.id === id))
+      if (!floorRoomIds.length) continue
+      const specs: Array<{ targetType: number; roomId: number; meterType: number }> = []
+      if (account.settlementMode === 1) {
+        const masterRoomId = account.roomIds[0]
+        if (account.electricityRule === 1) specs.push({ targetType: 1, roomId: masterRoomId, meterType: 1 })
+        if (account.waterRule === 1) specs.push({ targetType: 1, roomId: masterRoomId, meterType: 2 }, { targetType: 1, roomId: masterRoomId, meterType: 3 })
+      }
+      for (const roomId of floorRoomIds) {
+        if (account.electricityRule !== 0) specs.push({ targetType: 2, roomId, meterType: 1 })
+        if (account.waterRule !== 0 && account.waterRule !== 1) specs.push({ targetType: 2, roomId, meterType: 2 }, { targetType: 2, roomId, meterType: 3 })
+      }
+      for (const spec of specs) {
+        const matches = history.filter(item => item.accountCode === account.accountCode && item.targetType === spec.targetType && item.roomId === spec.roomId && item.meterType === spec.meterType)
+        const existing = matches.find(item => item.period === batch.period)
+        const previous = matches.filter(item => item.period < batch.period!).sort((a, b) => b.period.localeCompare(a.period))[0]
+        rows.push({
+          key: `${account.accountCode}|${spec.targetType}|${spec.roomId}|${spec.meterType}`,
+          accountCode: account.accountCode,
+          targetType: spec.targetType,
+          roomId: spec.roomId,
+          roomLabel: account.roomNumbers.join('、'),
+          meterType: spec.meterType,
+          prevReading: existing?.prevReading ?? previous?.currentReading,
+          currentReading: existing?.currentReading
+        })
+      }
+    }
+    batchRows.value = rows; batchGenerated.value = true
+  } finally { batchLoading.value = false }
+}
+function batchRowClass({ row }: { row: BatchRow }) { return row.status === 'fail' ? 'batch-row-fail' : '' }
+async function saveBatch() {
+  const filled = batchRows.value.filter(row => row.currentReading !== undefined && row.currentReading !== null)
+  if (!filled.length) { ElMessage.warning('没有填写本期读数的行'); return }
+  const pending = filled.filter(row => {
+    if (row.prevReading !== undefined && row.prevReading !== null && row.currentReading! < row.prevReading) {
+      row.status = 'fail'; row.error = '本期读数小于上期读数'; return false
+    }
+    return true
+  })
+  batchSaving.value = true
+  let results: PromiseSettledResult<number>[] = []
+  try {
+    results = await Promise.allSettled(pending.map(row => saveUtilityReading({
+      buildingId: batch.buildingId!,
+      accountCode: row.accountCode,
+      targetType: row.targetType,
+      roomId: row.roomId,
+      period: batch.period!,
+      meterType: row.meterType,
+      prevReading: row.prevReading,
+      currentReading: row.currentReading!
+    })))
+  } finally { batchSaving.value = false }
+  let ok = 0
+  results.forEach((result, index) => {
+    const row = pending[index]
+    if (result.status === 'fulfilled') { row.status = 'ok'; row.error = undefined; ok++ }
+    else { row.status = 'fail'; row.error = result.reason instanceof Error ? result.reason.message : '保存失败' }
+  })
+  const fail = filled.length - ok
+  if (fail) ElMessage.warning(`保存完成：成功 ${ok} 条，失败 ${fail} 条，失败行已在列表中标出`)
+  else ElMessage.success(`全部保存成功，共 ${ok} 条`)
+  if (ok) await loadReadings()
+}
 async function loadSettlements() { settlements.value = await listUtilitySettlements(period.value) }
 async function saveRate() { await updateUtilityRate(rate); ElMessage.success('单价已保存') }
 function openReading() {
@@ -242,6 +396,9 @@ onMounted(async () => { await loadBase(); await Promise.all([loadReadings(), loa
 <style scoped>
 .toolbar { display: flex; justify-content: space-between; align-items: flex-start; }
 .notice { margin-bottom: 14px; }
+.batch-card { margin-bottom: 14px; padding: 14px 16px; border: 1px solid var(--dms-hairline); border-radius: var(--dms-radius-card); background: var(--dms-surface); }
+.batch-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+:deep(.batch-row-fail) > td { background: color-mix(in srgb, var(--dms-bad) 6%, var(--dms-surface)) !important; }
 .section-title { margin: 22px 0 10px; font-size: 15px; }
 .hint { color: var(--el-text-color-secondary); font-size: 12px; }
 </style>

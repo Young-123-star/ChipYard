@@ -1,17 +1,15 @@
 <template>
   <div>
-    <el-card shadow="never">
-      <el-form :inline="true">
-        <el-form-item label="选择楼栋">
-          <el-select v-model="buildingId" placeholder="请选择楼栋" style="width: 220px" @change="reload">
-            <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" :disabled="!buildingId" @click="openCreate">新增楼层</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-        </el-form-item>
-      </el-form>
+    <DataView title="楼层列表" :total="list.length">
+      <template #filters>
+        <el-select v-model="buildingId" placeholder="请选择楼栋" style="width: 220px" @change="reload">
+          <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
+        </el-select>
+      </template>
+      <template #actions>
+        <el-button :loading="exporting" @click="onExport">导出</el-button>
+        <el-button type="primary" :disabled="!buildingId" @click="openCreate">新增楼层</el-button>
+      </template>
 
       <el-table :data="list" v-loading="loading" border>
         <el-table-column prop="floorNumber" label="楼层号" width="100" />
@@ -35,17 +33,24 @@
             <el-tag :type="tagTypeOf(BUILDING_STATUS, row.status)">{{ labelOf(BUILDING_STATUS, row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220">
+        <el-table-column label="操作" width="170">
           <template #default="{ row }">
             <el-button link type="primary" @click="goRooms(row)">查看房间</el-button>
             <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="onDelete(row)">删除</el-button>
+            <el-dropdown trigger="click">
+              <el-button link type="primary">更多<el-icon><ArrowDown /></el-icon></el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="onDelete(row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
-    </el-card>
+    </DataView>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑楼层' : '新增楼层'" width="420px">
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑楼层' : '新增楼层'" width="480px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="楼层号" prop="floorNumber"><el-input-number v-model="form.floorNumber" :min="1" /></el-form-item>
         <el-form-item label="名称"><el-input v-model="form.floorName" /></el-form-item>
@@ -70,6 +75,8 @@ import { listFloors, createFloor, updateFloor, deleteFloor } from '@/api/floor'
 import type { Building, Floor } from '@/api/types'
 import { BUILDING_STATUS, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
+import { ArrowDown } from '@element-plus/icons-vue'
+import DataView from '@/components/layout/DataView.vue'
 
 const router = useRouter()
 
