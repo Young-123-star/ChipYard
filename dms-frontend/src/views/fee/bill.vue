@@ -1,41 +1,31 @@
 <template>
-  <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="search">
-      <el-form-item label="楼栋">
-        <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 150px" @change="onBuildingFilterChange">
-          <el-option v-for="item in buildings" :key="item.id" :label="item.buildingName" :value="item.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="楼层">
-        <el-select v-model="query.floorId" placeholder="全部" clearable filterable :disabled="!query.buildingId" style="width: 120px" @change="onFloorFilterChange">
-          <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="房间">
-        <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="search">
-          <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="账期">
-        <el-date-picker v-model="query.period" type="month" value-format="YYYY-MM" placeholder="全部" clearable
-          style="width: 140px" @change="search" />
-      </el-form-item>
-      <el-form-item label="状态">
-        <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px" @change="search">
-          <el-option v-for="s in BILL_STATUS" :key="s.value" :label="s.label" :value="s.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item label="类型">
-        <el-select v-model="query.billType" placeholder="全部" clearable style="width: 110px" @change="search">
-          <el-option v-for="t in BILL_TYPE" :key="t.value" :label="t.label" :value="t.value" />
-        </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="search">查询</el-button>
-        <el-button type="primary" @click="openGenerate">生成账单</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-      </el-form-item>
-    </el-form>
+  <DataView title="账单列表" :total="total" collapsible>
+    <template #filters>
+      <el-select v-model="query.buildingId" placeholder="楼栋" clearable filterable style="width: 150px" @change="onBuildingFilterChange">
+        <el-option v-for="item in buildings" :key="item.id" :label="item.buildingName" :value="item.id" />
+      </el-select>
+      <el-select v-model="query.floorId" placeholder="楼层" clearable filterable :disabled="!query.buildingId" style="width: 120px" @change="onFloorFilterChange">
+        <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+      </el-select>
+      <el-select v-model="query.roomId" placeholder="房间" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="search">
+        <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
+      </el-select>
+      <el-date-picker v-model="query.period" type="month" value-format="YYYY-MM" placeholder="账期" clearable
+        style="width: 140px" @change="search" />
+      <el-select v-model="query.status" placeholder="状态" clearable style="width: 120px" @change="search">
+        <el-option v-for="s in BILL_STATUS" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
+      <el-select v-model="query.billType" placeholder="类型" clearable style="width: 110px" @change="search">
+        <el-option v-for="t in BILL_TYPE" :key="t.value" :label="t.label" :value="t.value" />
+      </el-select>
+    </template>
+    <template #filter-actions>
+      <el-button @click="search">查询</el-button>
+    </template>
+    <template #actions>
+      <el-button type="primary" @click="openGenerate">生成账单</el-button>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
+    </template>
 
     <div style="margin-bottom: 10px; color: var(--dms-ink-2); font-size: 13px">
       共 {{ total }} 张 · 本页：已缴 {{ paidCount }} · 未缴 {{ unpaidCount }} · 金额合计 ¥{{ amountSum.toFixed(2) }}
@@ -44,7 +34,7 @@
     <el-table v-loading="loading" :data="list">
       <el-table-column prop="billNo" label="账单号" width="170" />
       <el-table-column label="居住人" width="150">
-        <template #default="{ row }">{{ row.residentName }}（{{ row.employeeNo }}）</template>
+        <template #default="{ row }"><div class="cell-main">{{ row.residentName }}</div><div class="cell-sub">{{ row.employeeNo }}</div></template>
       </el-table-column>
       <el-table-column label="房间" width="110">
         <template #default="{ row }">{{ row.roomNumber ?? '-' }}</template>
@@ -72,53 +62,56 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination style="margin-top: 12px; justify-content: flex-end"
-      layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
-      @current-change="onPageChange" />
+    <template #pagination>
+      <el-pagination layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
+        @current-change="onPageChange" />
+    </template>
+  </DataView>
 
-    <!-- 生成账单 -->
-    <el-dialog v-model="genVisible" title="生成账单" width="420px">
-      <el-form label-width="90px">
-        <el-form-item label="账期">
-          <el-date-picker v-model="genPeriod" type="month" value-format="YYYY-MM" placeholder="选择账期" style="width: 100%" />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="genVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="onGenerate">生成</el-button>
-      </template>
-    </el-dialog>
+  <!-- 生成账单 -->
+  <el-dialog v-model="genVisible" title="生成账单" width="480px">
+    <el-form label-width="90px">
+      <el-form-item label="账期">
+        <el-date-picker v-model="genPeriod" type="month" value-format="YYYY-MM" placeholder="选择账期" style="width: 100%" />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="genVisible = false">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="onGenerate">生成</el-button>
+    </template>
+  </el-dialog>
 
-    <!-- 缴费 -->
-    <el-dialog v-model="payVisible" title="缴费" width="420px">
-      <el-descriptions :column="1" border size="small" style="margin-bottom: 14px">
-        <el-descriptions-item label="居住人">{{ current?.residentName }}（{{ current?.employeeNo }}）</el-descriptions-item>
-        <el-descriptions-item label="账期">{{ current?.period }}</el-descriptions-item>
-        <el-descriptions-item label="金额">¥{{ Number(current?.amount ?? 0).toFixed(2) }}</el-descriptions-item>
-      </el-descriptions>
-      <el-form label-width="90px">
-        <el-form-item label="缴费方式">
-          <el-select v-model="payMethod" style="width: 100%">
-            <el-option v-for="m in PAY_METHOD" :key="m.value" :label="m.label" :value="m.value" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="payVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="onPay">确认缴费</el-button>
-      </template>
-    </el-dialog>
-  </el-card>
+  <!-- 缴费 -->
+  <el-dialog v-model="payVisible" title="缴费" width="480px">
+    <el-descriptions :column="1" border size="small" style="margin-bottom: 14px">
+      <el-descriptions-item label="居住人">{{ current?.residentName }}（{{ current?.employeeNo }}）</el-descriptions-item>
+      <el-descriptions-item label="账期">{{ current?.period }}</el-descriptions-item>
+      <el-descriptions-item label="金额">¥{{ Number(current?.amount ?? 0).toFixed(2) }}</el-descriptions-item>
+    </el-descriptions>
+    <el-form label-width="90px">
+      <el-form-item label="缴费方式">
+        <el-select v-model="payMethod" style="width: 100%">
+          <el-option v-for="m in PAY_METHOD" :key="m.value" :label="m.label" :value="m.value" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="payVisible = false">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="onPay">确认缴费</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { pageBills, generateBills, payBill, voidBill } from '@/api/fee'
 import type { FeeBill } from '@/api/types'
 import { BILL_STATUS, BILL_TYPE, PAY_METHOD, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
 import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
+import DataView from '@/components/layout/DataView.vue'
 
 const loading = ref(false)
 const exporting = ref(false)
@@ -126,6 +119,11 @@ const saving = ref(false)
 const list = ref<FeeBill[]>([])
 const total = ref(0)
 const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomId: undefined as number | undefined, period: undefined as string | undefined, status: undefined as number | undefined, billType: undefined as number | undefined, page: 1, size: 10 })
+
+// 支持从仪表盘带 status 跳转进来时初始化筛选
+const route = useRoute()
+const initStatus = Number(route.query.status)
+if (route.query.status !== undefined && BILL_STATUS.some(s => s.value === initStatus)) query.status = initStatus
 
 const paidCount = computed(() => list.value.filter((b) => b.status === 2).length)
 const unpaidCount = computed(() => list.value.filter((b) => b.status === 1).length)

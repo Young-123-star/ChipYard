@@ -1,37 +1,44 @@
 <template>
-  <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="search">
-      <el-form-item label="楼栋">
+  <DataView title="维修工单" :total="total" collapsible>
+    <template #filters>
+      <div class="filter-item">
+        <span class="filter-item__label">楼栋</span>
         <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 150px" @change="onQueryBuildingChange">
           <el-option v-for="item in queryBuildings" :key="item.id" :label="item.buildingName" :value="item.id" />
         </el-select>
-      </el-form-item>
-      <el-form-item label="楼层">
+      </div>
+      <div class="filter-item">
+        <span class="filter-item__label">楼层</span>
         <el-select v-model="query.floorId" placeholder="全部" clearable filterable :disabled="!query.buildingId" style="width: 120px" @change="onQueryFloorChange">
           <el-option v-for="item in queryFloors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
         </el-select>
-      </el-form-item>
-      <el-form-item label="房间">
+      </div>
+      <div class="filter-item">
+        <span class="filter-item__label">房间</span>
         <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="search">
           <el-option v-for="item in queryRooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
         </el-select>
-      </el-form-item>
-      <el-form-item label="状态">
+      </div>
+      <div class="filter-item">
+        <span class="filter-item__label">状态</span>
         <el-select v-model="query.status" placeholder="全部" clearable style="width: 130px" @change="search">
           <el-option v-for="s in REPAIR_STATUS" :key="s.value" :label="s.label" :value="s.value" />
         </el-select>
-      </el-form-item>
-      <el-form-item label="紧急程度">
+      </div>
+      <div class="filter-item">
+        <span class="filter-item__label">紧急程度</span>
         <el-select v-model="query.priority" placeholder="全部" clearable style="width: 130px" @change="search">
           <el-option v-for="p in REPAIR_PRIORITY" :key="p.value" :label="p.label" :value="p.value" />
         </el-select>
-      </el-form-item>
-      <el-form-item>
-        <el-button @click="search">查询</el-button>
-        <el-button type="primary" @click="openCreate">新建工单</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-      </el-form-item>
-    </el-form>
+      </div>
+    </template>
+    <template #filter-actions>
+      <el-button @click="search">查询</el-button>
+    </template>
+    <template #actions>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
+      <el-button type="primary" @click="openCreate">新建工单</el-button>
+    </template>
 
     <el-table v-loading="loading" :data="list">
       <el-table-column prop="orderNo" label="工单号" width="150" />
@@ -47,7 +54,7 @@
         <template #default="{ row }"><el-tag :type="tagTypeOf(REPAIR_STATUS, row.status)">{{ labelOf(REPAIR_STATUS, row.status) }}</el-tag></template>
       </el-table-column>
       <el-table-column prop="handler" label="处理人" width="120" />
-      <el-table-column label="操作" width="180">
+      <el-table-column label="操作" width="120">
         <template #default="{ row }">
           <el-button v-if="row.status === 1" link type="primary" @click="openAccept(row)">受理</el-button>
           <el-button v-if="row.status === 2" link type="success" @click="openComplete(row)">完成</el-button>
@@ -57,58 +64,61 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination style="margin-top: 12px; justify-content: flex-end"
-      layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
-      @current-change="onPageChange" />
+    <template #pagination>
+      <el-pagination layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
+        @current-change="onPageChange" />
+    </template>
+  </DataView>
 
-    <el-dialog v-model="createVisible" title="新建维修工单" width="520px">
-      <el-form ref="createRef" :model="createForm" :rules="createRules" label-width="90px">
-        <el-form-item label="楼栋">
-          <el-select v-model="createLocation.buildingId" filterable style="width: 100%" @change="onCreateBuildingChange">
-            <el-option v-for="item in formBuildings" :key="item.id" :label="item.buildingName" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="楼层">
-          <el-select v-model="createLocation.floorId" filterable :disabled="!createLocation.buildingId" style="width: 100%" @change="onCreateFloorChange">
-            <el-option v-for="item in formFloors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="房间" prop="roomId">
-          <el-select v-model="createForm.roomId" filterable :disabled="!createLocation.floorId" style="width: 100%">
-            <el-option v-for="item in formRooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="报修人"><el-input v-model="createForm.residentCode" placeholder="工号或ID" style="width: 100%" /></el-form-item>
-        <el-form-item label="故障简述" prop="title"><el-input v-model="createForm.title" /></el-form-item>
-        <el-form-item label="紧急程度"><el-select v-model="createForm.priority" style="width: 100%"><el-option v-for="p in REPAIR_PRIORITY" :key="p.value" :label="p.label" :value="p.value" /></el-select></el-form-item>
-        <el-form-item label="描述"><el-input v-model="createForm.description" type="textarea" /></el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="createVisible = false">取消</el-button>
-        <el-button type="primary" :loading="saving" @click="onCreate">保存</el-button>
-      </template>
-    </el-dialog>
+  <el-dialog v-model="createVisible" title="新建维修工单" width="480px">
+    <el-form ref="createRef" :model="createForm" :rules="createRules" label-width="90px">
+      <el-form-item label="楼栋">
+        <el-select v-model="createLocation.buildingId" filterable style="width: 100%" @change="onCreateBuildingChange">
+          <el-option v-for="item in formBuildings" :key="item.id" :label="item.buildingName" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="楼层">
+        <el-select v-model="createLocation.floorId" filterable :disabled="!createLocation.buildingId" style="width: 100%" @change="onCreateFloorChange">
+          <el-option v-for="item in formFloors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="房间" prop="roomId">
+        <el-select v-model="createForm.roomId" filterable :disabled="!createLocation.floorId" style="width: 100%">
+          <el-option v-for="item in formRooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
+        </el-select>
+      </el-form-item>
+      <el-form-item label="报修人"><el-input v-model="createForm.residentCode" placeholder="工号或ID" style="width: 100%" /></el-form-item>
+      <el-form-item label="故障简述" prop="title"><el-input v-model="createForm.title" /></el-form-item>
+      <el-form-item label="紧急程度"><el-select v-model="createForm.priority" style="width: 100%"><el-option v-for="p in REPAIR_PRIORITY" :key="p.value" :label="p.label" :value="p.value" /></el-select></el-form-item>
+      <el-form-item label="描述"><el-input v-model="createForm.description" type="textarea" /></el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="createVisible = false">取消</el-button>
+      <el-button type="primary" :loading="saving" @click="onCreate">保存</el-button>
+    </template>
+  </el-dialog>
 
-    <el-dialog v-model="acceptVisible" title="受理工单" width="420px">
-      <el-input v-model="handler" placeholder="处理人" />
-      <template #footer><el-button @click="acceptVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="onAccept">受理</el-button></template>
-    </el-dialog>
+  <el-dialog v-model="acceptVisible" title="受理工单" width="480px">
+    <el-input v-model="handler" placeholder="处理人" />
+    <template #footer><el-button @click="acceptVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="onAccept">受理</el-button></template>
+  </el-dialog>
 
-    <el-dialog v-model="completeVisible" title="完成工单" width="460px">
-      <el-input v-model="result" type="textarea" placeholder="处理结果" />
-      <template #footer><el-button @click="completeVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="onComplete">完成</el-button></template>
-    </el-dialog>
-  </el-card>
+  <el-dialog v-model="completeVisible" title="完成工单" width="480px">
+    <el-input v-model="result" type="textarea" placeholder="处理结果" />
+    <template #footer><el-button @click="completeVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="onComplete">完成</el-button></template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { pageRepairOrders, createRepairOrder, acceptRepairOrder, completeRepairOrder, cancelRepairOrder } from '@/api/repair'
 import type { RepairOrder } from '@/api/types'
 import { REPAIR_STATUS, REPAIR_PRIORITY, labelOf, tagTypeOf } from '@/utils/dict'
 import { exportLedger } from '@/api/export'
 import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
+import DataView from '@/components/layout/DataView.vue'
 
 const loading = ref(false)
 const exporting = ref(false)
@@ -116,6 +126,11 @@ const saving = ref(false)
 const list = ref<RepairOrder[]>([])
 const total = ref(0)
 const query = reactive({ buildingId: undefined as number | undefined, floorId: undefined as number | undefined, roomId: undefined as number | undefined, status: undefined as number | undefined, priority: undefined as number | undefined, page: 1, size: 10 })
+
+// 支持从仪表盘带 status 跳转进来时初始化筛选
+const route = useRoute()
+const initStatus = Number(route.query.status)
+if (route.query.status !== undefined && REPAIR_STATUS.some(s => s.value === initStatus)) query.status = initStatus
 
 const createVisible = ref(false)
 const createRef = ref<FormInstance>()
@@ -202,3 +217,8 @@ async function onExport() {
 
 onMounted(() => { loadQueryBuildings(); loadFormBuildings(); reload() })
 </script>
+
+<style scoped>
+.filter-item { display: flex; align-items: center; gap: 6px; }
+.filter-item__label { color: var(--dms-ink-2); font-size: 13px; white-space: nowrap; }
+</style>

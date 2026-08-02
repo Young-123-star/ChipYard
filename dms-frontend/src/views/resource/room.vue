@@ -1,37 +1,30 @@
 <template>
-  <div>
-    <el-card shadow="never">
-      <el-form :inline="true" :model="query" @keyup.enter="search">
-        <el-form-item label="楼栋">
-          <el-select v-model="query.buildingId" placeholder="全部" clearable style="width: 160px" @change="onBuildingChange">
-            <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="楼层">
-          <el-select v-model="query.floorId" placeholder="全部" clearable style="width: 120px">
-            <el-option v-for="f in floors" :key="f.id" :label="f.floorName || f.floorNumber" :value="f.id" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="房型">
-          <el-select v-model="query.roomType" placeholder="全部" clearable style="width: 120px">
-            <el-option v-for="t in ROOM_TYPE" :key="t.value" :label="t.label" :value="t.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="query.status" placeholder="全部" clearable style="width: 120px">
-            <el-option v-for="s in ROOM_STATUS" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button @click="search">查询</el-button>
-          <el-button type="primary" @click="openCreate">新增</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button>
-        </el-form-item>
-      </el-form>
+  <DataView title="房间列表" :total="total" collapsible>
+    <template #filters>
+      <el-select v-model="query.buildingId" placeholder="楼栋" clearable style="width: 160px" @change="onBuildingChange">
+        <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
+      </el-select>
+      <el-select v-model="query.floorId" placeholder="楼层" clearable style="width: 120px">
+        <el-option v-for="f in floors" :key="f.id" :label="f.floorName || f.floorNumber" :value="f.id" />
+      </el-select>
+      <el-select v-model="query.roomType" placeholder="房型" clearable style="width: 120px">
+        <el-option v-for="t in ROOM_TYPE" :key="t.value" :label="t.label" :value="t.value" />
+      </el-select>
+      <el-select v-model="query.status" placeholder="状态" clearable style="width: 120px">
+        <el-option v-for="s in ROOM_STATUS" :key="s.value" :label="s.label" :value="s.value" />
+      </el-select>
+    </template>
+    <template #filter-actions>
+      <el-button type="primary" @click="search">查询</el-button>
+    </template>
+    <template #actions>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
+      <el-button type="primary" @click="openCreate">新增</el-button>
+    </template>
 
-      <div class="summary-bar">
-        当前筛选：共 <b>{{ summary.total }}</b> 间 · 床位 <b>{{ summary.totalBeds }}</b> · 已住 <b>{{ summary.occupiedBeds }}</b> · 空闲 <b class="free">{{ summary.freeBeds }}</b>
-      </div>
+    <div class="summary-bar">
+      当前筛选：共 <b>{{ summary.total }}</b> 间 · 床位 <b>{{ summary.totalBeds }}</b> · 已住 <b>{{ summary.occupiedBeds }}</b> · 空闲 <b class="free">{{ summary.freeBeds }}</b>
+    </div>
 
       <el-table :data="list" v-loading="loading" border @expand-change="onExpand">
         <el-table-column type="expand">
@@ -86,25 +79,33 @@
             <el-tag :type="tagTypeOf(ROOM_STATUS, row.status)">{{ labelOf(ROOM_STATUS, row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="225">
+        <el-table-column label="操作" width="200">
           <template #default="{ row }">
+            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
             <el-button v-if="row.status !== 3" link type="warning" @click="markRepair(row, true)">标记维修</el-button>
             <el-button v-else link type="success" @click="markRepair(row, false)">恢复空闲</el-button>
-            <el-button link type="primary" @click="openEdit(row)">编辑</el-button>
-            <el-button link type="danger" @click="onDelete(row)">删除</el-button>
+            <el-dropdown trigger="click">
+              <el-button link type="primary">更多<el-icon><ArrowDown /></el-icon></el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="onDelete(row)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </template>
         </el-table-column>
       </el-table>
 
+    <template #pagination>
       <el-pagination
-        style="margin-top: 12px; justify-content: flex-end"
         layout="total, prev, pager, next"
         :total="total" :current-page="query.page" :page-size="query.size"
         @current-change="(p: number) => { query.page = p; reload() }"
       />
-    </el-card>
+    </template>
+  </DataView>
 
-    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑房间' : '新增房间'" width="620px">
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑房间' : '新增房间'" width="720px">
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="楼栋" prop="buildingId">
           <el-select v-model="form.buildingId" style="width: 100%" @change="onFormBuildingChange">
@@ -181,13 +182,13 @@
         <el-button type="primary" :loading="saving" @click="onSave">保存</el-button>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import { pageRooms, roomSummary, createRoom, updateRoom, deleteRoom } from '@/api/room'
 import { listBeds } from '@/api/bed'
 import type { Room, Bed, RoomSummary } from '@/api/types'
@@ -195,6 +196,7 @@ import { ROOM_TYPE, ROOM_STATUS, GENDER_LIMIT, BED_TYPE, BED_STATUS, ROOM_FACILI
 import { parseFacilities, parseFacilityRows, serializeFacilities, type FacilityRow } from '@/utils/facility'
 import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 import { exportLedger } from '@/api/export'
+import DataView from '@/components/layout/DataView.vue'
 
 type RoomRow = Room & { facilitiesList: string[] }
 
@@ -362,18 +364,19 @@ onMounted(async () => {
 
 <style scoped>
 .summary-bar {
-  margin-bottom: 12px;
+  margin: 4px 0 12px;
   padding: 9px 16px;
-  background: rgba(0, 113, 227, 0.06);
-  border: 1px solid rgba(0, 113, 227, 0.12);
+  background: var(--dms-accent-soft);
+  border: 1px solid var(--dms-hairline);
   border-radius: 10px;
   font-size: 13px;
   color: var(--dms-ink-2);
 }
 .summary-bar b { color: var(--dms-ink); font-weight: 700; margin: 0 2px; }
-.summary-bar b.free { color: #1d8a3e; }
+.summary-bar b.free { color: var(--dms-ok); }
 .fac-tag { margin-right: 4px; margin-bottom: 4px; }
 .fac-none { color: var(--dms-ink-2); }
+.el-dropdown { margin-left: 8px; vertical-align: middle; }
 .facility-editor { width: 100%; display: flex; flex-direction: column; gap: 10px; }
 .facility-row { display: grid; grid-template-columns: minmax(180px, 1fr) 130px 48px; align-items: center; gap: 10px; }
 .facility-name,

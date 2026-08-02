@@ -60,7 +60,7 @@
       </el-table>
     </el-card>
 
-    <el-dialog v-model="typeDialog" :title="typeForm.id ? '编辑字典类型' : '新增字典类型'" width="460px">
+    <el-dialog v-model="typeDialog" :title="typeForm.id ? '编辑字典类型' : '新增字典类型'" width="480px">
       <el-form :model="typeForm" label-width="90px">
         <el-form-item label="类型编码" required><el-input v-model="typeForm.dictType" :disabled="typeForm.systemFlag === 1" /></el-form-item>
         <el-form-item label="类型名称" required><el-input v-model="typeForm.dictName" /></el-form-item>
@@ -74,7 +74,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="itemDialog" :title="itemForm.id ? '编辑字典项' : '新增字典项'" width="520px">
+    <el-dialog v-model="itemDialog" :title="itemForm.id ? '编辑字典项' : '新增字典项'" width="480px">
       <el-form :model="itemForm" label-width="90px">
         <el-form-item label="所属类型"><el-input v-model="itemForm.dictType" disabled /></el-form-item>
         <el-form-item label="显示名称" required><el-input v-model="itemForm.dictLabel" /></el-form-item>
@@ -260,6 +260,8 @@ onMounted(loadTypes)
 .type-panel,
 .item-panel {
   min-height: 520px;
+  /* 原依赖 theme.css 的 .app-page hack 裁剪表格圆角，hack 删除后由页面自理 */
+  overflow: hidden;
 }
 @media (max-width: 1100px) {
   .dict-page { grid-template-columns: 1fr; }

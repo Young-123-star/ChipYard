@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DMS · 蓝色主题 3.0 预览 — 发丝边框 / 中性灰 / 紧凑密度</title>
+<style>
+  /* ============================================================
+     设计方向：Linear / Stripe 式「克制的现代 SaaS 后台」
+     - 发丝边框代替阴影（阴影只留给浮层）
+     - 中性灰做主角，品牌蓝只做点缀
+     - 数字 tabular-nums，紧凑密度（13px 基准 / 40px 行高）
+     - 浅色侧栏（深色文字），取消深蓝渐变
+     ============================================================ */
+  :root {
+    /* 品牌蓝（沿用 #2b5ce6，收缩使用范围） */
+    --accent: #2b5ce6;
+    --accent-hover: #2450c9;
+    --accent-soft: #eef3fe;
+    --accent-ink: #1e46b8;
+
+    /* 中性色阶（去蓝倾向的近白灰） */
+    --bg: #f7f7f8;            /* 内容区底 */
+    --surface: #ffffff;       /* 卡片/侧栏 */
+    --ink: #1a1d23;           /* 主文字（近黑中性） */
+    --ink-2: #5c6470;         /* 次文字 */
+    --ink-3: #9aa1ac;         /* 辅助/占位 */
+    --hairline: #e6e7ea;      /* 发丝边框 */
+    --hairline-soft: #efeff1; /* 更浅分隔 */
+    --hover: #f4f4f6;         /* 行/菜单 hover */
+
+    /* 圆角与阴影（阴影仅浮层） */
+    --radius: 10px;
+    --radius-ctl: 8px;
+    --shadow-pop: 0 4px 6px -1px rgba(16,18,24,.06), 0 12px 32px -4px rgba(16,18,24,.12);
+
+    /* 状态色（压低饱和，配浅底） */
+    --ok: #178a4c;   --ok-bg: #e8f5ec;
+    --warn: #b06c09; --warn-bg: #fdf3e0;
+    --bad: #cf3a32;  --bad-bg: #fdecea;
+    --info: #2f6fbe; --info-bg: #e9f1fb;
+
+    /* 密度 */
+    --row-h: 40px;
+    --fs: 13px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: auto; }
+  body {
+    font-family: -apple-system, "SF Pro SC", "PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+    font-size: var(--fs);
+    color: var(--ink);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+  /* ============ 视图切换条（仅预览用） ============ */
+  .preview-nav {
+    position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 99;
+    display: flex; gap: 2px; padding: 3px;
+    background: rgba(26,29,35,.92); backdrop-filter: blur(8px);
+    border-radius: 99px; box-shadow: var(--shadow-pop);
+  }
+  .preview-nav a {
+    padding: 6px 16px; border-radius: 99px; text-decoration: none;
+    color: rgba(255,255,255,.65); font-size: 12px; font-weight: 500;
+    transition: all .15s;
+  }
+  .preview-nav a:hover { color: #fff; background: rgba(255,255,255,.12); }
+  .preview-tag {
+    padding: 40px 0 0; text-align: center;
+    font-size: 12px; color: var(--ink-3); letter-spacing: .12em;
+  }
+  .preview-tag b { color: var(--ink-2); }
+
+  /* ============ 应用骨架 ============ */
+  .app { display: flex; min-height: 100vh; border-bottom: 1px solid var(--hairline); }
+
+  /* ---- 深色侧栏（近黑中性实色，品牌蓝只给选中项/logo） ---- */
+  .aside {
+    width: 216px; flex-shrink: 0;
+    background: #17191e;
+    border-right: 1px solid #101216;
+    padding: 0 10px 16px;
+    display: flex; flex-direction: column;
+    color: rgba(255,255,255,.62);
+  }
+  .brand {
+    height: 56px; display: flex; align-items: center; gap: 9px;
+    padding: 0 8px; font-size: 14px; font-weight: 650; letter-spacing: -.01em;
+    color: #fff;
+    border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 6px;
+  }
+  .brand .mark {
+    width: 26px; height: 26px; border-radius: 7px; flex: 0 0 26px;
+    background: var(--accent);
+    display: grid; place-items: center;
+    font-size: 10px; font-weight: 800; color: #fff;
+  }
+  .brand small { display: block; font-size: 10px; font-weight: 400; color: rgba(255,255,255,.38); }
+  .nav-label {
+    font-size: 10px; font-weight: 600; letter-spacing: .08em;
+    color: rgba(255,255,255,.34); padding: 14px 10px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 9px;
+    height: 34px; padding: 0 10px; margin-bottom: 1px;
+    border-radius: 7px; cursor: pointer;
+    font-size: 13px; color: rgba(255,255,255,.62);
+    transition: background .12s, color .12s;
+  }
+  .nav-item svg { width: 15px; height: 15px; stroke: currentColor; fill: none; stroke-width: 1.7; opacity: .85; }
+  .nav-item:hover { background: rgba(255,255,255,.07); color: #fff; }
+  .nav-item.active { background: rgba(43,92,230,.22); color: #a8c1ff; font-weight: 600; }
+  .nav-item.active svg { opacity: 1; }
+
+  /* ---- 主区 ---- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    height: 52px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px;
+    background: rgba(255,255,255,.85); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--hairline);
+    position: sticky; top: 0; z-index: 10;
+  }
+  .crumb { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-3); }
+  .crumb b { color: var(--ink); font-weight: 600; }
+  .crumb svg { width: 12px; height: 12px; stroke: var(--ink-3); fill: none; stroke-width: 2; }
+  .user {
+    display: flex; align-items: center; gap: 8px;
+    padding: 4px 10px 4px 4px; border-radius: 99px; cursor: pointer;
+    font-size: 12px; color: var(--ink-2);
+  }
+  .user:hover { background: var(--hover); }
+  .user .avatar {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent-ink);
+    display: grid; place-items: center; font-size: 11px; font-weight: 700;
+  }
+  .content { padding: 20px 24px 32px; max-width: 1200px; width: 100%; margin: 0 auto; }
+
+  /* ---- 页头 ---- */
+  .page-head { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 18px; }
+  .page-head h1 { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
+  .page-head .sub { margin-top: 4px; font-size: 12px; color: var(--ink-3); }
+
+  /* ---- 通用控件 ---- */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 32px; padding: 0 13px;
+    border-radius: var(--radius-ctl); border: 1px solid var(--hairline);
+    background: var(--surface); color: var(--ink);
+    font-size: 12.5px; font-weight: 500; cursor: pointer;
+    transition: all .12s;
+  }
+  .btn:hover { border-color: #d3d5da; background: var(--hover); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+  .btn svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2; }
+
+  .input {
+    height: 32px; padding: 0 11px; min-width: 150px;
+    border-radius: var(--radius-ctl); border: 1px solid var(--hairline);
+    background: var(--surface); font-size: 12.5px; color: var(--ink);
+    outline: none; transition: border .12s, box-shadow .12s;
+  }
+  .input::placeholder { color: var(--ink-3); }
+  .input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(43,92,230,.12); }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 5px;
+    height: 22px; padding: 0 8px;
+    border-radius: 6px; font-size: 11.5px; font-weight: 500;
+  }
+  .tag::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .tag.ok { color: var(--ok); background: var(--ok-bg); }
+  .tag.warn { color: var(--warn); background: var(--warn-bg); }
+  .tag.bad { color: var(--bad); background: var(--bad-bg); }
+  .tag.info { color: var(--info); background: var(--info-bg); }
+  .tag.mute { color: var(--ink-2); background: var(--hover); }
+
+  /* ---- 卡片（发丝边框，无阴影） ---- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+  }
+
+  /* ============ 视图一：仪表盘 ============ */
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 12px; }
+  .stat { padding: 16px 18px 14px; }
+  .stat .k { font-size: 12px; color: var(--ink-2); display: flex; justify-content: space-between; align-items: center; }
+  .stat .v { margin-top: 6px; font-size: 26px; font-weight: 700; letter-spacing: -.03em; }
+  .stat .v small { font-size: 13px; font-weight: 500; color: var(--ink-3); margin-left: 2px; }
+  .stat .delta { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 5px; }
+  .stat .delta.up { color: var(--ok); background: var(--ok-bg); }
+  .stat .delta.down { color: var(--bad); background: var(--bad-bg); }
+  .stat .bar { margin-top: 10px; height: 4px; border-radius: 2px; background: var(--hairline-soft); overflow: hidden; }
+  .stat .bar i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+
+  .grid-2 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; }
+  .panel { padding: 16px 18px; }
+  .panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .panel-head h3 { font-size: 13.5px; font-weight: 650; }
+  .panel-head .more { font-size: 12px; color: var(--ink-3); cursor: pointer; }
+  .panel-head .more:hover { color: var(--accent); }
+
+  /* 迷你柱状图 */
+  .chart { display: flex; align-items: flex-end; gap: 10px; height: 150px; padding-top: 6px; }
+  .chart .col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+  .chart .col .b { width: 100%; max-width: 34px; border-radius: 4px 4px 2px 2px; background: var(--accent-soft); position: relative; }
+  .chart .col .b i { position: absolute; inset: auto 0 0 0; border-radius: 4px 4px 2px 2px; background: var(--accent); }
+  .chart .col .x { font-size: 10.5px; color: var(--ink-3); }
+
+  .todo-list { display: flex; flex-direction: column; }
+  .todo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--hairline-soft);
+    font-size: 12.5px; cursor: pointer;
+  }
+  .todo:last-child { border-bottom: 0; }
+  .todo:hover .t { color: var(--accent-ink); }
+  .todo .t { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .todo time { font-size: 11px; color: var(--ink-3); }
+
+  /* ============ 视图二：列表页（费用账单） ============ */
+  .filter-bar {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  .filter-bar .spacer { flex: 1; }
+  .table-wrap { overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    height: 36px; padding: 0 14px;
+    font-size: 11.5px; font-weight: 600; color: var(--ink-3); text-align: left;
+    background: #fafafa; border-bottom: 1px solid var(--hairline);
+    white-space: nowrap;
+  }
+  tbody td {
+    height: var(--row-h); padding: 0 14px;
+    font-size: 12.5px; border-bottom: 1px solid var(--hairline-soft);
+    white-space: nowrap;
+  }
+  tbody tr { transition: background .1s; }
+  tbody tr:hover { background: #fafbfd; }
+  tbody tr:last-child td { border-bottom: 0; }
+  td .cell-main { font-weight: 550; }
+  td .cell-sub { font-size: 11px; color: var(--ink-3); }
+  td.amount { text-align: right; font-weight: 600; }
+  td.amount.neg { color: var(--bad); }
+  th.r, td.r { text-align: right; }
+  .row-act { display: flex; gap: 2px; justify-content: flex-end; opacity: 0; transition: opacity .12s; }
+  tr:hover .row-act { opacity: 1; }
+  .row-act span {
+    padding: 3px 8px; border-radius: 5px; font-size: 12px; cursor: pointer; color: var(--ink-2);
+  }
+  .row-act span:hover { background: var(--accent-soft); color: var(--accent-ink); }
+  .table-foot {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; border-top: 1px solid var(--hairline);
+    font-size: 12px; color: var(--ink-2);
+  }
+  .pager { display: flex; gap: 4px; }
+  .pager span {
+    min-width: 26px; height: 26px; padding: 0 6px;
+    display: grid; place-items: center;
+    border-radius: 6px; font-size: 12px; cursor: pointer; color: var(--ink-2);
+  }
+  .pager span:hover { background: var(--hover); }
+  .pager span.cur { background: var(--accent); color: #fff; font-weight: 600; }
+
+  /* ============ 视图三：房间看板 ============ */
+  .board-head {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 18px; margin-bottom: 12px;
+  }
+  .board-head .bh-main { min-width: 200px; }
+  .board-head h2 { font-size: 16px; font-weight: 700; letter-spacing: -.01em; }
+  .board-head .addr { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+  .board-head .kv { display: flex; gap: 24px; margin-left: auto; }
+  .board-head .kv .item .n { font-size: 18px; font-weight: 700; }
+  .board-head .kv .item .l { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+  .legend { display: flex; gap: 14px; margin: 0 2px 10px; font-size: 11.5px; color: var(--ink-2); }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2.5px; margin-right: 5px; }
+  .floor-label {
+    display: flex; align-items: center; gap: 10px;
+    margin: 16px 2px 8px; font-size: 12px; font-weight: 650; color: var(--ink-2);
+  }
+  .floor-label::after { content: ""; flex: 1; height: 1px; background: var(--hairline); }
+  .room-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .room {
+    position: relative; padding: 12px 14px 11px; cursor: pointer;
+    transition: border-color .12s, transform .12s;
+  }
+  .room:hover { border-color: #c9ccd2; }
+  .room::before {
+    content: ""; position: absolute; left: 0; top: 12px; bottom: 12px;
+    width: 3px; border-radius: 0 2px 2px 0;
+  }
+  .room.s-ok::before { background: var(--ok); }
+  .room.s-warn::before { background: var(--warn); }
+  .room.s-bad::before { background: var(--bad); }
+  .room.s-mute::before { background: #c9ccd2; }
+  .room .top { display: flex; justify-content: space-between; align-items: center; }
+  .room .no { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
+  .room .meta { margin-top: 3px; font-size: 11.5px; color: var(--ink-3); }
+  .room .beds { display: flex; gap: 4px; margin-top: 10px; }
+  .room .beds i {
+    flex: 1; height: 5px; border-radius: 2.5px; background: var(--hairline);
+  }
+  .room .beds i.used { background: var(--accent); }
+  .room .beds i.bad { background: var(--bad); opacity: .55; }
+
+  @media (max-width: 900px) {
+    .stat-row, .room-grid { grid-template-columns: repeat(2, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .aside { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="preview-nav">
+  <a href="#v-dashboard">仪表盘</a>
+  <a href="#v-list">列表页 · 费用账单</a>
+  <a href="#v-board">房间看板</a>
+</nav>
+
+<!-- ================= 视图一：仪表盘 ================= -->
+<section class="app" id="v-dashboard">
+  <aside class="aside">
+    <div class="brand"><span class="mark">宿</span><span>宿舍管理系统<small>DORM MANAGEMENT</small></span></div>
+    <div class="nav-label">总览</div>
+    <div class="nav-item active"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>工作台</div>
+    <div class="nav-label">资源</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6"/></svg>楼栋管理</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 9h16M4 15h16"/></svg>楼层管理</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>房间管理</div>
+    <div class="nav-label">费用</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M9 14l6-6M9.5 9h.01M14.5 14h.01M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16l-3-2-2 2-2-2-2 2-2-2-3 2z"/></svg>费用账单</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>水电抄表</div>
+    <div class="nav-label">服务</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.8 2.8-2.1-.7-.7-2.1z"/></svg>维修工单</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">总览 <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>工作台</b></div>
+      <div class="user"><span class="avatar">管</span>系统管理员</div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <h1>工作台</h1>
+          <div class="sub">2026 年 8 月 2 日 · 星期日 · 数据更新于 10 分钟前</div>
+        </div>
+        <button class="btn primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新建入住</button>
+      </div>
+
+      <div class="stat-row">
+        <div class="card stat">
+          <div class="k">床位入住率 <span class="delta up num">+1.2%</span></div>
+          <div class="v num">86.4<small>%</small></div>
+          <div class="bar"><i style="width:86.4%"></i></div>
+        </div>
+        <div class="card stat">
+          <div class="k">在住人数 <span class="delta up num">+3</span></div>
+          <div class="v num">312<small>/ 361</small></div>
+          <div class="bar"><i style="width:86%"></i></div>
+        </div>
+        <div class="card stat">
+          <div class="k">本月待收费用 <span class="delta down num">-8.1%</span></div>
+          <div class="v num">¥42,380</div>
+          <div class="bar"><i style="width:62%;background:var(--warn)"></i></div>
+        </div>
+        <div class="card stat">
+          <div class="k">待处理工单</div>
+          <div class="v num">7<small>单 · 2 单加急</small></div>
+          <div class="bar"><i style="width:23%;background:var(--bad)"></i></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card panel">
+          <div class="panel-head"><h3>近 6 个月费用收缴</h3><span class="more">查看报表 →</span></div>
+          <div class="chart">
+            <div class="col"><div class="b" style="height:62%"><i style="height:78%"></i></div><span class="x">3月</span></div>
+            <div class="col"><div class="b" style="height:70%"><i style="height:84%"></i></div><span class="x">4月</span></div>
+            <div class="col"><div class="b" style="height:66%"><i style="height:72%"></i></div><span class="x">5月</span></div>
+            <div class="col"><div class="b" style="height:78%"><i style="height:90%"></i></div><span class="x">6月</span></div>
+            <div class="col"><div class="b" style="height:74%"><i style="height:81%"></i></div><span class="x">7月</span></div>
+            <div class="col"><div class="b" style="height:82%"><i style="height:64%"></i></div><span class="x">8月</span></div>
+          </div>
+        </div>
+        <div class="card panel">
+          <div class="panel-head"><h3>待办事项</h3><span class="more">全部 →</span></div>
+          <div class="todo-list">
+            <div class="todo"><span class="tag bad">加急</span><span class="t">A 栋 304 卫生间漏水报修</span><time>10:24</time></div>
+            <div class="todo"><span class="tag warn">待审</span><span class="t">张伟的入住申请待审批</span><time>09:51</time></div>
+            <div class="todo"><span class="tag info">抄表</span><span class="t">B 栋 7 月水电抄表待确认</span><time>昨天</time></div>
+            <div class="todo"><span class="tag mute">退宿</span><span class="t">李芳退宿结算单待财务复核</span><time>昨天</time></div>
+            <div class="todo"><span class="tag ok">巡检</span><span class="t">C 栋消防设施月度巡检已完成</span><time>2 天前</time></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="preview-tag">视图二 · <b>列表页（费用账单）</b> — 紧凑密度 / 行内快捷操作 hover 显现 / 金额 tabular-nums</div>
+
+<!-- ================= 视图二：列表页 ================= -->
+<section class="app" id="v-list" style="min-height:auto">
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">费用 <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>费用账单</b></div>
+      <div class="user"><span class="avatar">管</span>系统管理员</div>
+    </header>
+    <div class="content">
+      <div class="page-head">
+        <div>
+          <h1>费用账单</h1>
+          <div class="sub">2026 年 7 月账期 · 共 328 笔 · 待收 <b class="num" style="color:var(--warn)">¥42,380.00</b></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>导出</button>
+          <button class="btn primary"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>生成账单</button>
+        </div>
+      </div>
+
+      <div class="card filter-bar">
+        <input class="input" placeholder="搜索房号 / 姓名" />
+        <input class="input" placeholder="账期：2026-07" style="min-width:120px" />
+        <input class="input" placeholder="状态：全部" style="min-width:110px" />
+        <button class="btn">重置</button>
+        <div class="spacer"></div>
+        <button class="btn"><svg viewBox="0 0 24 24"><path d="M4 6h16M7 12h10M10 18h4"/></svg>筛选</button>
+        <button class="btn"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>列设置</button>
+      </div>
+
+      <div class="card table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>账单号</th><th>房间 / 住户</th><th>费用类型</th><th>账期</th>
+              <th class="r">金额</th><th>状态</th><th>创建时间</th><th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="num" style="color:var(--ink-3)">B202607-0101</td>
+              <td><div class="cell-main">A101 · 王强</div><div class="cell-sub">双人间 1/2 床</div></td>
+              <td>住宿费</td><td class="num">2026-07</td>
+              <td class="amount num">¥650.00</td>
+              <td><span class="tag ok">已缴清</span></td>
+              <td class="num" style="color:var(--ink-3)">07-01 09:12</td>
+              <td><div class="row-act"><span>详情</span><span>收据</span></div></td>
+            </tr>
+            <tr>
+              <td class="num" style="color:var(--ink-3)">B202607-0102</td>
+              <td><div class="cell-main">A102 · 陈静</div><div class="cell-sub">双人间 2/2 床</div></td>
+              <td>水电费</td><td class="num">2026-07</td>
+              <td class="amount num">¥86.40</td>
+              <td><span class="tag warn">待缴费</span></td>
+              <td class="num" style="color:var(--ink-3)">07-01 09:12</td>
+              <td><div class="row-act"><span>催缴</span><span>详情</span></div></td>
+            </tr>
+            <tr>
+              <td class="num" style="color:var(--ink-3)">B202607-0201</td>
+              <td><div class="cell-main">A201 · 刘洋</div><div class="cell-sub">四人间 3/4 床</div></td>
+              <td>住宿费</td><td class="num">2026-07</td>
+              <td class="amount num">¥520.00</td>
+              <td><span class="tag bad">已逾期</span></td>
+              <td class="num" style="color:var(--ink-3)">07-01 09:12</td>
+              <td><div class="row-act"><span>催缴</span><span>详情</span></div></td>
+            </tr>
+            <tr>
+              <td class="num" style="color:var(--ink-3)">B202607-0202</td>
+              <td><div class="cell-main">A202 · 赵敏</div><div class="cell-sub">双人间 1/2 床</div></td>
+              <td>水电费</td><td class="num">2026-07</td>
+              <td class="amount num">¥112.75</td>
+              <td><span class="tag warn">待缴费</span></td>
+              <td class="num" style="color:var(--ink-3)">07-01 09:12</td>
+              <td><div class="row-act"><span>催缴</span><span>详情</span></div></td>
+            </tr>
+            <tr>
+              <td class="num" style="color:var(--ink-3)">B202606-0305</td>
+              <td><div class="cell-main">B305 · 孙磊</div><div class="cell-sub">单人间</div></td>
+              <td>退宿结算</td><td class="num">2026-06</td>
+              <td class="amount neg num">-¥230.00</td>
+              <td><span class="tag info">退款中</span></td>
+              <td class="num" style="color:var(--ink-3)">06-28 16:40</td>
+              <td><div class="row-act"><span>详情</span></div></td>
+            </tr>
+            <tr>
+              <td class="num" style="color:var(--ink-3)">B202607-0312</td>
+              <td><div class="cell-main">B312 · 周杰</div><div class="cell-sub">双人间 2/2 床</div></td>
+              <td>住宿费</td><td class="num">2026-07</td>
+              <td class="amount num">¥650.00</td>
+              <td><span class="tag mute">挂账</span></td>
+              <td class="num" style="color:var(--ink-3)">07-01 09:12</td>
+              <td><div class="row-act"><span>核销</span><span>详情</span></div></td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="table-foot">
+          <span>共 <b class="num">328</b> 条 · 已选 0 条</span>
+          <div class="pager num"><span>‹</span><span class="cur">1</span><span>2</span><span>3</span><span>…</span><span>55</span><span>›</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="preview-tag">视图三 · <b>房间状态看板</b> — 左侧状态色条 + 床位占用条，卡片零阴影</div>
+
+<!-- ================= 视图三：房间看板 ================= -->
+<section class="app" id="v-board" style="min-height:auto">
+  <div class="main">
+    <header class="topbar">
+      <div class="crumb">资源 <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> 房间管理 <svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg> <b>状态看板</b></div>
+      <div class="user"><span class="avatar">管</span>系统管理员</div>
+    </header>
+    <div class="content">
+      <div class="card board-head">
+        <div class="bh-main">
+          <h2>A 栋员工宿舍</h2>
+          <div class="addr">园区东路 1 号 · 有电梯</div>
+        </div>
+        <div class="kv num">
+          <div class="item"><div class="n">6</div><div class="l">楼层</div></div>
+          <div class="item"><div class="n">96</div><div class="l">房间</div></div>
+          <div class="item"><div class="n">240</div><div class="l">床位</div></div>
+          <div class="item"><div class="n" style="color:var(--accent-ink)">86.4%</div><div class="l">入住率</div></div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><i style="background:var(--ok)"></i>有空床</span>
+        <span><i style="background:var(--warn)"></i>已满</span>
+        <span><i style="background:var(--bad)"></i>维修中</span>
+        <span><i style="background:#c9ccd2"></i>停用</span>
+      </div>
+
+      <div class="floor-label">1 层</div>
+      <div class="room-grid">
+        <div class="card room s-ok">
+          <div class="top"><span class="no num">A101</span><span class="tag ok">有空床</span></div>
+          <div class="meta">双人间 · 南 · 18.5㎡</div>
+          <div class="beds"><i class="used"></i><i></i></div>
+        </div>
+        <div class="card room s-warn">
+          <div class="top"><span class="no num">A102</span><span class="tag warn">已满</span></div>
+          <div class="meta">双人间 · 南 · 18.5㎡</div>
+          <div class="beds"><i class="used"></i><i class="used"></i></div>
+        </div>
+        <div class="card room s-ok">
+          <div class="top"><span class="no num">A103</span><span class="tag ok">有空床</span></div>
+          <div class="meta">双人间 · 北 · 18.5㎡</div>
+          <div class="beds"><i class="used"></i><i></i></div>
+        </div>
+        <div class="card room s-bad">
+          <div class="top"><span class="no num">A104</span><span class="tag bad">维修中</span></div>
+          <div class="meta">双人间 · 北 · 18.5㎡</div>
+          <div class="beds"><i class="bad"></i><i class="bad"></i></div>
+        </div>
+      </div>
+
+      <div class="floor-label">2 层</div>
+      <div class="room-grid">
+        <div class="card room s-ok">
+          <div class="top"><span class="no num">A201</span><span class="tag ok">有空床</span></div>
+          <div class="meta">四人间 · 北 · 26㎡</div>
+          <div class="beds"><i class="used"></i><i class="used"></i><i class="used"></i><i></i></div>
+        </div>
+        <div class="card room s-ok">
+          <div class="top"><span class="no num">A202</span><span class="tag ok">有空床</span></div>
+          <div class="meta">双人间 · 南 · 18.5㎡</div>
+          <div class="beds"><i class="used"></i><i></i></div>
+        </div>
+        <div class="card room s-mute">
+          <div class="top"><span class="no num">A203</span><span class="tag mute">停用</span></div>
+          <div class="meta">双人间 · 南 · 18.5㎡</div>
+          <div class="beds"><i></i><i></i></div>
+        </div>
+        <div class="card room s-warn">
+          <div class="top"><span class="no num">A204</span><span class="tag warn">已满</span></div>
+          <div class="meta">四人间 · 北 · 26㎡</div>
+          <div class="beds"><i class="used"></i><i class="used"></i><i class="used"></i><i class="used"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="preview-tag" style="padding-bottom:48px">
+  蓝色主题 3.0 · 发丝边框 / 中性灰 / 紧凑密度 · 仅预览稿，未接入系统
+</div>
+
+</body>
+</html>

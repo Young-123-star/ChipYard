@@ -1,28 +1,35 @@
 <template>
-  <el-card shadow="never">
-    <el-form :inline="true" :model="query" @keyup.enter="search">
-      <el-form-item label="楼栋">
+  <DataView title="入住档案" :total="total">
+    <template #filters>
+      <div class="filter-item">
+        <span class="filter-item__label">楼栋</span>
         <el-select v-model="query.buildingId" placeholder="全部" clearable filterable style="width: 160px" @change="onBuildingChange">
           <el-option v-for="b in buildings" :key="b.id" :label="b.buildingName" :value="b.id" />
         </el-select>
-      </el-form-item>
-      <el-form-item label="楼层">
+      </div>
+      <div class="filter-item">
+        <span class="filter-item__label">楼层</span>
         <el-select v-model="query.floorId" placeholder="全部" clearable filterable :disabled="!query.buildingId" style="width: 120px" @change="onFloorChange">
           <el-option v-for="item in floors" :key="item.id" :label="item.floorName || `${item.floorNumber}层`" :value="item.id" />
         </el-select>
-      </el-form-item>
-      <el-form-item label="房间">
+      </div>
+      <div class="filter-item">
+        <span class="filter-item__label">房间</span>
         <el-select v-model="query.roomId" placeholder="全部" clearable filterable :disabled="!query.floorId" style="width: 130px" @change="search">
           <el-option v-for="item in rooms" :key="item.id" :label="item.roomNumber" :value="item.id" />
         </el-select>
-      </el-form-item>
-      <el-form-item><el-button @click="search">查询</el-button>
-          <el-button :loading="exporting" @click="onExport">导出</el-button></el-form-item>
-    </el-form>
+      </div>
+    </template>
+    <template #filter-actions>
+      <el-button @click="search">查询</el-button>
+    </template>
+    <template #actions>
+      <el-button :loading="exporting" @click="onExport">导出</el-button>
+    </template>
 
     <el-table v-loading="loading" :data="list">
       <el-table-column label="居住人" width="180">
-        <template #default="{ row }">{{ row.residentName }}（{{ row.employeeNo }}）</template>
+        <template #default="{ row }"><div class="cell-main">{{ row.residentName }}</div><div class="cell-sub">{{ row.employeeNo }}</div></template>
       </el-table-column>
       <el-table-column label="楼栋" width="160">
         <template #default="{ row }">{{ buildingName(row.buildingId) }}</template>
@@ -37,10 +44,11 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination style="margin-top: 12px; justify-content: flex-end"
-      layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
-      @current-change="onPageChange" />
-  </el-card>
+    <template #pagination>
+      <el-pagination layout="total, prev, pager, next" :total="total" :current-page="query.page" :page-size="query.size"
+        @current-change="onPageChange" />
+    </template>
+  </DataView>
 </template>
 
 <script setup lang="ts">
@@ -49,6 +57,7 @@ import { pageRecords } from '@/api/checkin'
 import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
 import type { CheckinRecord } from '@/api/types'
 import { exportLedger } from '@/api/export'
+import DataView from '@/components/layout/DataView.vue'
 
 const loading = ref(false)
 const exporting = ref(false)
@@ -91,3 +100,8 @@ async function onExport() {
 
 onMounted(() => { loadBuildings(); reload() })
 </script>
+
+<style scoped>
+.filter-item { display: flex; align-items: center; gap: 6px; }
+.filter-item__label { color: var(--dms-ink-2); font-size: 13px; white-space: nowrap; }
+</style>

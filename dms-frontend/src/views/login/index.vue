@@ -91,7 +91,7 @@ async function onSubmit() {
   line-height: 1.05;
 }
 .wordmark span {
-  background: linear-gradient(92deg, #0071e3 10%, #6e8bff 55%, #38b6d8 95%);
+  background: linear-gradient(92deg, var(--dms-accent) 10%, var(--dms-accent-strong) 95%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
