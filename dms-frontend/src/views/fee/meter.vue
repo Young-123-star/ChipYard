@@ -15,7 +15,7 @@
         <el-table :data="accounts" border>
           <el-table-column label="楼栋" min-width="120"><template #default="{ row }">{{ buildingName(row.buildingId) }}</template></el-table-column>
           <el-table-column prop="accountCode" label="账户编码" min-width="130" />
-          <el-table-column label="方式" width="90"><template #default="{ row }">{{ row.settlementMode === 1 ? '户级' : '房间' }}</template></el-table-column>
+          <el-table-column label="方式" width="90"><template #default="{ row }">{{ labelOf(SETTLEMENT_MODE, row.settlementMode) }}</template></el-table-column>
           <el-table-column label="包含房间" min-width="180"><template #default="{ row }">{{ row.roomNumbers.join('、') }}</template></el-table-column>
           <el-table-column label="用电规则" min-width="130"><template #default="{ row }">{{ electricRuleLabel(row.electricityRule) }}</template></el-table-column>
           <el-table-column label="用水规则" min-width="130"><template #default="{ row }">{{ waterRuleLabel(row.waterRule) }}</template></el-table-column>
@@ -163,6 +163,7 @@ import { ElMessage, ElMessageBox, type FormInstance } from 'element-plus'
 import { generateUtilitySettlement, getUtilityRate, listUtilityAccounts, listUtilityReadings, listUtilitySettlements, previewUtilitySettlement, saveUtilityReading, updateUtilityRate, voidUtilitySettlement } from '@/api/fee'
 import { pageRooms } from '@/api/room'
 import { useRoomLocationOptions } from '@/composables/useRoomLocationOptions'
+import { ELECTRIC_RULE, SETTLEMENT_MODE, WATER_RULE, labelOf } from '@/utils/dict'
 import type { MeterReading, Room, UtilityAccount, UtilityPreview, UtilitySettlement } from '@/api/types'
 
 const router = useRouter()
@@ -202,8 +203,8 @@ function keyOf(item: UtilityAccount) { return `${item.buildingId}|${item.account
 function roomNumber(id: number) { return rooms.value.find(item => item.id === id)?.roomNumber || id }
 function buildingName(id: number) { return buildings.value.find(item => item.id === id)?.buildingName || id }
 function meterLabel(type: number) { return ({ 1: '电表', 2: '冷水表', 3: '热水表' } as Record<number, string>)[type] || type }
-function electricRuleLabel(rule: number) { return ({ 0: '不计', 1: '户级250度', 2: '房间250度', 3: '夫妻平摊', 4: '公司承担' } as Record<number, string>)[rule] }
-function waterRuleLabel(rule: number) { return ({ 0: '不计', 1: '户级50吨', 2: '房间17吨', 3: '夫妻平摊', 4: '公司承担' } as Record<number, string>)[rule] }
+function electricRuleLabel(rule: number) { return labelOf(ELECTRIC_RULE, rule) }
+function waterRuleLabel(rule: number) { return labelOf(WATER_RULE, rule) }
 function money(value: number) { return Number(value || 0).toFixed(2) }
 
 async function loadBase() {

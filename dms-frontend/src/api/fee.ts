@@ -51,8 +51,31 @@ export function getUtilityRate(): Promise<UtilityRate> {
   return request.get('/fee/utility-rate')
 }
 
-export function updateUtilityRate(data: { electricityPrice: number; waterPrice: number }): Promise<void> {
+export function updateUtilityRate(data: Partial<Omit<UtilityRate, 'id'>>): Promise<void> {
   return request.put('/fee/utility-rate', data)
+}
+
+// 账户级批量保存水电规则（后端校验同户一致性）
+export function saveUtilityAccount(data: {
+  buildingId: number
+  accountCode: string
+  settlementMode: number
+  electricityRule: number
+  waterRule: number
+  roomIds: number[]
+}): Promise<number> {
+  return request.post('/fee/utility/accounts/save', data)
+}
+
+// 批量刷新水电配置：按楼栋/房型范围一键更新所有匹配房间的计费方式
+export function batchApplyUtilityAccount(data: {
+  buildingId?: number
+  roomType?: number
+  settlementMode: number
+  electricityRule: number
+  waterRule: number
+}): Promise<{ updated: number; skipped: number }> {
+  return request.post('/fee/utility/accounts/batch-apply', data)
 }
 
 export function listUtilityAccounts(buildingId?: number): Promise<UtilityAccount[]> {

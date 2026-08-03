@@ -182,6 +182,16 @@ export interface UtilityRate {
   id: number
   electricityPrice: number
   waterPrice: number
+  /** 电免额（度/间/月） */
+  electricAllowance: number
+  /** 户级水免额（吨/户/月） */
+  householdWaterAllowance: number
+  /** 房间水免额（吨/间/月） */
+  roomWaterAllowance: number
+  /** 结算周期起日（上月几号） */
+  cycleStartDay: number
+  /** 结算周期止日（本月几号） */
+  cycleEndDay: number
 }
 
 

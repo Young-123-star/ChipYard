@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import {
   Bell, CircleCheck, DataBoard, DocumentAdd, Files, Grid, House, Money,
-  Odometer, OfficeBuilding, PriceTag, Setting, SwitchButton, Tickets, Tools,
+  Odometer, OfficeBuilding, Operation, PriceTag, Setting, SwitchButton, Tickets, Tools,
   TrendCharts, UploadFilled, User
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
@@ -28,6 +28,7 @@ const routes: RouteRecordRaw[] = [
       { path: 'fee-standards', name: 'fee-standards', meta: { title: '收费标准', group: '费用管理', icon: PriceTag }, component: () => import('@/views/fee/standard.vue') },
       { path: 'fee-bills', name: 'fee-bills', meta: { title: '住宿费账单', group: '费用管理', icon: Money }, component: () => import('@/views/fee/bill.vue') },
       { path: 'fee-meter', name: 'fee-meter', meta: { title: '抄表/水电', group: '费用管理', icon: Odometer }, component: () => import('@/views/fee/meter.vue') },
+      { path: 'fee-rules', name: 'fee-rules', meta: { title: '水电规则', group: '费用管理', icon: Operation }, component: () => import('@/views/fee/rules.vue') },
       { path: 'repair-orders', name: 'repair-orders', meta: { title: '维修工单', group: '服务运营', icon: Tools }, component: () => import('@/views/repair/index.vue') },
       { path: 'inspections', name: 'inspections', meta: { title: '巡检管理', group: '服务运营', icon: CircleCheck }, component: () => import('@/views/inspection/index.vue') },
       { path: 'dicts', name: 'dicts', meta: { title: '字典管理', group: '系统管理', icon: Setting }, component: () => import('@/views/system/dict.vue') },
