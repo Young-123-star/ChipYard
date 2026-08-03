@@ -132,7 +132,7 @@ export const ROOM_FACILITY = [
   { value: '书桌', label: '书桌', type: 'info' }
 ]
 
-// 水电结算相关硬编码字典（无后端字典类型，前端固定）
+// 水电结算相关硬编码字典（无后端字典类型，前端固定；免额数值可在「水电规则」页配置，故标签不带具体数字）
 export const SETTLEMENT_MODE = [
   { value: 1, label: '户级账户' },
   { value: 2, label: '房间账户' }
@@ -140,17 +140,17 @@ export const SETTLEMENT_MODE = [
 
 export const ELECTRIC_RULE = [
   { value: 0, label: '不计电费' },
-  { value: 1, label: '户级250度' },
-  { value: 2, label: '房间250度' },
-  { value: 3, label: '夫妻实际费用平摊' },
+  { value: 1, label: '户级总表分摊' },
+  { value: 2, label: '房间表计量' },
+  { value: 3, label: '夫妻房均摊' },
   { value: 4, label: '公司承担' }
 ]
 
 export const WATER_RULE = [
   { value: 0, label: '不计水费' },
-  { value: 1, label: '户级50吨' },
-  { value: 2, label: '房间17吨' },
-  { value: 3, label: '夫妻实际费用平摊' },
+  { value: 1, label: '户级总表分摊' },
+  { value: 2, label: '房间表计量' },
+  { value: 3, label: '夫妻房均摊' },
   { value: 4, label: '公司承担' }
 ]
 

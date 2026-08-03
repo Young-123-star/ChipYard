@@ -12,8 +12,10 @@ import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SchemaConstraintTest {
@@ -204,6 +206,24 @@ class SchemaConstraintTest {
                 1,
                 200.00
         ));
+    }
+
+    @Test
+    void utility_rate_config_columns_have_defaults() {
+        jdbcTemplate.update(
+                "INSERT INTO dms_utility_rate (id, electricity_price, water_price) VALUES (?, ?, ?)",
+                1L,
+                0.5383,
+                4.1500
+        );
+        Map<String, Object> row = jdbcTemplate.queryForMap(
+                "SELECT electric_allowance, household_water_allowance, room_water_allowance, cycle_start_day, cycle_end_day"
+                        + " FROM dms_utility_rate WHERE id = 1");
+        assertEquals(250, ((Number) row.get("electric_allowance")).intValue());
+        assertEquals(50, ((Number) row.get("household_water_allowance")).intValue());
+        assertEquals(17, ((Number) row.get("room_water_allowance")).intValue());
+        assertEquals(25, ((Number) row.get("cycle_start_day")).intValue());
+        assertEquals(24, ((Number) row.get("cycle_end_day")).intValue());
     }
 
     @Test

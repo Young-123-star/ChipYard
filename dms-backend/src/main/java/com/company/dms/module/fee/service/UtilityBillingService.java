@@ -5,6 +5,8 @@ import com.company.dms.common.exception.BizException;
 import com.company.dms.module.checkin.entity.CheckinRecord;
 import com.company.dms.module.checkin.service.CheckinService;
 import com.company.dms.module.fee.dto.MeterReadingDTO;
+import com.company.dms.module.fee.dto.UtilityAccountSaveDTO;
+import com.company.dms.module.fee.dto.UtilityBatchApplyDTO;
 import com.company.dms.module.fee.entity.FeeBill;
 import com.company.dms.module.fee.entity.MeterReading;
 import com.company.dms.module.fee.entity.UtilityRate;
@@ -34,9 +36,12 @@ import java.util.stream.Collectors;
 
 @Service
 public class UtilityBillingService {
-    private static final BigDecimal ELECTRIC_ALLOWANCE = new BigDecimal("250");
-    private static final BigDecimal HOUSEHOLD_WATER_ALLOWANCE = new BigDecimal("50");
-    private static final BigDecimal ROOM_WATER_ALLOWANCE = new BigDecimal("17");
+    // 老数据缺列值时的兜底默认值，与 dms_utility_rate 列默认值一致
+    private static final BigDecimal DEFAULT_ELECTRIC_ALLOWANCE = new BigDecimal("250");
+    private static final BigDecimal DEFAULT_HOUSEHOLD_WATER_ALLOWANCE = new BigDecimal("50");
+    private static final BigDecimal DEFAULT_ROOM_WATER_ALLOWANCE = new BigDecimal("17");
+    private static final int DEFAULT_CYCLE_START_DAY = 25;
+    private static final int DEFAULT_CYCLE_END_DAY = 24;
 
     private final RoomMapper roomMapper;
     private final MeterReadingMapper readingMapper;
@@ -73,6 +78,88 @@ public class UtilityBillingService {
             item.put("errors", accountErrors(group));
             return item;
         }).toList();
+    }
+
+    /**
+     * 账户级批量保存：将 roomIds 指定的房间统一更新结算模式/账户编号/水电规则。
+     * 更新前按账户分组复用 accountErrors 做整体校验，任一账户不合法则整体拒绝。
+     */
+    @Transactional
+    public int saveAccount(UtilityAccountSaveDTO dto) {
+        Integer mode = dto.getSettlementMode();
+        if (mode != 1 && mode != 2) throw new BizException("无效的结算方式");
+        List<Room> rooms = roomMapper.selectBatchIds(dto.getRoomIds());
+        if (rooms.size() != dto.getRoomIds().size()) throw new BizException("存在无效的房间");
+        int electricityRule = value(dto.getElectricityRule());
+        int waterRule = value(dto.getWaterRule());
+        Map<String, List<Room>> byAccount = new LinkedHashMap<>();
+        for (Room room : rooms) {
+            if (!Objects.equals(room.getBuildingId(), dto.getBuildingId())) {
+                throw new BizException("房间 " + room.getRoomNumber() + " 不属于所选楼栋");
+            }
+            // 与房间保存逻辑一致：房间账户(模式2)留空时默认用房间号
+            String accountCode = dto.getAccountCode();
+            if (mode == 2 && (accountCode == null || accountCode.isBlank())) accountCode = room.getRoomNumber();
+            if (accountCode == null || accountCode.isBlank()) throw new BizException("水电账户编号不能为空");
+            accountCode = accountCode.trim();
+            room.setSettlementMode(mode);
+            room.setUtilityAccountCode(accountCode);
+            room.setElectricityRule(electricityRule);
+            room.setWaterRule(waterRule);
+            byAccount.computeIfAbsent(accountCode, key -> new ArrayList<>()).add(room);
+        }
+        for (List<Room> accountRooms : byAccount.values()) {
+            List<String> errors = accountErrors(new Group(dto.getBuildingId(),
+                    accountRooms.get(0).getUtilityAccountCode(), accountRooms));
+            if (!errors.isEmpty()) throw new BizException(String.join("; ", errors));
+        }
+        for (Room room : rooms) roomMapper.updateById(room);
+        return rooms.size();
+    }
+
+    /**
+     * 批量刷新水电配置：政策变化时一键更新匹配楼栋/房型的全部房间。
+     * 模式2按房间号成户（与 saveAccount 约定一致）；模式1保留现有账户编码并户，
+     * 原本没有账户编码的房间无法确定归户，跳过并计入 skipped。
+     */
+    @Transactional
+    public Map<String, Object> batchApply(UtilityBatchApplyDTO dto) {
+        Integer mode = dto.getSettlementMode();
+        if (mode != 1 && mode != 2) throw new BizException("无效的结算方式");
+        int electricityRule = value(dto.getElectricityRule());
+        int waterRule = value(dto.getWaterRule());
+        if (electricityRule < 0 || electricityRule > 4 || waterRule < 0 || waterRule > 4) {
+            throw new BizException("水电结算规则无效");
+        }
+        if (electricityRule == 0 && waterRule == 0) throw new BizException("至少需配置一项水电规则");
+        if ((electricityRule == 1 || waterRule == 1) && mode != 1) throw new BizException("按户结算规则要求按户结算模式");
+        if ((electricityRule == 3 || waterRule == 3) && mode != 2) throw new BizException("夫妻房规则要求单房间账户");
+
+        List<Room> rooms = roomMapper.selectList(Wrappers.<Room>lambdaQuery()
+                .eq(dto.getBuildingId() != null, Room::getBuildingId, dto.getBuildingId())
+                .eq(dto.getRoomType() != null, Room::getRoomType, dto.getRoomType())
+                .orderByAsc(Room::getBuildingId).orderByAsc(Room::getRoomNumber));
+        int updated = 0;
+        int skipped = 0;
+        for (Room room : rooms) {
+            String accountCode = room.getUtilityAccountCode();
+            if (mode == 2) {
+                accountCode = room.getRoomNumber();
+            } else if (accountCode == null || accountCode.isBlank()) {
+                skipped++;
+                continue;
+            }
+            room.setSettlementMode(mode);
+            room.setUtilityAccountCode(accountCode.trim());
+            room.setElectricityRule(electricityRule);
+            room.setWaterRule(waterRule);
+            roomMapper.updateById(room);
+            updated++;
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("updated", updated);
+        result.put("skipped", skipped);
+        return result;
     }
 
     public Long saveReading(MeterReadingDTO dto) {
@@ -151,8 +238,9 @@ public class UtilityBillingService {
         preview.put("valid", errors.isEmpty());
         preview.put("errors", errors);
         preview.put("accounts", accounts);
-        preview.put("cycleStart", cycleEnd(period).minusMonths(1).withDayOfMonth(25));
-        preview.put("cycleEnd", cycleEnd(period));
+        UtilityRate rate = meterService.getRate();
+        preview.put("cycleStart", cycleStart(period, rate));
+        preview.put("cycleEnd", cycleEnd(period, rate));
         return preview;
     }
 
@@ -178,8 +266,8 @@ public class UtilityBillingService {
             settlement.setBuildingId(calc.group().buildingId());
             settlement.setAccountCode(calc.group().accountCode());
             settlement.setPeriod(period);
-            settlement.setCycleEnd(cycleEnd(period));
-            settlement.setCycleStart(cycleEnd(period).minusMonths(1).withDayOfMonth(25));
+            settlement.setCycleEnd(cycleEnd(period, calc.rate()));
+            settlement.setCycleStart(cycleStart(period, calc.rate()));
             settlement.setElectricityPrice(calc.rate().getElectricityPrice());
             settlement.setWaterPrice(calc.rate().getWaterPrice());
             settlement.setElectricityUsage(calc.electricityUsage());
@@ -246,7 +334,11 @@ public class UtilityBillingService {
         if (!configErrors.isEmpty()) throw new BizException(String.join(", ", configErrors));
         if (activeSettlement(group, period) != null) throw new BizException("该账期结算单已生成");
         UtilityRate rate = meterService.getRate();
-        LocalDate cutoff = cycleEnd(period);
+        LocalDate cutoff = cycleEnd(period, rate);
+        // 免额取当前配置，老数据缺列值时回退默认值
+        BigDecimal electricAllowance = allowance(rate.getElectricAllowance(), DEFAULT_ELECTRIC_ALLOWANCE);
+        BigDecimal householdWaterAllowance = allowance(rate.getHouseholdWaterAllowance(), DEFAULT_HOUSEHOLD_WATER_ALLOWANCE);
+        BigDecimal roomWaterAllowance = allowance(rate.getRoomWaterAllowance(), DEFAULT_ROOM_WATER_ALLOWANCE);
         List<RoomCalculation> results = new ArrayList<>();
         BigDecimal electricityUsage = BigDecimal.ZERO;
         BigDecimal waterUsage = BigDecimal.ZERO;
@@ -269,14 +361,14 @@ public class UtilityBillingService {
                 List<BigDecimal> actuals = roomReadings.stream().map(v -> v.add(commonShare)).toList();
                 List<BigDecimal> costs = allocate(master.multiply(rate.getElectricityPrice()), actuals);
                 for (int i = 0; i < group.rooms().size(); i++) {
-                    results.add(roomCalculation(group.rooms().get(i), 1, actuals.get(i), ELECTRIC_ALLOWANCE,
+                    results.add(roomCalculation(group.rooms().get(i), 1, actuals.get(i), electricAllowance,
                             costs.get(i), electricRule, rate.getElectricityPrice(), cutoff));
                 }
                 electricityUsage = master;
             } else {
                 Room room = onlyRoom(group);
                 BigDecimal use = reading(group, period, 2, room.getId(), 1);
-                results.add(roomCalculation(room, 1, use, ELECTRIC_ALLOWANCE,
+                results.add(roomCalculation(room, 1, use, electricAllowance,
                         money(use.multiply(rate.getElectricityPrice())), electricRule, rate.getElectricityPrice(), cutoff));
                 electricityUsage = use;
             }
@@ -289,22 +381,23 @@ public class UtilityBillingService {
                 BigDecimal roomUse = use.divide(BigDecimal.valueOf(group.rooms().size()), 8, RoundingMode.HALF_UP);
                 List<BigDecimal> actuals = group.rooms().stream().map(r -> roomUse).toList();
                 List<BigDecimal> costs = allocate(use.multiply(rate.getWaterPrice()), actuals);
-                BigDecimal excessShare = positive(use.subtract(HOUSEHOLD_WATER_ALLOWANCE))
+                BigDecimal excessShare = positive(use.subtract(householdWaterAllowance))
                         .divide(BigDecimal.valueOf(group.rooms().size()), 8, RoundingMode.HALF_UP);
                 for (int i = 0; i < group.rooms().size(); i++) {
                     Room room = group.rooms().get(i);
                     List<CheckinRecord> occupants = checkinService.listRecordsByRoomAt(room.getId(), cutoff);
                     BigDecimal employee = occupants.isEmpty() ? BigDecimal.ZERO : money(excessShare.multiply(rate.getWaterPrice()));
                     results.add(new RoomCalculation(room, 2, roomUse,
-                            HOUSEHOLD_WATER_ALLOWANCE.divide(BigDecimal.valueOf(group.rooms().size()), 8, RoundingMode.HALF_UP),
-                            excessShare, costs.get(i), employee, occupants, "按户水费免额 50 吨"));
+                            householdWaterAllowance.divide(BigDecimal.valueOf(group.rooms().size()), 8, RoundingMode.HALF_UP),
+                            excessShare, costs.get(i), employee, occupants,
+                            "按户水费免额 " + amountText(householdWaterAllowance) + " 吨"));
                 }
                 waterUsage = use;
             } else {
                 Room room = onlyRoom(group);
                 BigDecimal use = reading(group, period, 2, room.getId(), 2)
                         .add(reading(group, period, 2, room.getId(), 3));
-                results.add(roomCalculation(room, 2, use, ROOM_WATER_ALLOWANCE,
+                results.add(roomCalculation(room, 2, use, roomWaterAllowance,
                         money(use.multiply(rate.getWaterPrice())), waterRule, rate.getWaterPrice(), cutoff));
                 waterUsage = use;
             }
@@ -329,7 +422,8 @@ public class UtilityBillingService {
             note = occupants.isEmpty() ? "空房间费用由公司承担" : "公司承担";
         } else {
             employee = money(excess.multiply(price));
-            note = type == 1 ? "房间电费免额 250 度" : "房间水费免额 17 吨";
+            note = type == 1 ? "房间电费免额 " + amountText(allowance) + " 度"
+                    : "房间水费免额 " + amountText(allowance) + " 吨";
         }
         return new RoomCalculation(room, type, usage, allowance, excess, totalCost, employee, occupants, note);
     }
@@ -490,12 +584,35 @@ public class UtilityBillingService {
         return firstRoom(group);
     }
 
-    private LocalDate cycleEnd(String period) {
+    /** 结算周期止日：本月 cycle_end_day（默认 24） */
+    private LocalDate cycleEnd(String period, UtilityRate rate) {
         try {
-            return YearMonth.parse(period).atDay(24);
+            return YearMonth.parse(period).atDay(cycleEndDay(rate));
         } catch (Exception e) {
             throw new BizException("账期格式必须为 YYYY-MM");
         }
+    }
+
+    /** 结算周期起日：上月 cycle_start_day（默认 25） */
+    private LocalDate cycleStart(String period, UtilityRate rate) {
+        return cycleEnd(period, rate).minusMonths(1).withDayOfMonth(cycleStartDay(rate));
+    }
+
+    private int cycleStartDay(UtilityRate rate) {
+        return rate.getCycleStartDay() == null ? DEFAULT_CYCLE_START_DAY : rate.getCycleStartDay();
+    }
+
+    private int cycleEndDay(UtilityRate rate) {
+        return rate.getCycleEndDay() == null ? DEFAULT_CYCLE_END_DAY : rate.getCycleEndDay();
+    }
+
+    private BigDecimal allowance(BigDecimal value, BigDecimal fallback) {
+        return value == null ? fallback : value;
+    }
+
+    /** 免额文案数值：去掉小数尾巴，50.00 → "50" */
+    private String amountText(BigDecimal value) {
+        return value.stripTrailingZeros().toPlainString();
     }
 
     private int value(Integer value) {

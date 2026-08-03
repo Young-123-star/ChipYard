@@ -8,6 +8,8 @@ import com.company.dms.module.fee.dto.GenerateBillsDTO;
 import com.company.dms.module.fee.dto.MeterQuery;
 import com.company.dms.module.fee.dto.MeterReadingDTO;
 import com.company.dms.module.fee.dto.PayBillDTO;
+import com.company.dms.module.fee.dto.UtilityAccountSaveDTO;
+import com.company.dms.module.fee.dto.UtilityBatchApplyDTO;
 import com.company.dms.module.fee.dto.UtilityRateDTO;
 import com.company.dms.module.fee.entity.FeeStandard;
 import com.company.dms.module.fee.entity.MeterReading;
@@ -142,6 +144,18 @@ public class FeeController {
     @GetMapping("/utility/accounts")
     public R<List<Map<String, Object>>> utilityAccounts(@RequestParam(required = false) Long buildingId) {
         return R.ok(utilityBillingService.listAccounts(buildingId));
+    }
+
+    @Operation(summary = "批量保存水电账户配置")
+    @PostMapping("/utility/accounts/save")
+    public R<Integer> saveUtilityAccount(@Valid @RequestBody UtilityAccountSaveDTO dto) {
+        return R.ok(utilityBillingService.saveAccount(dto));
+    }
+
+    @Operation(summary = "批量刷新水电配置")
+    @PostMapping("/utility/accounts/batch-apply")
+    public R<Map<String, Object>> batchApplyUtilityAccount(@Valid @RequestBody UtilityBatchApplyDTO dto) {
+        return R.ok(utilityBillingService.batchApply(dto));
     }
 
     @GetMapping("/utility/readings")

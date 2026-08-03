@@ -65,6 +65,26 @@ public class MeterServiceImpl implements MeterService {
         UtilityRate rate = getRate();
         rate.setElectricityPrice(dto.getElectricityPrice());
         rate.setWaterPrice(dto.getWaterPrice());
+        if (dto.getElectricAllowance() != null) {
+            if (dto.getElectricAllowance().signum() < 0) throw new BizException("电免额不能为负");
+            rate.setElectricAllowance(dto.getElectricAllowance());
+        }
+        if (dto.getHouseholdWaterAllowance() != null) {
+            if (dto.getHouseholdWaterAllowance().signum() < 0) throw new BizException("户级水免额不能为负");
+            rate.setHouseholdWaterAllowance(dto.getHouseholdWaterAllowance());
+        }
+        if (dto.getRoomWaterAllowance() != null) {
+            if (dto.getRoomWaterAllowance().signum() < 0) throw new BizException("房间水免额不能为负");
+            rate.setRoomWaterAllowance(dto.getRoomWaterAllowance());
+        }
+        if (dto.getCycleStartDay() != null) {
+            if (dto.getCycleStartDay() < 1 || dto.getCycleStartDay() > 28) throw new BizException("结算周期起日须在 1-28 之间");
+            rate.setCycleStartDay(dto.getCycleStartDay());
+        }
+        if (dto.getCycleEndDay() != null) {
+            if (dto.getCycleEndDay() < 1 || dto.getCycleEndDay() > 28) throw new BizException("结算周期止日须在 1-28 之间");
+            rate.setCycleEndDay(dto.getCycleEndDay());
+        }
         rateMapper.updateById(rate);
     }
 

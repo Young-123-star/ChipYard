@@ -210,12 +210,17 @@ CREATE TABLE dms_meter_reading (
 
 DROP TABLE IF EXISTS dms_utility_rate;
 CREATE TABLE dms_utility_rate (
-    id                BIGINT PRIMARY KEY AUTO_INCREMENT,
-    electricity_price DECIMAL(10,4) NOT NULL,
-    water_price       DECIMAL(10,4) NOT NULL,
-    created_at        DATETIME,
-    updated_at        DATETIME,
-    deleted_at        DATETIME
+    id                        BIGINT PRIMARY KEY AUTO_INCREMENT,
+    electricity_price         DECIMAL(10,4) NOT NULL,
+    water_price               DECIMAL(10,4) NOT NULL,
+    electric_allowance        DECIMAL(10,2) NOT NULL DEFAULT 250,
+    household_water_allowance DECIMAL(10,2) NOT NULL DEFAULT 50,
+    room_water_allowance      DECIMAL(10,2) NOT NULL DEFAULT 17,
+    cycle_start_day           TINYINT NOT NULL DEFAULT 25,
+    cycle_end_day             TINYINT NOT NULL DEFAULT 24,
+    created_at                DATETIME,
+    updated_at                DATETIME,
+    deleted_at                DATETIME
 );
 
 DROP TABLE IF EXISTS dms_utility_room_result;

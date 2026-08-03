@@ -71,7 +71,8 @@ docker compose up -d --build
   - `security/`：`SecurityConfig`（白名单含 `/api/auth/login`、`/api/integration/**`、swagger、h2-console）、`JwtAuthFilter`、`JwtUtil`、`SecurityUtil`。
   - `mybatis/`：`BaseEntity`、`MybatisPlusConfig`、自动填充 `MyMetaObjectHandler`。
 - `module/` — 按业务域分包，每个模块内部为 `controller / service(+Impl) / mapper / entity / dto / vo` 六层结构：
-  `auth`（登录/用户）、`resource`（楼栋/楼层/房间/床位）、`resident`（居住人）、`checkin`（入住意向单/入住档案）、`checkout`（退宿单/欠费挂账）、`fee`（收费标准/账单/抄表/水电结算/报表）、`repair`（维修工单）、`inspection`（巡检）、`dict`（字典）、`importer`（Excel 数据初始化导入）、`exporter`（导出）、`integration`（OA / HCP webhook，token 鉴权）。
+  `auth`（登录/用户）、`resource`（楼栋/楼层/房间/床位）、`resident`（居住人）、`checkin`（入住意向单/入住档案）、`checkout`（退宿单/欠费挂账）、`fee`（收费标准/账单/抄表/水电结算/水电规则配置/报表）、`repair`（维修工单）、`inspection`（巡检）、`dict`（字典）、`importer`（Excel 数据初始化导入）、`exporter`（导出）、`integration`（OA / HCP webhook，token 鉴权）。
+  - 水电计费：单价/免额/结算周期存 `dms_utility_rate`（单行配置），前端「水电规则」页（`fee/rules.vue`）可视化维护；规则语义（电/水各 0–4）在 `UtilityBillingService`，修改参数仅影响之后生成的结算，历史结算不回算。
 
 ### 前端分层（`src/`）
 
