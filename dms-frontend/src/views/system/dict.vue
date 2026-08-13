@@ -9,7 +9,7 @@
       </template>
       <el-table :data="types" v-loading="typeLoading" highlight-current-row @current-change="onTypeSelect">
         <el-table-column prop="dictName" label="名称" min-width="120" />
-        <el-table-column prop="dictType" label="编码" min-width="150" />
+        <el-table-column prop="dictType" label="编码" min-width="120" />
         <el-table-column label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'info'" size="small">{{ row.status === 1 ? '启用' : '停用' }}</el-tag>
@@ -248,8 +248,9 @@ onMounted(loadTypes)
 <style scoped>
 .dict-page {
   display: grid;
-  grid-template-columns: minmax(380px, 0.9fr) minmax(520px, 1.4fr);
-  gap: 16px;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
 }
 .panel-head {
   display: flex;

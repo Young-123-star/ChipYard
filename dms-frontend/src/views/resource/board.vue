@@ -233,12 +233,12 @@ onMounted(() => { loadBuildings(); reload() })
 .gender.female { background: color-mix(in srgb, var(--dms-bad) 12%, transparent); color: var(--dms-bad); }
 .meta { font-size: 12px; color: var(--dms-ink-3); margin-top: 4px; }
 
-/* 床位占用条：整段=一张床，实心=已入住 */
-.bedbar { display: flex; gap: 4px; margin-top: 12px; }
-.bedbar i { flex: 1; height: 5px; border-radius: 2.5px; background: var(--dms-hairline); }
-.bedbar i.used { background: var(--dms-accent); }
-.room.st-3 .bedbar i.used { background: color-mix(in srgb, var(--dms-bad) 55%, transparent); }
-.room.st-0 .bedbar i.used { background: var(--dms-ink-3); }
+/* 床位方格：一格=一张床，实心=已入住 */
+.bedbar { display: flex; gap: 5px; margin-top: 12px; }
+.bedbar i { width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--el-border-color); background: var(--dms-surface); }
+.bedbar i.used { background: var(--dms-accent); border-color: var(--dms-accent); }
+.room.st-3 .bedbar i.used { background: color-mix(in srgb, var(--dms-bad) 55%, transparent); border-color: transparent; }
+.room.st-0 .bedbar i.used { background: var(--dms-ink-3); border-color: transparent; }
 
 /* 状态圆点标签（右上角） */
 .status {

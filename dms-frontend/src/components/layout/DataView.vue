@@ -37,17 +37,17 @@ const hasFilters = computed(() => !!(slots.filters || slots['filter-actions']))
 
 <style scoped>
 .data-view { overflow: hidden; border: 1px solid var(--dms-hairline); border-radius: var(--dms-radius-card); background: var(--dms-surface); box-shadow: var(--dms-shadow-card); }
-.data-view__filters { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 12px 18px; border-bottom: 1px solid var(--dms-hairline); background: #fafafa; }
+.data-view__filters { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--dms-hairline); background: #fafafa; }
 .data-view__fields { display: flex; flex: 1; flex-wrap: wrap; align-items: flex-end; gap: 12px; min-width: 0; }
 .data-view__fields.is-collapsed { max-height: 34px; overflow: hidden; }
 .data-view__filter-actions, .data-view__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 .data-view__toggle { white-space: nowrap; }
-.data-view__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; min-height: 56px; padding: 0 18px; }
+.data-view__toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 46px; padding: 0 14px; }
 .data-view__toolbar > div:first-child { display: flex; align-items: baseline; gap: 10px; }
 h2 { margin: 0; font-size: 15px; letter-spacing: -.015em; }
 .data-view__count { color: var(--dms-ink-2); font-size: 12.5px; font-variant-numeric: tabular-nums; }
-.data-view__content { min-width: 0; padding: 0 18px 18px; }
-.data-view__pagination { display: flex; justify-content: flex-end; padding: 0 18px 18px; }
+.data-view__content { min-width: 0; padding: 0 14px 14px; }
+.data-view__pagination { display: flex; justify-content: flex-end; padding: 0 14px 14px; }
 @media (max-width: 767px) {
   .data-view__filters { align-items: stretch; flex-direction: column; padding: 14px; }
   .data-view__filter-actions { justify-content: flex-end; }

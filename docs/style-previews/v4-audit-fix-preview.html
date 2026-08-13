@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hallmark 审计修复效果预览 — 前 / 后对照</title>
+<style>
+  :root {
+    --accent: #2b5ce6; --accent-strong: #1e46b8; --accent-soft: #eef3fe; --accent-ink: #1e46b8;
+    --bg: #f7f7f8; --surface: #fcfcfe; --ink: #1a1d23; --ink-2: #5c6470; --ink-3: #9aa1ac;
+    --hairline: #e6e7ea; --hairline-soft: #efeff1; --hover: #f4f4f6;
+    --ok: #178a4c; --warn: #b06c09; --bad: #cf3a32; --hold: #2f6fbe;
+    --nav-top: #11408c; --nav-bottom: #0c2f63;
+    --radius: 10px; --radius-ctl: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei UI", "Segoe UI", sans-serif; font-size: 13px; color: var(--ink); background: #e9eaee; padding: 32px 20px 64px; }
+  .wrap { max-width: 1240px; margin: 0 auto; }
+  h1 { font-size: 20px; letter-spacing: -.02em; }
+  .sub { margin: 6px 0 28px; color: var(--ink-2); font-size: 12.5px; }
+  .case { margin-bottom: 40px; }
+  .case h2 { font-size: 14px; margin-bottom: 4px; }
+  .case .why { font-size: 12px; color: var(--ink-2); margin-bottom: 12px; max-width: 860px; line-height: 1.7; }
+  .case .why b { color: var(--bad); font-weight: 600; }
+  .case .why i { color: var(--ok); font-style: normal; font-weight: 600; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .cell { border: 1px solid var(--hairline); border-radius: 12px; background: var(--bg); overflow: hidden; }
+  .cell > .tag { display: flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: 11px; font-weight: 650; letter-spacing: .06em; border-bottom: 1px solid var(--hairline); background: var(--surface); }
+  .tag.before { color: var(--bad); }
+  .tag.after { color: var(--ok); }
+  .stage { padding: 28px; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+
+  /* ===== 用例 1：登录页 wordmark ===== */
+  .login-stage { background: linear-gradient(160deg, #f2f5fb, #e8edf7); min-height: 180px; flex-direction: column; gap: 10px; }
+  .wordmark { font-size: 30px; font-weight: 700; letter-spacing: -.03em; color: var(--ink); }
+  .wordmark span.g { background: linear-gradient(92deg, var(--accent) 10%, var(--accent-strong) 95%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .wordmark span.s { color: var(--accent); }
+  .login-tip { font-size: 12px; color: var(--ink-3); }
+
+  /* ===== 用例 2：侧栏选中项 ===== */
+  .side { width: 216px; border-radius: 10px; padding: 14px 10px; background: linear-gradient(180deg, var(--nav-top), var(--nav-bottom)); }
+  .nav-item { position: relative; display: flex; align-items: center; gap: 9px; height: 34px; padding: 0 10px; margin-bottom: 2px; border-radius: 7px; font-size: 13px; color: rgba(255,255,255,.72); }
+  .nav-item.active { color: #fff; font-weight: 600; background: rgba(255,255,255,.12); }
+  .nav-item.active::before { content: ""; position: absolute; left: -10px; top: 7px; bottom: 7px; width: 3px; border-radius: 0 3px 3px 0; background: linear-gradient(180deg, #6f97f5, var(--accent)); }
+  .nav-item.active.glow::before { box-shadow: 0 0 10px rgba(43,92,230,.8); }
+  .side .lab { font-size: 10px; color: rgba(255,255,255,.34); letter-spacing: .08em; padding: 4px 10px 6px; }
+
+  /* ===== 用例 3：KPI 卡 ===== */
+  .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; }
+  .kpi { padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); }
+  .kpi .k { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+  .kpi .v { margin-top: 6px; font-size: 24px; font-weight: 700; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .kpi .v small { font-size: 12px; font-weight: 500; color: var(--ink-3); }
+  .kpi .n { margin-top: 2px; font-size: 11.5px; color: var(--ink-3); }
+  .kpi .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .kpi.tile { display: flex; align-items: center; gap: 12px; }
+  .kpi .chip { flex: 0 0 36px; width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; font-size: 15px; font-weight: 800; }
+  .c-a { color: var(--accent); background: var(--accent-soft); }
+  .c-o { color: var(--ok); background: #e8f5ec; }
+  .c-w { color: var(--warn); background: #fdf3e0; }
+  .d-a { background: var(--accent); } .d-o { background: var(--ok); } .d-w { background: var(--warn); }
+
+  /* ===== 用例 4：规则说明卡（嵌套 → 平铺分组） ===== */
+  .panel { width: 100%; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); padding: 16px 18px; }
+  .panel > h3 { font-size: 14px; margin-bottom: 12px; }
+  .rule-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .rule-card { padding: 12px 14px; border: 1px solid var(--hairline); border-radius: var(--radius); background: #fff; }
+  .rule-card h4 { font-size: 13px; margin-bottom: 6px; }
+  .rule-card p { font-size: 12px; color: var(--ink-2); line-height: 1.7; }
+  .rule-flat { display: grid; grid-template-columns: 1fr; }
+  .rule-flat .row { display: grid; grid-template-columns: 130px 1fr; gap: 14px; padding: 10px 2px; border-bottom: 1px solid var(--hairline-soft); }
+  .rule-flat .row:last-child { border-bottom: 0; }
+  .rule-flat .row h4 { font-size: 13px; }
+  .rule-flat .row h4 span { display: block; margin-top: 3px; font-size: 10.5px; font-weight: 500; color: var(--accent-ink); }
+  .rule-flat .row p { font-size: 12px; color: var(--ink-2); line-height: 1.7; }
+
+  /* ===== 用例 5：房间卡（色条 → 纯圆点标签） ===== */
+  .rooms { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; }
+  .room { position: relative; padding: 13px 14px 12px; border: 1px solid var(--hairline); border-radius: var(--radius); background: var(--surface); }
+  .room.stripe::before { content: ""; position: absolute; left: 0; top: 13px; bottom: 13px; width: 3px; border-radius: 0 2px 2px 0; background: var(--st-c); }
+  .room .top { display: flex; justify-content: space-between; align-items: center; }
+  .room .no { font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .room .meta { margin-top: 4px; font-size: 12px; color: var(--ink-3); }
+  .room .bedbar { display: flex; gap: 4px; margin-top: 12px; }
+  .room .bedbar i { flex: 1; height: 5px; border-radius: 2.5px; background: var(--hairline); }
+  .room .bedbar i.used { background: var(--accent); }
+  .stag { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; font-weight: 500; color: var(--st-c); background: color-mix(in srgb, var(--st-c) 12%, transparent); }
+  .stag::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+  .s-ok { --st-c: var(--ok); } .s-warn { --st-c: var(--warn); } .s-bad { --st-c: var(--bad); }
+
+  /* ===== 用例 6：移动端 375px 表格 ===== */
+  .phone { width: 100%; max-width: 375px; margin: 0 auto; border: 1px solid var(--hairline); border-radius: 14px; background: var(--bg); overflow: hidden; }
+  .phone .bar { padding: 10px 14px; font-size: 12px; font-weight: 600; background: var(--surface); border-bottom: 1px solid var(--hairline); }
+  .phone .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--surface); }
+  th, td { padding: 9px 12px; font-size: 12px; text-align: left; border-bottom: 1px solid var(--hairline-soft); white-space: nowrap; }
+  th { color: var(--ink-3); font-size: 11px; background: #fafafa; }
+  .phone .hint { padding: 8px 14px; font-size: 11px; color: var(--ink-3); }
+  .phone.cut .scroll { overflow: hidden; }
+  .phone.cut table { min-width: 560px; }
+
+  .foot { margin-top: 36px; padding-top: 14px; border-top: 1px solid var(--hairline); font-size: 12px; color: var(--ink-3); line-height: 1.8; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Hallmark 审计修复效果预览</h1>
+  <div class="sub">左 = 修复前（现状） · 右 = 修复后（建议） — 仅预览，未改项目代码 · 对应审计发现：1 critical / 6 major / 6 minor</div>
+
+  <!-- 用例 1 -->
+  <div class="case">
+    <h2>1 · 登录页标题（critical：渐变标题）</h2>
+    <div class="why"><b>前</b>：wordmark 用 background-clip:text 蓝渐变填充，最典型 AI 指纹。<i>后</i>：纯色品牌蓝，靠字重和字号做层次。</div>
+    <div class="pair">
+      <div class="cell"><div class="tag before">修复前</div>
+        <div class="stage login-stage"><div class="wordmark">宿舍<span class="g">管理系统</span></div><div class="login-tip">公司宿舍资源与费用运营平台</div></div>
+      </div>
+      <div class="cell"><div class="tag after">修复后</div>
+        <div class="stage login-stage"><div class="wordmark">宿舍<span class="s">管理系统</span></div><div class="login-tip">公司宿舍资源与费用运营平台</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用例 2 -->
+  <div class="case">
+    <h2>2 · 侧栏选中态（major：深色面光晕）</h2>
+    <div class="why"><b>前</b>：指示条带 10px 蓝色外发光，深色面上应用明度分层而非光晕。<i>后</i>：实色指示条，干净收尾。</div>
+    <div class="pair">
+      <div class="cell"><div class="tag before">修复前</div>
+        <div class="stage"><div class="side">
+          <div class="lab">运营总览</div>
+          <div class="nav-item active glow">▦ &nbsp;工作台</div>
+          <div class="nav-item">▤ &nbsp;房态看板</div>
+          <div class="nav-item">▨ &nbsp;统计报表</div>
+        </div></div>
+      </div>
+      <div class="cell"><div class="tag after">修复后</div>
+        <div class="stage"><div class="side">
+          <div class="lab">运营总览</div>
+          <div class="nav-item active">▦ &nbsp;工作台</div>
+          <div class="nav-item">▤ &nbsp;房态看板</div>
+          <div class="nav-item">▨ &nbsp;统计报表</div>
+        </div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用例 3 -->
+  <div class="case">
+    <h2>3 · KPI 指标卡（major：图标色块卡片）</h2>
+    <div class="why"><b>前</b>：每卡一个彩色方块 chip，6 张等宽 tile 一字排开，"icon-tile feature card"模板形态。<i>后</i>：去色块，语义色小圆点 + 纯排版，数字成为主角。</div>
+    <div class="pair">
+      <div class="cell"><div class="tag before">修复前</div>
+        <div class="stage" style="padding:18px">
+          <div class="kpi-row">
+            <div class="kpi tile"><span class="chip c-a">◷</span><span><span class="k">入住率</span><span class="v">86.4<small>%</small></span><span class="n">1/10 床</span></span></div>
+            <div class="kpi tile"><span class="chip c-o">▦</span><span><span class="k">空闲床位</span><span class="v">9</span><span class="n">可供分配</span></span></div>
+            <div class="kpi tile"><span class="chip c-w">◔</span><span><span class="k">待退宿</span><span class="v">1</span><span class="n">等待确认</span></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="cell"><div class="tag after">修复后</div>
+        <div class="stage" style="padding:18px">
+          <div class="kpi-row">
+            <div class="kpi"><div class="k"><span class="dot d-a"></span>入住率</div><div class="v">86.4<small>%</small></div><div class="n">1/10 床</div></div>
+            <div class="kpi"><div class="k"><span class="dot d-o"></span>空闲床位</div><div class="v">9</div><div class="n">可供分配</div></div>
+            <div class="kpi"><div class="k"><span class="dot d-w"></span>待退宿</div><div class="v">1</div><div class="n">等待确认</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用例 4 -->
+  <div class="case">
+    <h2>4 · 水电规则说明（major：卡中卡）</h2>
+    <div class="why"><b>前</b>：el-card 面板内再嵌 5 张带边框圆角小卡，两层 containment。<i>后</i>：内层去壳，改为分组行 + 发丝分隔线，外层卡是唯一容器。</div>
+    <div class="pair">
+      <div class="cell"><div class="tag before">修复前</div>
+        <div class="stage" style="padding:16px">
+          <div class="panel"><h3>用电规则</h3>
+            <div class="rule-cards">
+              <div class="rule-card"><h4>户级总表分摊</h4><p>公摊电量 = 户总表 − Σ房间表；房间实际电量 = 房间表 + 公摊÷房间数；免额 250 度/间/月。</p></div>
+              <div class="rule-card"><h4>房间表计量</h4><p>仅抄房间电表；免额 250 度/间/月，超出部分×电价由在住人均摊。</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="cell"><div class="tag after">修复后</div>
+        <div class="stage" style="padding:16px">
+          <div class="panel"><h3>用电规则</h3>
+            <div class="rule-flat">
+              <div class="row"><h4>户级总表分摊<span>户级账户（多房间）</span></h4><p>公摊电量 = 户总表 − Σ房间表；房间实际电量 = 房间表 + 公摊÷房间数；免额 250 度/间/月，超出部分由在住人均摊，空房公司承担。</p></div>
+              <div class="row"><h4>房间表计量<span>单房间账户</span></h4><p>仅抄房间电表；免额 250 度/间/月，超出部分×电价由在住人均摊，空房间费用由公司承担。</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用例 5 -->
+  <div class="case">
+    <h2>5 · 房间状态卡（minor：侧边色条）</h2>
+    <div class="why"><b>前</b>：左缘 3px 状态色条（side-stripe 形态）。<i>后</i>：状态只由圆点标签承担，床位占用条保留——信息不丢，卡片更安静。</div>
+    <div class="pair">
+      <div class="cell"><div class="tag before">修复前</div>
+        <div class="stage" style="padding:16px">
+          <div class="rooms">
+            <div class="room stripe s-ok"><div class="top"><span class="no">A101</span><span class="stag">有空床</span></div><div class="meta">双人间 · 南 · 18.5㎡</div><div class="bedbar"><i class="used"></i><i></i></div></div>
+            <div class="room stripe s-warn"><div class="top"><span class="no">A102</span><span class="stag">已满</span></div><div class="meta">双人间 · 南 · 18.5㎡</div><div class="bedbar"><i class="used"></i><i class="used"></i></div></div>
+            <div class="room stripe s-bad"><div class="top"><span class="no">A104</span><span class="stag">维修中</span></div><div class="meta">双人间 · 北 · 18.5㎡</div><div class="bedbar"><i></i><i></i></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="cell"><div class="tag after">修复后</div>
+        <div class="stage" style="padding:16px">
+          <div class="rooms">
+            <div class="room s-ok"><div class="top"><span class="no">A101</span><span class="stag">有空床</span></div><div class="meta">双人间 · 南 · 18.5㎡</div><div class="bedbar"><i class="used"></i><i></i></div></div>
+            <div class="room s-warn"><div class="top"><span class="no">A102</span><span class="stag">已满</span></div><div class="meta">双人间 · 南 · 18.5㎡</div><div class="bedbar"><i class="used"></i><i class="used"></i></div></div>
+            <div class="room s-bad"><div class="top"><span class="no">A104</span><span class="stag">维修中</span></div><div class="meta">双人间 · 北 · 18.5㎡</div><div class="bedbar"><i></i><i></i></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 用例 6 -->
+  <div class="case">
+    <h2>6 · 移动端 375px 表格（major：移动底线）</h2>
+    <div class="why"><b>前</b>：窄屏下表格被硬裁，右侧列不可达。<i>后</i>：表格容器横向滚动 + 滑动提示，全部列可达。</div>
+    <div class="pair">
+      <div class="cell"><div class="tag before">修复前</div>
+        <div class="stage" style="padding:16px">
+          <div class="phone cut">
+            <div class="bar">房间列表 · 共 4 条</div>
+            <div class="scroll"><table>
+              <tr><th>房间号</th><th>房型</th><th>床位</th><th>水电账户</th><th>状态</th><th>操作</th></tr>
+              <tr><td>A101</td><td>双人间</td><td>0/2</td><td>未配置</td><td>空闲</td><td>编辑 · 更多</td></tr>
+              <tr><td>A102</td><td>双人间</td><td>1/2</td><td>未配置</td><td>已满</td><td>编辑 · 更多</td></tr>
+            </table></div>
+          </div>
+        </div>
+      </div>
+      <div class="cell"><div class="tag after">修复后</div>
+        <div class="stage" style="padding:16px">
+          <div class="phone">
+            <div class="bar">房间列表 · 共 4 条</div>
+            <div class="scroll"><table>
+              <tr><th>房间号</th><th>房型</th><th>床位</th><th>水电账户</th><th>状态</th><th>操作</th></tr>
+              <tr><td>A101</td><td>双人间</td><td>0/2</td><td>未配置</td><td>空闲</td><td>编辑 · 更多</td></tr>
+              <tr><td>A102</td><td>双人间</td><td>1/2</td><td>未配置</td><td>已满</td><td>编辑 · 更多</td></tr>
+            </table></div>
+            <div class="hint">← 左右滑动查看全部列 →</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    未在图中展示的两项（不可视化）：① 令牌收口——DataView #fafafa、layout 内联色值提为 --dms-* 令牌，视觉不变但换肤不再漏；
+    ② 微交互细节——tooltip 支持 focus 触发、legend-item 的 transition:all 改为指明属性、结果已可见的操作去掉成功 toast。
+  </div>
+</div>
+</body>
+</html>
