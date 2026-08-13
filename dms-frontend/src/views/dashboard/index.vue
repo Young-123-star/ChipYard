@@ -1,5 +1,5 @@
 <template>
-  <AppPage title="运营总览" description="集中查看房态、费用与服务待办，优先处理今天需要推进的事项。" eyebrow="Operations cockpit">
+  <AppPage title="运营总览" description="集中查看房态、费用与服务待办，优先处理今天需要推进的事项。">
     <template #actions>
       <el-button @click="load">刷新数据</el-button>
       <el-button type="primary" @click="router.push('/board')">查看房态</el-button>
@@ -12,8 +12,9 @@
 
     <section class="metrics" aria-label="关键运营指标">
       <button v-for="item in metrics" :key="item.label" type="button" class="metric" @click="router.push(item.to)">
-        <i class="metric__chip" :class="`tone-${item.tone}`"><el-icon :size="16"><component :is="item.icon" /></el-icon></i>
-        <span class="metric__text"><span>{{ item.label }}</span><strong>{{ item.value }}</strong><small>{{ item.note }}</small></span>
+        <span class="k"><i class="dot" :class="`tone-${item.tone}`"></i>{{ item.label }}</span>
+        <strong>{{ item.value }}</strong>
+        <small>{{ item.note }}</small>
       </button>
     </section>
 
@@ -44,9 +45,10 @@
 
       <el-card shadow="never" class="panel">
         <template #header><div class="panel__head"><div><b>快捷入口</b><span>常用运营动作</span></div></div></template>
-        <div class="quick-grid">
+        <div class="quick-list">
           <button v-for="link in quickLinks" :key="link.label" type="button" @click="router.push(link.to)">
-            <span>{{ link.code }}</span><b>{{ link.label }}</b><small>{{ link.note }}</small>
+            <span><b>{{ link.label }}</b><small>{{ link.note }}</small></span>
+            <el-icon class="go"><ArrowRight /></el-icon>
           </button>
         </div>
       </el-card>
@@ -55,9 +57,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, type Component } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter, type RouteLocationRaw } from 'vue-router'
-import { Grid, Money, Odometer, SwitchButton, Tools, User } from '@element-plus/icons-vue'
+import { ArrowRight } from '@element-plus/icons-vue'
 import AppPage from '@/components/layout/AppPage.vue'
 import { getRoomBoard } from '@/api/room'
 import { pageIntakes } from '@/api/checkin'
@@ -87,13 +89,13 @@ const previewRooms = computed(() => rooms.value.slice(0, PREVIEW_ROOM_LIMIT))
 const servicePending = computed(() => pendingRepairs.value + pendingInspections.value + rectifyingInspections.value)
 const currency = (value = 0) => `¥${Number(value).toLocaleString('zh-CN', { maximumFractionDigits: 0 })}`
 
-const metrics = computed<{ label: string; value: string | number; note: string; tone: string; icon: Component; to: RouteLocationRaw }[]>(() => [
-  { label: '入住率', value: `${occupancyRate.value}%`, note: `${occupiedBeds.value}/${totalBeds.value || 0} 床`, tone: 'accent', icon: Odometer, to: '/board' },
-  { label: '空闲床位', value: freeBeds.value, note: '可供分配', tone: 'ok', icon: Grid, to: '/board' },
-  { label: '待入住', value: pendingIntakes.value, note: '等待分配床位', tone: 'hold', icon: User, to: { path: '/intakes', query: { status: 1 } } },
-  { label: '待退宿', value: pendingCheckouts.value, note: '等待确认', tone: 'warn', icon: SwitchButton, to: { path: '/checkout-orders', query: { status: 1 } } },
-  { label: '账期欠费', value: currency(latestPeriod.value?.unpaid), note: latestPeriod.value?.period || '暂无账期', tone: 'bad', icon: Money, to: { path: '/fee-bills', query: { status: 1 } } },
-  { label: '服务待办', value: servicePending.value, note: '维修与巡检', tone: 'accent', icon: Tools, to: { path: '/repair-orders', query: { status: 1 } } }
+const metrics = computed<{ label: string; value: string | number; note: string; tone: string; to: RouteLocationRaw }[]>(() => [
+  { label: '入住率', value: `${occupancyRate.value}%`, note: `${occupiedBeds.value}/${totalBeds.value || 0} 床`, tone: 'accent', to: '/board' },
+  { label: '空闲床位', value: freeBeds.value, note: '可供分配', tone: 'ok', to: '/board' },
+  { label: '待入住', value: pendingIntakes.value, note: '等待分配床位', tone: 'hold', to: { path: '/intakes', query: { status: 1 } } },
+  { label: '待退宿', value: pendingCheckouts.value, note: '等待确认', tone: 'warn', to: { path: '/checkout-orders', query: { status: 1 } } },
+  { label: '账期欠费', value: currency(latestPeriod.value?.unpaid), note: latestPeriod.value?.period || '暂无账期', tone: 'bad', to: { path: '/fee-bills', query: { status: 1 } } },
+  { label: '服务待办', value: servicePending.value, note: '维修与巡检', tone: 'accent', to: { path: '/repair-orders', query: { status: 1 } } }
 ])
 
 const tasks = computed(() => [
@@ -104,10 +106,10 @@ const tasks = computed(() => [
 ].filter(item => item.value > 0))
 const taskTotal = computed(() => tasks.value.reduce((sum, item) => sum + item.value, 0))
 const quickLinks = [
-  { code: 'IN', label: '发起入住', note: '创建入住意向', to: '/intakes' },
-  { code: 'RM', label: '房间管理', note: '维护房间床位', to: '/rooms' },
-  { code: 'FI', label: '账单管理', note: '生成与收款', to: '/fee-bills' },
-  { code: 'SV', label: '维修工单', note: '登记服务需求', to: '/repair-orders' }
+  { label: '发起入住', note: '创建入住意向', to: '/intakes' },
+  { label: '房间管理', note: '维护房间床位', to: '/rooms' },
+  { label: '账单管理', note: '生成与收款', to: '/fee-bills' },
+  { label: '维修工单', note: '登记服务需求', to: '/repair-orders' }
 ]
 
 function roomClass(room: RoomBoard) {
@@ -149,27 +151,25 @@ onMounted(load)
 
 <style scoped>
 .metrics { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
-.metric { display: flex; align-items: center; gap: 12px; min-width: 0; padding: 14px 16px; border: 1px solid var(--dms-hairline); border-radius: var(--dms-radius-card); text-align: left; color: inherit; background: var(--dms-surface); box-shadow: none; cursor: pointer; transition: border-color var(--dms-motion-fast), background var(--dms-motion-fast); }
+.metric { min-width: 0; padding: 14px 16px; border: 1px solid var(--dms-hairline); border-radius: var(--dms-radius-card); text-align: left; color: inherit; background: var(--dms-surface); box-shadow: none; cursor: pointer; transition: border-color var(--dms-motion-fast), background var(--dms-motion-fast); }
 .metric:hover { border-color: var(--el-color-primary-light-7); background: var(--dms-hover); }
-.metric__chip { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 9px; }
-.tone-accent { color: var(--dms-accent); background: var(--dms-accent-soft); }
-.tone-ok { color: var(--dms-ok); background: color-mix(in srgb, var(--dms-ok) 12%, transparent); }
-.tone-warn { color: var(--dms-warn); background: color-mix(in srgb, var(--dms-warn) 14%, transparent); }
-.tone-bad { color: var(--dms-bad); background: color-mix(in srgb, var(--dms-bad) 10%, transparent); }
-.tone-hold { color: var(--dms-hold); background: color-mix(in srgb, var(--dms-hold) 10%, transparent); }
-.metric__text { min-width: 0; }
-.metric__text span, .metric__text small { display: block; color: var(--dms-ink-2); }
-.metric__text span { font-size: 12px; }
-.metric__text strong { display: block; overflow: hidden; margin: 4px 0 3px; color: var(--dms-ink); font-size: 22px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; }
-.metric__text small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.metric .k { display: flex; align-items: center; gap: 6px; color: var(--dms-ink-2); font-size: 12px; }
+.metric .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 7px; }
+.tone-accent { background: var(--dms-accent); }
+.tone-ok { background: var(--dms-ok); }
+.tone-warn { background: var(--dms-warn); }
+.tone-bad { background: var(--dms-bad); }
+.tone-hold { background: var(--dms-hold); }
+.metric strong { display: block; overflow: hidden; margin: 6px 0 3px; color: var(--dms-ink); font-size: 22px; font-variant-numeric: tabular-nums; text-overflow: ellipsis; }
+.metric small { display: block; color: var(--dms-ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .hero { display: grid; grid-template-columns: minmax(220px, .6fr) minmax(420px, 1.4fr); align-items: center; gap: 20px; padding: 20px 24px; border: 1px solid var(--dms-hairline); border-radius: var(--dms-radius-card); color: var(--dms-ink); background: linear-gradient(120deg, var(--dms-accent-soft) 0%, var(--dms-surface) 55%); }
 .hero__copy > span { color: var(--dms-ink-3); font-size: 12px; font-weight: 700; letter-spacing: .1em; }
 .hero__copy > strong { display: block; margin-top: 10px; color: var(--dms-ink); font-size: 44px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
 .hero__copy > strong small { margin-left: 3px; color: var(--dms-ink-3); font-size: 18px; }
 .hero__copy p { margin: 10px 0 0; color: var(--dms-ink-2); font-size: 13px; }
 .hero__copy p b { color: var(--dms-accent); font-weight: 600; font-variant-numeric: tabular-nums; }
-.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(46px, 1fr)); gap: 6px; margin: 0; padding: 0; border: 0; color: var(--dms-ink-2); background: none; cursor: pointer; }
-.room-grid span { display: grid; place-items: center; min-height: 26px; border: 1px solid var(--dms-hairline); border-left: 3px solid var(--dms-hairline); border-radius: 6px; font-size: 10px; font-variant-numeric: tabular-nums; background: var(--dms-surface); transition: background var(--dms-motion-fast); }
+.room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); gap: 6px; margin: 0; padding: 0; border: 0; color: var(--dms-ink-2); background: none; cursor: pointer; }
+.room-grid span { display: block; min-height: 26px; line-height: 26px; padding: 0 6px; border: 1px solid var(--dms-hairline); border-left: 3px solid var(--dms-hairline); border-radius: 6px; font-size: 10.5px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; background: var(--dms-surface); transition: background var(--dms-motion-fast); }
 .room-grid span:hover { background: var(--dms-hover); }
 .room-grid__free { border-left-color: var(--dms-ok); }
 .room-grid__partial { border-left-color: var(--dms-warn); }
@@ -193,11 +193,14 @@ onMounted(load)
 .task span > * { display: block; }
 .task span small { margin-top: 3px; color: var(--dms-ink-2); }
 .task > strong { font-size: 20px; font-variant-numeric: tabular-nums; }
-.quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.quick-grid button { display: grid; grid-template-columns: 36px 1fr; grid-template-rows: auto auto; column-gap: 10px; padding: 15px; border: 1px solid var(--dms-hairline); border-radius: 12px; color: inherit; text-align: left; background: var(--dms-surface); cursor: pointer; transition: border-color var(--dms-motion-fast), background var(--dms-motion-fast); }
-.quick-grid button:hover { border-color: var(--el-color-primary-light-7); background: var(--dms-accent-soft); }
-.quick-grid span { grid-row: 1 / 3; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; color: var(--dms-accent); font-size: 11px; font-weight: 800; background: var(--dms-accent-soft); }
-.quick-grid small { margin-top: 3px; color: var(--dms-ink-2); }
+.quick-list { display: flex; flex-direction: column; }
+.quick-list button { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 13px 4px; border: 0; border-bottom: 1px solid var(--dms-hairline); color: inherit; text-align: left; background: none; cursor: pointer; }
+.quick-list button:last-child { border-bottom: 0; }
+.quick-list button span > * { display: block; }
+.quick-list button small { margin-top: 3px; color: var(--dms-ink-2); }
+.quick-list .go { color: var(--dms-ink-3); transition: color var(--dms-motion-fast), transform var(--dms-motion-fast); }
+.quick-list button:hover b { color: var(--dms-accent-ink); }
+.quick-list button:hover .go { color: var(--dms-accent); transform: translateX(2px); }
 @media (max-width: 1199px) { .metrics { grid-template-columns: repeat(3, 1fr); } }
 @media (max-width: 900px) { .hero { grid-template-columns: 1fr; } .dashboard-grid { grid-template-columns: 1fr; } }
 @media (max-width: 767px) { .metrics { grid-template-columns: repeat(2, 1fr); } .hero { padding: 18px; } .hero__copy > strong { font-size: 36px; } .quick-grid { grid-template-columns: 1fr; } }

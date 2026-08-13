@@ -18,12 +18,12 @@ defineProps<{ title: string; description?: string; eyebrow?: string }>()
 </script>
 
 <style scoped>
-.app-page { display: grid; gap: 14px; }
-.app-page__header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; min-height: 40px; }
+.app-page { display: grid; gap: 12px; }
+.app-page__header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; min-height: 30px; }
 .app-page__copy { min-width: 0; }
 .app-page__eyebrow { display: block; margin-bottom: 3px; color: var(--dms-accent); font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-h1 { margin: 0; color: var(--dms-ink); font-size: 22px; line-height: 1.2; letter-spacing: -.035em; }
-p { max-width: 720px; margin: 4px 0 0; color: var(--dms-ink-2); font-size: 13px; line-height: 1.6; }
+h1 { margin: 0; color: var(--dms-ink); font-size: 18px; line-height: 1.2; letter-spacing: -.02em; }
+p { max-width: 720px; margin: 3px 0 0; color: var(--dms-ink-2); font-size: 12.5px; line-height: 1.6; }
 .app-page__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; }
 .app-page__summary { min-width: 0; }
 @media (max-width: 767px) {
